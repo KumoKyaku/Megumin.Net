@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Megumin.Protobuf-netLUT</AssemblyName>
+    <PackageProjectUrl>https://github.com/KumoKyaku/Megumin.Net</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/KumoKyaku/Megumin.Net/blob/master/LICENSE</PackageLicenseUrl>
+    <Copyright>Copyright (c) 2019 云却</Copyright>
+    <Description>MeguminNet中的消息序列化部分。</Description>
+    <Product>MeguminNet</Product>
+    <Authors>云却</Authors>
+    <Version>0.0.2</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <RootNamespace>Megumin.Message</RootNamespace>
+    <PackageTags>net</PackageTags>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\OpenSource.snk</AssemblyOriginatorKeyFile>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>bin\Debug\netstandard2.0\Megumin.Protobuf-netLUT.xml</DocumentationFile>
+    <LangVersion>7.2</LangVersion>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\netstandard2.0\Megumin.Protobuf-netLUT.xml</DocumentationFile>
+    <LangVersion>7.2</LangVersion>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="protobuf-net" Version="2.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Megumin.Remote</AssemblyName>
+    <RootNamespace>Megumin.Remote</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>云却</Authors>
+    <Version>0.0.2</Version>
+    <Product>MeguminNet</Product>
+    <Description>NetRemoteStandard的一个实现。</Description>
+    <Copyright>Copyright (c) 2019 云却</Copyright>
+    <PackageLicenseUrl>https://github.com/KumoKyaku/Megumin.Net/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/KumoKyaku/Megumin.Net</PackageProjectUrl>
+    <PackageTags>net</PackageTags>
+    <SignAssembly>true</SignAssembly>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <AssemblyOriginatorKeyFile>..\OpenSource.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>bin\Debug\netstandard2.0\Megumin.Remote.xml</DocumentationFile>
+    <LangVersion>7.3</LangVersion>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <LangVersion>7.3</LangVersion>
+    <DocumentationFile>bin\Release\netstandard2.0\Megumin.Remote.xml</DocumentationFile>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="RemoteBase.cs~RF16df24af.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Megumin.MessagePipeline\Megumin.MessagePipeline.csproj" />
+    <ProjectReference Include="..\NetRemoteStandard\NetRemoteStandard.csproj" />
+  </ItemGroup>
+
+</Project>
