@@ -46,7 +46,7 @@
 发送一个消息，等待一个消息返回。  
 
 ---
-## IRpcSendMessage.SendAsync
+## [IRpcSendMessage.SendAsync](image/callstep.png)
 从结果值返回异常是有意义的：1.省去了try catch ,写法更简单（注意，没有提高处理异常的性能）2.用来支持异常在分布式服务器中传递，避免try catch 控制流。
 
 ```cs
@@ -77,8 +77,8 @@ IRemote remote = new TCPRemote(); ///省略连接代码……
 public async void TestSend()
 {
     Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
-    ///                                         泛型类型为期待返回的类型
-    LoginResult result = await remote.SendAsyncSafeAwait<LoginResult>(login);
+    ///                                           泛型类型为期待返回的类型
+    LoginResult result = await remote.SendAsyncSafeAwait<LoginResult>(login, (ex)=>{});
     ///后续代码 不用任何判断，也不用担心异常。
     Console.WriteLine(result.IsSuccess);
 }
@@ -89,7 +89,7 @@ public async void TestSend()
 接收端回调函数
 
 ```cs
-public static async ValueTask<object> DealMessage(object message,IReceiveMessage receiver)
+public async ValueTask<object> DealMessage(object message,IReceiveMessage receiver)
 {
     switch (message)
     {
@@ -99,6 +99,8 @@ public static async ValueTask<object> DealMessage(object message,IReceiveMessage
         case Login login:
             Console.WriteLine($"接收消息{nameof(Login)}--{login.Account}");
             return new LoginResult { IsSuccess = true };
+        case TestPacket2 packet2:
+            return new TestPacket1 { Value = packet2.Value };
         default:
             break;
     }

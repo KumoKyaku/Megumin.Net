@@ -424,9 +424,8 @@ namespace Megumin.Remote
             }
             finally
             {
-                //重构后的BufferPool改为申请时清零数据，所以出不清零，节省性能。
-                ///必须清楚数据，否则下一次使用时读取到长度边界，残留数据可能会被误认为成报头，会出现截断BUG。
-                //owner.Memory.Span.Clear();
+                ///重构后的BufferPool改为申请时清零数据，所以出不清零，节省性能。
+                ///owner.Memory.Span.Clear();
                 owner.Dispose();
             }
         }
