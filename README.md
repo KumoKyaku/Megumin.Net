@@ -46,7 +46,7 @@
 发送一个消息，等待一个消息返回。  
 
 ---
-## [IRpcSendMessage.SendAsync](image/callstep.png)
+## [IRpcSendMessage.SendAsync](Image/callstep.png)
 从结果值返回异常是有意义的：1.省去了try catch ,写法更简单（注意，没有提高处理异常的性能）2.用来支持异常在分布式服务器中传递，避免try catch 控制流。
 
 ```cs
