@@ -37,6 +37,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Kcp" Version="1.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Megumin.MessagePipeline\Megumin.MessagePipeline.csproj" />
     <ProjectReference Include="..\NetRemoteStandard\NetRemoteStandard.csproj" />
   </ItemGroup>
