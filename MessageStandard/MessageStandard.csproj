@@ -39,7 +39,7 @@
 
   <ItemGroup>
     <PackageReference Include="Megumin.Explosion" Version="0.0.1" />
-    <PackageReference Include="Megumin.MemoryExtension" Version="0.0.2" />
+    <PackageReference Include="Megumin.MemoryExtension" Version="1.0.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
   </ItemGroup>
 

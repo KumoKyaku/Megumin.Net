@@ -42,8 +42,8 @@
     <Reference Include="Megumin.Explosion, Version=0.0.1.0, Culture=neutral, PublicKeyToken=83a041e0a8636db9, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Megumin.Explosion.0.0.1\lib\netstandard2.0\Megumin.Explosion.dll</HintPath>
     </Reference>
-    <Reference Include="Megumin.MemoryExtension, Version=0.0.2.0, Culture=neutral, PublicKeyToken=83a041e0a8636db9, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Megumin.MemoryExtension.0.0.2\lib\netstandard1.2\Megumin.MemoryExtension.dll</HintPath>
+    <Reference Include="Megumin.MemoryExtension, Version=1.0.0.0, Culture=neutral, PublicKeyToken=83a041e0a8636db9, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Megumin.MemoryExtension.1.0.0\lib\netstandard1.2\Megumin.MemoryExtension.dll</HintPath>
     </Reference>
     <Reference Include="MessagePack, Version=1.7.3.4, Culture=neutral, PublicKeyToken=b4a0369545f0a1be, processorArchitecture=MSIL">
       <HintPath>..\..\packages\MessagePack.1.7.3.4\lib\net47\MessagePack.dll</HintPath>
@@ -150,16 +150,16 @@
       <Private>True</Private>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System.Runtime, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\System.Runtime.4.3.0\lib\net462\System.Runtime.dll</HintPath>
+    <Reference Include="System.Runtime, Version=4.1.1.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\System.Runtime.4.3.1\lib\net462\System.Runtime.dll</HintPath>
       <Private>True</Private>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\..\packages\System.Runtime.CompilerServices.Unsafe.4.5.2\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
-    <Reference Include="System.Runtime.Extensions, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\System.Runtime.Extensions.4.3.0\lib\net462\System.Runtime.Extensions.dll</HintPath>
+    <Reference Include="System.Runtime.Extensions, Version=4.1.1.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\System.Runtime.Extensions.4.3.1\lib\net462\System.Runtime.Extensions.dll</HintPath>
       <Private>True</Private>
       <Private>True</Private>
     </Reference>

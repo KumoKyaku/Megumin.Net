@@ -11,7 +11,7 @@ namespace ServerApp
     {
         public int GUID { get; set; }
 
-        TCPRemoteListener listener = new TCPRemoteListener(Config.MainPort);
+        TcpRemoteListener listener = new TcpRemoteListener(Config.MainPort);
 
         public void Start()
         {

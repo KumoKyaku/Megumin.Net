@@ -61,7 +61,7 @@ namespace RemoteTestClient
         static readonly Receiver receiver = new Receiver();
         private static async void NewRemote(int clientIndex)
         {
-            IRemote remote = new TCPRemote() { };
+            IRemote remote = new TcpRemote() { };
             remote.OnReceiveCallback += receiver.TestReceive;
             var res = await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
             if (res == null)
@@ -164,7 +164,7 @@ namespace RemoteTestClient
 
         private static async void Connect(int index)
         {
-            IRemote remote = new TCPRemote();
+            IRemote remote = new TcpRemote();
             var res = await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
             if (res == null)
             {

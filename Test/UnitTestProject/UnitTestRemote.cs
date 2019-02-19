@@ -25,7 +25,7 @@ namespace UnitFunc
             List<IRemote> remotes = new List<IRemote>();
             for (int i = 0; i < 10; i++)
             {
-                remotes.Add(new TCPRemote());
+                remotes.Add(new TcpRemote());
             }
             TestConnect(remotes, Port).Wait();
             cancellation.Cancel();
@@ -41,7 +41,7 @@ namespace UnitFunc
             List<IRemote> remotes = new List<IRemote>();
             for (int i = 0; i < 1; i++)
             {
-                remotes.Add(new UDPRemote());
+                remotes.Add(new UdpRemote());
             }
             TestConnect(remotes, Port).Wait();
             cancellation.Cancel();
@@ -55,7 +55,7 @@ namespace UnitFunc
             PrepareEnvironment(cancellation);
             StartTcpListen(Port, cancellation);
 
-            TCPRemote remote = new TCPRemote();
+            TcpRemote remote = new TcpRemote();
             remote.RpcCallbackPool.RpcTimeOutMilliseconds = 2000;
             remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, Port)).Wait();
             TestSendAsync(remote).Wait();
@@ -70,7 +70,7 @@ namespace UnitFunc
             PrepareEnvironment(cancellation);
             StartUdpListen(Port, cancellation);
 
-            UDPRemote remote = new UDPRemote();
+            UdpRemote remote = new UdpRemote();
             remote.RpcCallbackPool.RpcTimeOutMilliseconds = 2000;
             remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback, Port)).Wait();
             TestSendAsync(remote).Wait();
@@ -85,7 +85,7 @@ namespace UnitFunc
             PrepareEnvironment(cancellation);
             StartTcpListen(Port, cancellation);
 
-            TCPRemote remote = new TCPRemote();
+            TcpRemote remote = new TcpRemote();
             remote.RpcCallbackPool.RpcTimeOutMilliseconds = 2000;
             remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, Port)).Wait();
             TestLazySendAsync(remote).Wait();
@@ -100,7 +100,7 @@ namespace UnitFunc
             PrepareEnvironment(cancellation);
             StartUdpListen(Port, cancellation);
 
-            UDPRemote remote = new UDPRemote();
+            UdpRemote remote = new UdpRemote();
             remote.RpcCallbackPool.RpcTimeOutMilliseconds = 2000;
             remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback, Port)).Wait();
             //remote.Receive(null);
@@ -150,7 +150,7 @@ namespace UnitFunc
         {
             ThreadPool.QueueUserWorkItem(async state =>
             {
-                TCPRemoteListener listener = new TCPRemoteListener(port);
+                TcpRemoteListener listener = new TcpRemoteListener(port);
                 while (!cancellation.Token.IsCancellationRequested)
                 {
                     var r = await listener.ListenAsync(TestFunction.DealMessage);
@@ -163,7 +163,7 @@ namespace UnitFunc
         {
             ThreadPool.QueueUserWorkItem(async state =>
             {
-                UDPRemoteListener listener = new UDPRemoteListener(port);
+                UdpRemoteListener listener = new UdpRemoteListener(port);
                 while (!cancellation.Token.IsCancellationRequested)
                 {
                     var r = await listener.ListenAsync(TestFunction.DealMessage);
@@ -264,7 +264,7 @@ namespace UnitFunc
 
         public async Task TestAsync()
         {
-            TCPRemote remote = new TCPRemote();
+            TcpRemote remote = new TcpRemote();
             var res = await remote.SendAsyncSafeAwait<TestPacket1>(null);
             res.ToString();
             await Task.Delay(10);
@@ -273,7 +273,7 @@ namespace UnitFunc
 
         public async void TestAsync2()
         {
-            TCPRemote remote = new TCPRemote();
+            TcpRemote remote = new TcpRemote();
             var res = await remote.SendAsyncSafeAwait<TestPacket1>(null);
             res.ToString();
             await Task.Delay(10);
@@ -282,7 +282,7 @@ namespace UnitFunc
 
         public async void TestAsync3()
         {
-            TCPRemote remote = new TCPRemote();
+            TcpRemote remote = new TcpRemote();
             var res = await remote.SendAsync<TestPacket1>(null);
             res.ToString();
             await Task.Delay(10);
@@ -291,7 +291,7 @@ namespace UnitFunc
 
         public async Task TestAsync4()
         {
-            TCPRemote remote = new TCPRemote();
+            TcpRemote remote = new TcpRemote();
             var res = await remote.SendAsync<TestPacket1>(null);
             res.ToString();
             await Task.Delay(10);

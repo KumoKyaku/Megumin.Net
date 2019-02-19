@@ -12,19 +12,19 @@ namespace Megumin.Remote
     /// <summary>
     /// IPV4 IPV6 udp中不能混用
     /// </summary>
-    public class UDPRemoteListener : UdpClient
+    public class UdpRemoteListener : UdpClient
     {
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public EndPoint RemappedEndPoint { get; }
 
-        public UDPRemoteListener(int port,AddressFamily addressFamily = AddressFamily.InterNetworkV6)
+        public UdpRemoteListener(int port,AddressFamily addressFamily = AddressFamily.InterNetworkV6)
             : base(port, addressFamily)
         {
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None,port);
         }
 
         public bool IsListening { get; private set; }
-        public TaskCompletionSource<UDPRemote> TaskCompletionSource { get; private set; }
+        public TaskCompletionSource<UdpRemote> TaskCompletionSource { get; private set; }
 
         async void AcceptAsync()
         {
@@ -42,11 +42,11 @@ namespace Megumin.Remote
         /// <summary>
         /// 正在连接的
         /// </summary>
-        readonly Dictionary<IPEndPoint, UDPRemote> connecting = new Dictionary<IPEndPoint, UDPRemote>();
+        readonly Dictionary<IPEndPoint, UdpRemote> connecting = new Dictionary<IPEndPoint, UdpRemote>();
         /// <summary>
         /// 连接成功的
         /// </summary>
-        readonly ConcurrentQueue<UDPRemote> connected = new ConcurrentQueue<UDPRemote>();
+        readonly ConcurrentQueue<UdpRemote> connected = new ConcurrentQueue<UdpRemote>();
         /// <summary>
         /// 重映射
         /// </summary>
@@ -55,7 +55,7 @@ namespace Megumin.Remote
         {
             if (!connecting.TryGetValue(res.RemoteEndPoint,out var remote))
             {
-                remote = new UDPRemote(this.Client.AddressFamily);
+                remote = new UdpRemote(this.Client.AddressFamily);
                 connecting[res.RemoteEndPoint] = remote;
 
                 var (Result, Complete) = await remote.TryAccept(res).WaitAsync(5000);
@@ -90,7 +90,7 @@ namespace Megumin.Remote
             }
         }
 
-        public async Task<UDPRemote> ListenAsync(ReceiveCallback receiveHandle)
+        public async Task<UdpRemote> ListenAsync(ReceiveCallback receiveHandle)
         {
             IsListening = true;
             System.Threading.ThreadPool.QueueUserWorkItem(state =>
@@ -108,7 +108,7 @@ namespace Megumin.Remote
             }
             if (TaskCompletionSource == null)
             {
-                TaskCompletionSource = new TaskCompletionSource<UDPRemote>();
+                TaskCompletionSource = new TaskCompletionSource<UdpRemote>();
             }
 
             var res = await TaskCompletionSource.Task;
@@ -124,7 +124,7 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="pipline"></param>
         /// <returns></returns>
-        public async Task<UDPRemote> ListenAsync(ReceiveCallback receiveHandle,IMessagePipeline pipline)
+        public async Task<UdpRemote> ListenAsync(ReceiveCallback receiveHandle,IMessagePipeline pipline)
         {
             IsListening = true;
             System.Threading.ThreadPool.QueueUserWorkItem(state =>
@@ -143,7 +143,7 @@ namespace Megumin.Remote
             }
             if (TaskCompletionSource == null)
             {
-                TaskCompletionSource = new TaskCompletionSource<UDPRemote>();
+                TaskCompletionSource = new TaskCompletionSource<UdpRemote>();
             }
 
             var res = await TaskCompletionSource.Task;

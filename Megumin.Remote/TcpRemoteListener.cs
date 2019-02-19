@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace Megumin.Remote
 {
-    public class TCPRemoteListener
+    public class TcpRemoteListener
     {
         private TcpListener tcpListener;
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public EndPoint RemappedEndPoint { get; }
 
-        public TCPRemoteListener(int port)
+        public TcpRemoteListener(int port)
         {
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None,port);
         }
@@ -50,10 +50,10 @@ namespace Megumin.Remote
         ///创建TCPRemote并ReceiveStart
         /// </summary>
         /// <returns></returns>
-        public async Task<TCPRemote> ListenAsync(ReceiveCallback receiveHandle)
+        public async Task<TcpRemote> ListenAsync(ReceiveCallback receiveHandle)
         {
             var remoteSocket = await Accept();
-            var remote = new TCPRemote(remoteSocket);
+            var remote = new TcpRemote(remoteSocket);
             remote.MessagePipeline = MessagePipeline.Default;
             remote.OnReceiveCallback += receiveHandle;
             remote.ReceiveStart();
@@ -65,10 +65,10 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="pipline"></param>
         /// <returns></returns>
-        public async Task<TCPRemote> ListenAsync(ReceiveCallback receiveHandle, IMessagePipeline pipline)
+        public async Task<TcpRemote> ListenAsync(ReceiveCallback receiveHandle, IMessagePipeline pipline)
         {
             var remoteSocket = await Accept();
-            var remote = new TCPRemote(remoteSocket);
+            var remote = new TcpRemote(remoteSocket);
             remote.MessagePipeline = pipline;
             remote.OnReceiveCallback += receiveHandle;
             remote.ReceiveStart();

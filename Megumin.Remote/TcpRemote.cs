@@ -18,15 +18,15 @@ namespace Megumin.Remote
     /// <para>发送内存开销 对于TcpChannel实例 动态内存开销，取决于发送速度，内存实时占用为发送数据的1~2倍</para>
     /// <para>                  接收的常驻开销8kb*2,随着接收压力动态调整</para>
     /// </summary>
-    public partial class TCPRemote : RemoteBase,  IRemote
+    public partial class TcpRemote : RemoteBase,  IRemote
     {
         public Socket Client { get; }
         public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
 
         /// <summary>
-        /// Mono/IL2CPP 请使用中使用<see cref="TCPRemote.TCPRemote(AddressFamily)"/>
+        /// Mono/IL2CPP 请使用中使用<see cref="TcpRemote.TcpRemote(AddressFamily)"/>
         /// </summary>
-        public TCPRemote() : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
+        public TcpRemote() : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
         {
 
         }
@@ -35,18 +35,18 @@ namespace Megumin.Remote
         /// <para>SocketException: Protocol option not supported</para>
         /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
         /// </remarks>
-        public TCPRemote(AddressFamily addressFamily) 
+        public TcpRemote(AddressFamily addressFamily) 
             : this(new Socket(addressFamily,SocketType.Stream, ProtocolType.Tcp))
         {
 
         }
 
-        public TCPRemote(IMessagePipeline messagePipeline) : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
+        public TcpRemote(IMessagePipeline messagePipeline) : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
         {
             MessagePipeline = messagePipeline;
         }
 
-        public TCPRemote(IMessagePipeline messagePipeline, AddressFamily addressFamily)
+        public TcpRemote(IMessagePipeline messagePipeline, AddressFamily addressFamily)
             : this(new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp))
         {
             MessagePipeline = messagePipeline;
@@ -56,7 +56,7 @@ namespace Megumin.Remote
         /// 使用一个已连接的Socket创建远端
         /// </summary>
         /// <param name="client"></param>
-        internal TCPRemote(Socket client)
+        internal TcpRemote(Socket client)
         {
             this.Client = client;
             IsVaild = true;
@@ -128,7 +128,7 @@ namespace Megumin.Remote
         }
 
         // TODO: 仅当以上 Dispose(bool disposing) 拥有用于释放未托管资源的代码时才替代终结器。
-        ~TCPRemote()
+        ~TcpRemote()
         {
             // 请勿更改此代码。将清理代码放入以上 Dispose(bool disposing) 中。
             Dispose(false);
@@ -146,7 +146,7 @@ namespace Megumin.Remote
     }
 
     ///连接 断开连接
-    partial class TCPRemote:IConnectable
+    partial class TcpRemote:IConnectable
     {
         public event Action<SocketError> OnDisConnect;
 
@@ -195,13 +195,13 @@ namespace Megumin.Remote
     }
 
     /// 发送实例消息
-    partial class TCPRemote
+    partial class TcpRemote
     {
         public Task BroadCastSendAsync(ArraySegment<byte> msgBuffer) => Client.SendAsync(msgBuffer, SocketFlags.None);
     }
 
     /// 发送字节消息
-    partial class TCPRemote
+    partial class TcpRemote
     {
         ConcurrentQueue<IMemoryOwner<byte>> sendWaitList = new ConcurrentQueue<IMemoryOwner<byte>>();
         bool isSending;
@@ -304,7 +304,7 @@ namespace Megumin.Remote
     }
 
     /// 接收字节消息
-    partial class TCPRemote : IReceiveMessage
+    partial class TcpRemote : IReceiveMessage
     {
         bool isReceiving;
         SocketAsyncEventArgs receiveArgs;

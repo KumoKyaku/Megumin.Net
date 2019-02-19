@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace Megumin.Message
 {
+    /// <summary>
+    /// 继承此类时注意使用 sealed 密闭子类以提高效率。
+    /// </summary>
     public partial class MessagePipeline:IMessagePipeline
     {
         #region Message
@@ -48,7 +51,7 @@ namespace Megumin.Message
 
         /// <summary>
         /// 分离粘包
-        /// <para> <see cref="Packet(short, object, IRemote)"/> 对应 </para>
+        /// <para> <see cref="Pack(int, object, ReadOnlySpan{byte})"/> 对应 </para>
         /// </summary>
         /// <param name="source"></param>
         /// <param name="pushCompleteMessage"></param>
@@ -98,7 +101,8 @@ namespace Megumin.Message
 
                     if (await PostDeserialize(messageID, extraMessage, rpcID, message, bufferReceiver))
                     {
-                        if (Post2ThreadScheduler)
+                        var post2 = CheckPost2ThreadScheduler(messageID, message);
+                        if (post2)
                         {
                             var resp = await MessageThreadTransducer.Push(rpcID, message, bufferReceiver);
 
@@ -129,6 +133,27 @@ namespace Megumin.Message
             }
         }
 
+        /// <summary>
+        /// 精确控制各个消息是否切换到主线程。
+        /// <para>用于处理在某些时钟精确的且线程无关消息时跳过轮询等待。</para>
+        /// 例如：同步两个远端时间戳的消息。
+        /// </summary>
+        /// <param name="messageID"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        protected virtual bool CheckPost2ThreadScheduler(int messageID, object message)
+        {
+            return Post2ThreadScheduler;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="bufferReceiver"></param>
+        /// <param name="extraMessage"></param>
+        /// <param name="rpcID"></param>
+        /// <param name="resp"></param>
         protected virtual void Reply<T>(T bufferReceiver, ReadOnlyMemory<byte> extraMessage, int rpcID, object resp)
             where T : ISendMessage, IRemoteID, IUID<int>, IObjectMessageReceiver
         {

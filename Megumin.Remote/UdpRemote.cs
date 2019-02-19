@@ -13,19 +13,19 @@ namespace Megumin.Remote
     /// <summary>
     /// 不支持多播地址 每包大小最好不要大于 537（548 - 框架报头11）
     /// </summary>
-    public partial class UDPRemote : RemoteBase, IRemote
+    public partial class UdpRemote : RemoteBase, IRemote
     {
         public Socket Client => udpClient?.Client;
         public UdpClient udpClient;
         public EndPoint RemappedEndPoint => udpClient?.Client.RemoteEndPoint;
 
-        public UDPRemote(AddressFamily addressFamily = AddressFamily.InterNetworkV6) :
+        public UdpRemote(AddressFamily addressFamily = AddressFamily.InterNetworkV6) :
             this(new UdpClient(0, addressFamily))
         {
 
         }
 
-        internal UDPRemote(UdpClient udp)
+        internal UdpRemote(UdpClient udp)
         {
             udpClient = udp;
             IsVaild = true;
@@ -76,7 +76,7 @@ namespace Megumin.Remote
     }
 
     ///连接
-    partial class UDPRemote
+    partial class UdpRemote
     {
         public event Action<SocketError> OnDisConnect;
 
@@ -275,7 +275,7 @@ namespace Megumin.Remote
     }
 
     /// 发送
-    partial class UDPRemote
+    partial class UdpRemote
     {
         /// <summary>
         /// 注意，发送完成时内部回收了buffer。
@@ -326,7 +326,7 @@ namespace Megumin.Remote
     }
 
     /// 接收
-    partial class UDPRemote
+    partial class UdpRemote
     {
         public bool isReceiving = false;
         public override void ReceiveStart()
