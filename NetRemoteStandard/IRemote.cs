@@ -299,4 +299,18 @@ namespace Net.Remote
         /// <returns></returns>
         IMiniAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message,int identifier, Action<Exception> OnException = null);
     }
+
+    /// <summary>
+    /// 监听端多路复用，用于Udp,即一个socket 对应多个远端。
+    /// </summary>
+    public interface IMultiplexing
+    {
+        /// <summary>
+        /// 负数和0 是非法值，最小值为1 。当为1时每个连接对应一个socket，等于Tcp效果。默认为1。
+        /// <para>开启多路复用并不一定提高效率，要以实际测试为准</para>
+        /// 设定值需要根据网络传输速度和消息处理速度决定，没有通用标准。
+        /// </summary>
+        int MultiplexingCount { get; set; }
+    }
+
 }
