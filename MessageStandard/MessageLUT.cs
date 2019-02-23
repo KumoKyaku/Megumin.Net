@@ -150,6 +150,7 @@ namespace Megumin.Message
                 case KeyAlreadyHave.Skip:
                     if (dFormatter.ContainsKey(messageID))
                     {
+                        Debug.LogWarning($"[{type.FullName}]和[{dFormatter[messageID].type.FullName}]的消息ID[{messageID}]冲突。");
                         return;
                     }
                     else
@@ -201,7 +202,7 @@ namespace Megumin.Message
 
                 if (Seiralize == null)
                 {
-                    OnMissSeiralize?.Invoke(type);
+                    Debug.LogError($"消息[{type.Name}]的序列化函数没有找到。");
                     return (-1, default);
                 }
 
@@ -222,7 +223,7 @@ namespace Megumin.Message
             }
             else
             {
-                OnMissSeiralize?.Invoke(type);
+                Debug.LogError($"消息[{type.Name}]的序列化函数没有找到。");
                 return (-1, default);
             }
         }
@@ -242,14 +243,10 @@ namespace Megumin.Message
             }
             else
             {
-                OnMissDeserialize?.Invoke(messageID);
+                Debug.LogError($"消息ID为[{messageID}]的反序列化函数没有找到。");
                 return null;
             }
         }
-
-
-        public static event Action<int> OnMissDeserialize;
-        public static event Action<Type> OnMissSeiralize;
 
         /// <summary>
         /// 查找消息类型
