@@ -309,4 +309,17 @@ namespace Megumin.Message
         }
     }
 
+
+    internal static class Debug
+    {
+        const string moduleName = "Megumin.MessageLUT";
+        public static void Log(object message)
+            => MeguminDebug.Log(message, moduleName);
+
+        public static void LogError(object message)
+            => MeguminDebug.LogError(message, moduleName);
+
+        public static void LogWarning(object message)
+            => MeguminDebug.LogWarning(message, moduleName);
+    }
 }

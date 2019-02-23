@@ -522,4 +522,17 @@ namespace Megumin.Message
             return null;
         }
     }
+
+    internal static class Debug
+    {
+        const string moduleName = "Megumin.MessagePipeline";
+        public static void Log(object message)
+            => MeguminDebug.Log(message, moduleName);
+
+        public static void LogError(object message)
+            => MeguminDebug.LogError(message, moduleName);
+
+        public static void LogWarning(object message)
+            => MeguminDebug.LogWarning(message, moduleName);
+    }
 }

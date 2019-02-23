@@ -39,8 +39,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Megumin.Explosion, Version=0.0.1.0, Culture=neutral, PublicKeyToken=83a041e0a8636db9, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Megumin.Explosion.0.0.1\lib\netstandard2.0\Megumin.Explosion.dll</HintPath>
+    <Reference Include="Megumin.Explosion, Version=0.1.1.0, Culture=neutral, PublicKeyToken=83a041e0a8636db9, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Megumin.Explosion.0.1.1\lib\netstandard2.0\Megumin.Explosion.dll</HintPath>
     </Reference>
     <Reference Include="Megumin.MemoryExtension, Version=1.0.0.0, Culture=neutral, PublicKeyToken=83a041e0a8636db9, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Megumin.MemoryExtension.1.0.0\lib\netstandard1.2\Megumin.MemoryExtension.dll</HintPath>
