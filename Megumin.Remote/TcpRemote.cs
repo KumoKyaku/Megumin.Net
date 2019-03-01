@@ -207,7 +207,18 @@ namespace Megumin.Remote
         bool isSending;
         private MemoryArgs sendArgs;
         protected readonly object sendlock = new object();
-        
+
+        SendStates State = SendStates.Idel;
+
+        enum SendStates
+        {
+            Idel,
+            MoveWaiting2Sending,
+            Sending,
+            Release,
+        }
+
+
         /// <summary>
         /// 注意，发送完成时内部回收了buffer。
         /// ((框架约定1)发送字节数组发送完成后由发送逻辑回收)
@@ -215,10 +226,7 @@ namespace Megumin.Remote
         /// <param name="bufferMsg"></param>
         public override void SendAsync(IMemoryOwner<byte> bufferMsg)
         {
-            lock (sendlock)
-            {
-                sendWaitList.Enqueue(bufferMsg);
-            }
+            sendWaitList.Enqueue(bufferMsg);
             SendStart();
         }
 
@@ -236,7 +244,7 @@ namespace Megumin.Remote
             ///如果待发送队列有消息，交换列表 ，继续发送
             lock (sendlock)
             {
-                if (sendWaitList.Count > 0 && !manualDisconnecting && isSending == false)
+                if (!sendWaitList.IsEmpty && !manualDisconnecting && isSending == false)
                 {
                     isSending = true;
                     return true;
@@ -256,32 +264,29 @@ namespace Megumin.Remote
             if (sendArgs == null)
             {
                 sendArgs = new MemoryArgs();
+                sendArgs.Completed += SendComplete;
             }
 
-
-            if (sendWaitList.TryDequeue(out var owner))
+            //移动等待队列到发送队列；
+            while (sendWaitList.TryDequeue(out var owner) || !sendWaitList.IsEmpty)
             {
-                if (owner != null)
-                {
-                    sendArgs.SetMemoryOwner(owner);
+                sendArgs.SetMemoryOwner((owner,owner.Memory.Length));
+            }
 
-                    sendArgs.Completed += SendComplete;
-                    if (!Client.SendAsync(sendArgs))
-                    {
-                        SendComplete(this, sendArgs);
-                    }
-                }
+            sendArgs.Flush();
+
+            if (!Client.SendAsync(sendArgs))
+            {
+                SendComplete(Client, sendArgs);
             }
         }
 
         void SendComplete(object sender, SocketAsyncEventArgs args)
         {
-            ///这个方法由IOCP线程调用。需要尽快结束。
-            args.Completed -= SendComplete;
-            isSending = false;
-
             ///无论成功失败，都要清理发送缓冲
-            sendArgs.owner.Dispose();
+            sendArgs.Release();
+            ///这个方法由IOCP线程调用。需要尽快结束。
+            isSending = false;
 
             if (args.SocketError == SocketError.Success)
             {
@@ -454,21 +459,63 @@ namespace Megumin.Remote
 
     internal class MemoryArgs : SocketAsyncEventArgs
     {
-        public IMemoryOwner<byte> owner { get; private set; }
-        public byte[] copybuffer = new byte[8192];
-        public void SetMemoryOwner(IMemoryOwner<byte> memoryOwner)
+        public void SetMemoryOwner((IMemoryOwner<byte> memoryOwner,int count) sendbuffer)
         {
-            this.owner = memoryOwner;
-            var memory = owner.Memory;
-            if (MemoryMarshal.TryGetArray<byte>(memory,out var sbuffer))
+            if (sendbuffer.memoryOwner == null)
             {
-                SetBuffer(sbuffer.Array, sbuffer.Offset, sbuffer.Count);
+                return;
             }
-            else
+
+            bool TryAdd((IMemoryOwner<byte> memoryOwner,int count) buffer)
             {
-                memory.CopyTo(copybuffer);
-                SetBuffer(copybuffer, 0, memory.Length);
+                if (MemoryMarshal.TryGetArray<byte>(sendbuffer.memoryOwner.Memory, out var sbuffer))
+                {
+                    sendList.Add(new ArraySegment<byte>(sbuffer.Array, sbuffer.Offset, sendbuffer.count));
+                    releaseList.Add(sendbuffer.memoryOwner);
+                    return true;
+                }
+
+                return false;
             }
+
+
+            if (!TryAdd(sendbuffer))
+            {
+                var temp = BufferPool.Rent(sendbuffer.count);
+                sendbuffer.memoryOwner.Memory.Span.Slice(0, sendbuffer.count).CopyTo(temp.Memory.Span);
+                if (!TryAdd((temp,sendbuffer.count)))
+                {
+                    throw new Exception($"内存池损坏");
+                }
+            }
+
         }
+
+        public void Flush()
+        {
+            BufferList = sendList;
+        }
+
+        public void Release()
+        {
+            sendList.Clear();
+            foreach (var item in releaseList)
+            {
+                try
+                {
+                    item.Dispose();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e);
+                }
+            }
+            releaseList.Clear();
+        }
+
+        readonly List<IMemoryOwner<byte>> releaseList
+            = new List<IMemoryOwner<byte>>();
+
+        List<ArraySegment<byte>> sendList = new List<ArraySegment<byte>>();
     }
 }

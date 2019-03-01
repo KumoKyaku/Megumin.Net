@@ -19,22 +19,23 @@
 # [``开发路线图``](https://trello.com/b/s84Jn7hW/meguminnet)
 
 # 优势
-- 使用内存池和多线程高效收发，可配置线程调度，无需担心网络层性能问题。
-- 高度封装，无需关心通讯协议、RPC。
+- 使用内存池和多线程处理收发，可配置线程调度，无需担心网络层性能问题。
+- 内置Rpc。
 - 可以搭配不同的序列化类库，甚至不用序列化库。
-- **AOT/IL2CPP可用。** Unity玩家的福音。
-- 高度可配置的消息管线，专业程序员可以针对具体功能进一步优化。
+- **AOT/IL2CPP可用。**
+- 可配置消息管线，专业程序员可以针对具体功能进一步优化。
 - 接口分离。[[Dependency injection]](https://en.wikipedia.org/wiki/Dependency_injection) 应用程序可以使用NetRemoteStandard.dll编码，然后使用Megumin.Remote.dll的具体实现类注入，当需要切换协议或者序列化类库时，应用程序逻辑无需改动。
-- 高并发分布式模式中，IOCP开销和消息调度转发延迟之间有很好的平衡
-- 自定义MiniTask池,针对网络功能对Task重新实现，性能更高，alloc非常低。
-- 支持`Span<T>`
-- 纯C#实现，这是学习网络功能一个好的起点
-- **`MIT许可证`**。开源千秋万代，闭源死路一条。
+- IOCP开销和消息调度转发延迟之间有很好的平衡。
+- 自定义MiniTask池,针对网络功能对Task重新实现，性能更高，仅初始化时alloc。
+- 支持`Span<T>`。
+- 纯C#实现，这是学习网络功能一个好的起点。
+- **`MIT许可证`**
   
 # 劣势
-- 目前为止类库还很年青，没有经过足够的测试
-- 对于非程序人员仍然需要一些学习成本
-- API设计仍待生产环境验证
+- 目前为止类库还很年青，没有经过足够的测试。
+- 对于非程序人员仍然需要一些学习成本。
+- API设计仍待生产环境验证。
++ [类库没有解决操作系统的时间精度问题。](https://stackoverflow.com/questions/6254703/thread-sleep-for-less-than-1-millisecond)这个问题非常复杂，需要专人定制。
 
 
 ---
@@ -142,9 +143,12 @@ public async ValueTask<object> DealMessage(object message,IReceiveMessage receiv
         </linker>
 
 # MessagePipeline是什么？
-MessagePipeline 是 Megumin.Remote 的一部分功能。  
-它决定了消息收发具体经过了那些流程，可以自定义MessagePipeline并注入到Remote,用来满足一些特殊需求。  
-如，消息反序列化前转发；使用返回消息池来实现接收过程构造返回消息实例无Alloc（这需要序列化类库的支持和明确的生命周期管理）。  
+MessagePipeline 是 Megumin.Remote 分离出来的一部分功能。   
+它也可以理解为一个协议栈。   
+它决定了消息收发具体经过了哪些步骤，可以自定义MessagePipeline并注入到Remote,用来满足一些特殊需求。  
+例如：
+- 消息反序列化前转发。
+- 使用返回消息池来实现接收过程构造返回消息实例无Alloc（这需要序列化类库的支持和明确的生命周期管理）。  
 ``你可以为每个Remote指定一个MessagePipeline实例，如果没有指定，默认使用MessagePipeline.Default。``
 
 # MessageLUT是什么？
@@ -164,7 +168,7 @@ Regist<string>(11, BaseType.Serialize, BaseType.StringDeserialize);
 Regist<int>(12, BaseType.Serialize,BaseType.IntDeserialize);
 ```
 
-序列化类库的中间件基于MessageLUT提供多个简单易用的API，自动生成序列化和反序列化函数。你需要为协议类添加一个MSGIDAttribute来提供查找表使用的ID。因为一个ID只能对应一组序列化函数，因此每一个协议类同时只能使用一个序列化库。  
+序列化类库的中间件基于MessageLUT提供多个简单易用的API，自动生成序列化和反序列化函数。需要为协议类添加一个MSGIDAttribute来提供查找表使用的ID。因为一个ID只能对应一组序列化函数，因此每一个协议类同时只能使用一个序列化库。  
 
 ```cs
 namespace Message
@@ -227,6 +231,7 @@ namespace Message
     两者不相同。
 
 # 支持的序列化库(陆续添加中)
+
 每个库有各自的限制，对IL2CPP支持也不同。框架会为每个支持的库写一个继承于MessageStandard/MessageLUT的新的MessageLUT.  
 由于各个序列化库对`Span<byte>`的支持不同，所以中间层可能会有轻微的性能损失.
 
@@ -251,25 +256,29 @@ namespace Message
 ---
 
 # 一些细节
-- 内置了RPC功能，保证了请求和返回消息一对一匹配。发送时RPCID为正数，返回时RPCID*-1，用正负区分上下行。0和int.minValue为RPCID无效值。
-- 内置了内存池，发送过程是全程无Alloc的，接收过程构造返回消息实例需要Alloc。
+- `RPC功能`：保证了请求和返回消息一对一匹配。发送时RPCID为正数，返回时RPCID*-1，用正负区分上下行。0和int.minValue为RPCID无效值。
+- `内存分配`：通过使用`内存池`，发送过程是全程无alloc的，接收过程构造返回消息实例需要alloc。
 - [发送过程数据拷贝](#jump1)了2次，接收过程数据无拷贝(各个序列化类库不同)。
-- 内置内存池在初始状态就会分配一些内存（大约150KB）。随着使用继续扩大，最大到3MB左右，详细情况参考源码。目前不支持配置大小。
-- 序列化时使用type做Key查找函数，反序列化时使用MSGID(int)做Key查找函数。
-- 内置了string,int,long,float,double 5个内置类型，即使不使用序列化类库，也可以直接发送它们。你也可以使用MessageLUT.Regist<T>函数手动添加其他类型。  
+- `内存池`：在初始化时会分配一些内存（大约150KB）。随着使用继续扩大，最大到3MB左右，详细情况参考源码。目前不支持配置大小。
+- `序列化`：使用type做Key查找函数。
+- `反序列化`：使用MSGID(int)做Key查找函数。
+- 内置了string,int,long,float,double 5个内置类型，即使不使用序列化类库，也可以直接发送它们。你也可以使用`MessageLUT.Regist<T>`函数手动添加其他类型。  
   如果不想用序列化库，也可以使用Json通过string发送。
-- 消息类型尽量不要是大的自定义的struct，整个序列化过程可能会导致多次装箱拆箱。在参数传递过程中还会多次复制，性能比class低很多。
-- .NET Standard 2.0 运行时。我还没有弄清楚2.0和2.1意味着什么。如果未来unity支持2.1，那么很可能运行时将切换为2.1，或者同时支持两个运行时。
+- `消息类型`：尽量不要是大的自定义的struct，整个序列化过程可能会导致多次装箱拆箱。在参数传递过程中还会多次复制，性能比class低很多。
+- .NET Standard 2.0 框架。我还没有弄清楚2.0和2.1意味着什么。如果未来unity支持2.1，那么很可能框架将切换为2.1，或者同时支持两个框架。
 
 <span id="jump1"></span>
-## 时间和空间上的折衷
-序列化之前无法确定消息大小，因此需要传递一个足够大的buffer到序列化层。如果不进行拷贝，直接将整个大buffer传递到发送层，由于异步特性，无法准确得知发送过程的生命周期，可能在发送层积累大量的大buffer，严重消耗内存，因此我们在序列化层和发送层之间做了一次拷贝。
+# `时间和空间上的折衷`
+
+序列化之前无法确定消息大小，因此需要传递一个足够大的buffer到序列化层。如果不进行拷贝，直接将整个大buffer传递到发送层，由于异步特性，无法准确得知发送过程的生命周期，可能在发送层积累大量的大buffer，严重消耗内存，因此类库在序列化层和发送层之间做了一次拷贝。
 
 # 效率
+
 没有精确测试，Task的使用确实影响了一部分性能，但是是值得的。经过简单本机测试单进程维持了15000+ Tcp连接。
 
 # 其他信息
-写框架途中总结到的知识或者猜测。
+
+这是写类库途中总结到的知识或者猜测：
 - public virtual MethodInfo MakeGenericMethod(params Type[] typeArguments);  
   在IL2CPP下可用，但是不能创造新方法。如果这个泛型方法在编译期间确定，那么此方法可用。否则找不到方法。
 - IL2CPP不能使用dynamic关键字。
@@ -277,10 +286,12 @@ namespace Message
 ## **``在1.0.0版本前API可能会有破坏性的改变。``**
 
 严格来说，目前只有TCP协议可以在生产环境使用。  
-UDP,KCP存在一些问题,将在今后一段时间完成，但可能是6个月也可能是一年，我有一个需要加班的全职工作，因此我不确定。  
+UDP,KCP存在一些问题,将在今后一段时间完成，但可能是6个月也可能是一年，我有一个需要加班的全职工作，因此不确定。  
 
 **Megumin.Remote是以MMORPG为目标实现的。对于非MMORPG游戏可能不是最佳选择。** 在遥远的未来也许会针对不同游戏类型写出NetRemoteStandard的不同实现。
 
 # 友情链接
 - [Megumin.Explosion](https://github.com/KumoKyaku/Megumin.Explosion) Megumin系列类库的最底层基础库，Megumin的其他库都有可能需要引用它。
 - [Megumin.MemoryExtention](https://github.com/KumoKyaku/Megumin.Explosion) Sytem.Memory.dll `Span<T>`系列的扩展库。
+- [Megumin.GameFramework](https://github.com/KumoKyaku/Megumin.GameFramework) Megumin系列的业务逻辑类库。
++ [Kcp](https://github.com/KumoKyaku/KCP) 类库所依赖的Kcp实现。
