@@ -4,11 +4,50 @@ using Net.Remote;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using MessageQueue = System.Collections.Concurrent.ConcurrentQueue<System.Action>;
+using MessageQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Message.WorkRequest>;
 
 namespace Megumin.Message
 {
+    internal struct WorkRequest
+    {
+        readonly int rpcID;
+        readonly MiniTask<object> task;
+        readonly object message;
+        readonly IObjectMessageReceiver r;
+
+        internal WorkRequest(MiniTask<object> task, int rpcID, object message, IObjectMessageReceiver r)
+        {
+            this.rpcID = rpcID;
+            this.task = task;
+            this.message = message;
+            this.r = r;
+        }
+
+        public async void Invoke()
+        {
+            if (this.task == null)
+            {
+                return;
+            }
+            ///此处可以忽略异常处理
+            ///
+            var response = await r.Deal(rpcID, message);
+
+            if (response is Task<object> task)
+            {
+                response = await task;
+            }
+
+            if (response is ValueTask<object> vtask)
+            {
+                response = await vtask;
+            }
+
+            this.task.SetResult(response);
+        }
+    }
     /// <summary>
     /// 接收消息池
     /// </summary>
@@ -24,41 +63,23 @@ namespace Megumin.Message
         {
             while (receivePool.TryDequeue(out var res))
             {
-                res?.Invoke();
+                res.Invoke();
             }
 
-            ///                                       双检查（这里使用Count和IsEmpty有不同含义）
-            while (actions.TryDequeue(out var callback) || !actions.IsEmpty)
+            while (actions.TryDequeue(out var callback))
             {
                 callback?.Invoke();
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static IMiniAwaitable<object> Push(int rpcID, object message, IObjectMessageReceiver r)
         {
-            MiniTask<object> task1 = MiniTask<object>.Rent();
-            Action action = async () =>
-            {
-                ///此处可以忽略异常处理
-                ///
-                var response = await r.Deal(rpcID, message);
-
-                if (response is Task<object> task)
-                {
-                    response = await task;
-                }
-
-                if (response is ValueTask<object> vtask)
-                {
-                    response = await vtask;
-                }
-
-                task1.SetResult(response);
-            };
-
-            receivePool.Enqueue(action);
-
-            return task1;
+            //这里是性能敏感区域，使用结构体优化，不使用action闭包
+            MiniTask<object> task = MiniTask<object>.Rent();
+            WorkRequest work = new WorkRequest(task, rpcID, message, r);
+            receivePool.Enqueue(work);
+            return task;
         }
 
         static readonly ConcurrentQueue<Action> actions = new ConcurrentQueue<Action>();
