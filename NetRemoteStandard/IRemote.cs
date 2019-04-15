@@ -108,16 +108,18 @@ namespace Net.Remote
         /// <summary>
         /// 注册一个rpc过程，并返回一个rpcID，后续可通过rpcID完成回调
         /// </summary>
+        /// <param name="overrideMilliseconds">重写超时时间，如果没有指定，使用默认超时时间</param>
         /// <typeparam name="RpcResult"></typeparam>
         /// <returns></returns>
-        (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source) Regist<RpcResult>();
+        (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source) Regist<RpcResult>(int? overrideMilliseconds = null);
         /// <summary>
         /// 注册一个rpc过程，并返回一个rpcID，后续可通过rpcID完成回调
         /// </summary>
         /// <typeparam name="RpcResult"></typeparam>
         /// <param name="OnException"></param>
+        /// <param name="overrideMilliseconds">重写超时时间，如果没有指定，使用默认超时时间</param>
         /// <returns></returns>
-        (int rpcID, IMiniAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException);
+        (int rpcID, IMiniAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException, int? overrideMilliseconds = null);
         /// <summary>
         /// 取得rpc回调函数
         /// </summary>
@@ -165,11 +167,12 @@ namespace Net.Remote
         /// </summary>
         /// <typeparam name="RpcResult">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
         /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表<see cref="MessageLUT"/> 中指定ID和序列化函数</param>
+        /// <param name="overrideMilliseconds">重写超时时间，如果没有指定，使用默认超时时间</param>
         /// <returns>需要检测空值</returns>
         /// <exception cref="NullReferenceException">返回值是空的</exception>
         /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
-        IMiniAwaitable<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message);
+        IMiniAwaitable<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message, int? overrideMilliseconds = null);
 
         /// <summary>
         /// 异步发送消息，封装Rpc过程
@@ -181,12 +184,13 @@ namespace Net.Remote
         /// <typeparam name="RpcResult"></typeparam>
         /// <param name="message"></param>
         /// <param name="OnException">发生异常时的回调函数</param>
+        /// <param name="overrideMilliseconds">重写超时时间，如果没有指定，使用默认超时时间</param>
         /// <returns></returns>
         /// <exception cref="NullReferenceException">返回值是空的</exception>
         /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
         /// <remarks>可能会有内存泄漏，参考具体实现。也许这个方法应该叫UnSafe。</remarks>
-        IMiniAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, Action<Exception> OnException = null);
+        IMiniAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, Action<Exception> OnException = null, int? overrideMilliseconds = null);
     }
 
     /// <summary>
@@ -288,7 +292,7 @@ namespace Net.Remote
         /// <param name="message"></param>
         /// <param name="identifier"></param>
         /// <returns></returns>
-        IMiniAwaitable<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message,int identifier);
+        IMiniAwaitable<(RpcResult result, Exception exception)> ForwardAsync<RpcResult>(object message,int identifier);
         /// <summary>
         /// 转发发送
         /// </summary>
@@ -297,7 +301,7 @@ namespace Net.Remote
         /// <param name="identifier"></param>
         /// <param name="OnException"></param>
         /// <returns></returns>
-        IMiniAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message,int identifier, Action<Exception> OnException = null);
+        IMiniAwaitable<RpcResult> ForwardAsyncSafeAwait<RpcResult>(object message,int identifier, Action<Exception> OnException = null);
     }
 
     /// <summary>

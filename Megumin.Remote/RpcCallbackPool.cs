@@ -56,7 +56,8 @@ namespace Megumin.Remote
             }
         }
 
-        public (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source) Regist<RpcResult>()
+        public (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source) 
+            Regist<RpcResult>(int? overrideMilliseconds = null)
         {
             int rpcID = GetRpcID();
 
@@ -103,7 +104,7 @@ namespace Megumin.Remote
                 );
             }
 
-            CreateCheckTimeout(key);
+            CreateCheckTimeout(key, overrideMilliseconds ?? RpcTimeOutMilliseconds);
 
             return (rpcID, source);
         }
@@ -117,7 +118,8 @@ namespace Megumin.Remote
             }
         }
 
-        public (int rpcID, IMiniAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException)
+        public (int rpcID, IMiniAwaitable<RpcResult> source) 
+            Regist<RpcResult>(Action<Exception> OnException, int? overrideMilliseconds = null)
         {
             int rpcID = GetRpcID();
             IMiniAwaitable<RpcResult> source = MiniTask<RpcResult>.Rent();
@@ -160,7 +162,7 @@ namespace Megumin.Remote
                 );
             }
 
-            CreateCheckTimeout(key);
+            CreateCheckTimeout(key, overrideMilliseconds ?? RpcTimeOutMilliseconds);
 
             return (rpcID, source);
         }
@@ -170,7 +172,7 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="rpcID"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CreateCheckTimeout(int rpcID)
+        void CreateCheckTimeout(int rpcID,int timeOutMilliseconds)
         {
             ///备注：即使异步发送被同步调用，此处也不会发生错误。
             ///同步调用，当返回消息返回时，会从回调池移除，
@@ -180,9 +182,9 @@ namespace Megumin.Remote
             ///超时检查
             Task.Run(async () =>
             {
-                if (RpcTimeOutMilliseconds >= 0)
+                if (timeOutMilliseconds >= 0)
                 {
-                    await Task.Delay(RpcTimeOutMilliseconds);
+                    await Task.Delay(timeOutMilliseconds);
                     if (TryDequeue(rpcID, out var rpc))
                     {
                         MessageThreadTransducer.Invoke(() =>

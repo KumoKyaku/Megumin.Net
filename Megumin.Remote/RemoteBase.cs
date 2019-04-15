@@ -61,11 +61,12 @@ namespace Megumin.Remote
         /// </summary>
         public abstract void SendAsync(IMemoryOwner<byte> memoryOwner);
 
-        public IMiniAwaitable<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message)
+        public IMiniAwaitable<(RpcResult result, Exception exception)> 
+            SendAsync<RpcResult>(object message, int? overrideMilliseconds = null)
         {
             ReceiveStart();
 
-            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>();
+            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(overrideMilliseconds);
 
             try
             {
@@ -79,11 +80,12 @@ namespace Megumin.Remote
             }
         }
 
-        public IMiniAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, Action<Exception> OnException = null)
+        public IMiniAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>
+            (object message, Action<Exception> OnException = null, int? overrideMilliseconds = null)
         {
             ReceiveStart();
 
-            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(OnException);
+            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(OnException, overrideMilliseconds);
 
             try
             {
@@ -181,7 +183,7 @@ namespace Megumin.Remote
         internal protected virtual void SendAsync<T>(int rpcID, T message, int identifier)
             => SendAsync(MessagePipeline.Pack(0,message,identifier));
 
-        public IMiniAwaitable<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message, int identifier)
+        public IMiniAwaitable<(RpcResult result, Exception exception)> ForwardAsync<RpcResult>(object message, int identifier)
         {
             ReceiveStart();
 
@@ -199,7 +201,7 @@ namespace Megumin.Remote
             }
         }
 
-        public IMiniAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, int identifier, Action<Exception> OnException = null)
+        public IMiniAwaitable<RpcResult> ForwardAsyncSafeAwait<RpcResult>(object message, int identifier, Action<Exception> OnException = null)
         {
             ReceiveStart();
 
