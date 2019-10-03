@@ -67,6 +67,10 @@ namespace System.Threading.Tasks
         {
             this.CanAwaiter = canAwait;
         }
+        /// <summary>
+        /// 当没有同步完成时，向CanAwaiter注册回调，CanAwaite会将回调保存起来，用于在完成时调用。
+        /// </summary>
+        /// <param name="continuation"></param>
         public void UnsafeOnCompleted(Action continuation)
         {
             CanAwaiter.UnsafeOnCompleted(continuation);
