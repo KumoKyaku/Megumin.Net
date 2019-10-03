@@ -284,7 +284,7 @@ namespace Net.Remote
         /// </summary>
         /// <param name="message"></param>
         /// <param name="identifier"></param>
-        void SendAsync(object message,int identifier);
+        void ForwardAsync(object message,int identifier);
         /// <summary>
         /// 转发发送
         /// </summary>

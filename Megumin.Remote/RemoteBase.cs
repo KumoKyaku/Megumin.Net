@@ -174,7 +174,7 @@ namespace Megumin.Remote
     ///路由
     partial class RemoteBase :IForwarder
     {
-        public void SendAsync(object message, int identifier)
+        public void ForwardAsync(object message, int identifier)
         {
             SendAsync(0,message,identifier);
         }
