@@ -35,8 +35,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MessagePack" Version="1.9.11" />
-    <PackageReference Include="MessagePack.UnityShims" Version="1.7.3.4" />
+    <PackageReference Include="MessagePack" Version="2.1.115" />
+    <PackageReference Include="MessagePack.UnityShims" Version="2.1.115" />
   </ItemGroup>
 
   <ItemGroup>

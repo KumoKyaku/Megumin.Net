@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using ProtoBuf;
 
@@ -32,10 +33,10 @@ namespace Megumin.Message
         /// <param name="key"></param>
         protected internal static void Regist(Type type,KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
-            var attribute = type.FirstAttribute<ProtoContractAttribute>();
+            var attribute = type.GetCustomAttributes<ProtoContractAttribute>().FirstOrDefault();
             if (attribute != null)
             {
-                var MSGID = type.FirstAttribute<MSGID>();
+                var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
                 if (MSGID != null)
                 {
                     Regist(type, MSGID.ID,
@@ -51,10 +52,10 @@ namespace Megumin.Message
         public static void Regist<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             var type = typeof(T);
-            var attribute = type.FirstAttribute<ProtoContractAttribute>();
+            var attribute = type.GetCustomAttributes<ProtoContractAttribute>().FirstOrDefault();
             if (attribute != null)
             {
-                var MSGID = type.FirstAttribute<MSGID>();
+                var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
                 if (MSGID != null)
                 {
                     Regist<T>(MSGID.ID,

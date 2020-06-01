@@ -9,9 +9,27 @@ using Megumin.Message;
 using Megumin.Message.TestMessage;
 using Megumin.Remote;
 using Net.Remote;
+using System.Runtime.CompilerServices;
 
 namespace UnitFunc
 {
+    internal static class TaskExtension_8FF64A2B
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async static Task<(T result, bool complete)> WaitAsync<T>(this Task<T> task, int millisecondsTimeout)
+        {
+            var complete = await Task.Run(() => task.Wait(millisecondsTimeout));
+            return (complete ? task.Result : default, complete);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async static Task<bool> WaitAsync(this Task task, int millisecondsTimeout)
+        {
+            return await Task.Run(() => task.Wait(millisecondsTimeout));
+        }
+    }
+
+
     [TestClass]
     public class UnitTestRemote
     {

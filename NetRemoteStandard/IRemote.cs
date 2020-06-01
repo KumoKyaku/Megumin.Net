@@ -317,4 +317,26 @@ namespace Net.Remote
         int MultiplexingCount { get; set; }
     }
 
+    public interface ILogger
+    {
+        void Log(object message);
+        void LogError(object message);
+        void LogWarning(object message);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public static class Debug
+    {
+        public static ILogger Logger { get; set; }
+        public static void Log(object message)
+            => Logger?.Log(message);
+
+        public static void LogError(object message)
+            => Logger?.LogError(message);
+
+        public static void LogWarning(object message)
+            => Logger?.LogWarning(message);
+    }
 }

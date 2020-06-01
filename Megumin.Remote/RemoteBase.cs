@@ -11,6 +11,45 @@ using Net.Remote;
 
 namespace Megumin.Remote
 {
+    internal static class TaskExtension_8FF64A2B
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async static Task<(T result, bool complete)> WaitAsync<T>(this Task<T> task, int millisecondsTimeout)
+        {
+            var complete = await Task.Run(() => task.Wait(millisecondsTimeout));
+            return (complete ? task.Result : default, complete);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async static Task<bool> WaitAsync(this Task task, int millisecondsTimeout)
+        {
+            return await Task.Run(() => task.Wait(millisecondsTimeout));
+        }
+    }
+
+    /// <summary>
+    /// 线程安全ID生成器
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    internal static class InterlockedID<T>
+    {
+        static int id = 0;
+        static readonly object locker = new object();
+        public static int NewID(int min = 0)
+        {
+            lock (locker)
+            {
+                if (id < min)
+                {
+                    id = min;
+                    return id;
+                }
+
+                return id++;
+            }
+        }
+    }
+
     public abstract partial class RemoteBase:IUID<int>
     {
         public int ID { get; } = InterlockedID<IRemote>.NewID();
@@ -219,18 +258,5 @@ namespace Megumin.Remote
                 return source;
             }
         }
-    }
-
-    internal static class Debug
-    {
-        const string moduleName = "Megumin.Remote";
-        public static void Log(object message)
-            => MeguminDebug.Log(message, moduleName);
-
-        public static void LogError(object message)
-            => MeguminDebug.LogError(message, moduleName);
-
-        public static void LogWarning(object message)
-            => MeguminDebug.LogWarning(message, moduleName);
     }
 }

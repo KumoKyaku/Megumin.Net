@@ -5,6 +5,7 @@ using System.Text;
 using Google.Protobuf;
 using System.IO;
 using System.Buffers;
+using System.Linq;
 
 namespace Megumin.Message
 {
@@ -36,7 +37,7 @@ namespace Megumin.Message
         {
             if (type.IsSubclassOf(typeof(IMessage<>)))
             {
-                var MSGID = type.FirstAttribute<MSGID>();
+                var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
                 if (MSGID != null)
                 {
                     Regist(type, MSGID.ID,
@@ -53,7 +54,7 @@ namespace Megumin.Message
             where T:IMessage<T>
         {
             var type = typeof(T);
-            var MSGID = type.FirstAttribute<MSGID>();
+            var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
             if (MSGID != null)
             {
                 Regist<T>(MSGID.ID,

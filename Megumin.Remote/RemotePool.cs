@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Megumin.Message;
 using Net.Remote;
-using IRemoteDic = Megumin.IDictionary<int, System.Net.EndPoint, Net.Remote.IRemote>;
+//using IRemoteDic = Megumin.IDictionary<int, System.Net.EndPoint, Net.Remote.IRemote>;
 
 namespace Megumin.Remote
 {

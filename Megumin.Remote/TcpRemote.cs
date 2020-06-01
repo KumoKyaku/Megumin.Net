@@ -9,10 +9,67 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using ByteMessageList = Megumin.ListPool<System.Buffers.IMemoryOwner<byte>>;
+using ByteMessageList = Megumin.Remote.ListPool<System.Buffers.IMemoryOwner<byte>>;
 
 namespace Megumin.Remote
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    internal static class ListPool<T>
+    {
+        static ConcurrentQueue<List<T>> pool = new ConcurrentQueue<List<T>>();
+
+        /// <summary>
+        /// 默认容量10
+        /// </summary>
+        public static int MaxSize { get; set; } = 10;
+
+        public static List<T> Rent()
+        {
+            if (pool.TryDequeue(out var list))
+            {
+                if (list == null || list.Count != 0)
+                {
+                    return new List<T>();
+                }
+                return list;
+            }
+            else
+            {
+                return new List<T>();
+            }
+        }
+
+        /// <summary>
+        /// 调用者保证归还后不在使用当前list
+        /// </summary>
+        /// <param name="list"></param>
+        public static void Return(List<T> list)
+        {
+            if (list == null)
+            {
+                return;
+            }
+
+            if (pool.Count < MaxSize)
+            {
+                list.Clear();
+                pool.Enqueue(list);
+            }
+        }
+
+        public static void Clear()
+        {
+            while (pool.Count > 0)
+            {
+                pool.TryDequeue(out var list);
+            }
+        }
+
+    }
+
     /// <summary>
     /// <para>TcpChannel内存开销 整体采用内存池优化</para>
     /// <para>发送内存开销 对于TcpChannel实例 动态内存开销，取决于发送速度，内存实时占用为发送数据的1~2倍</para>

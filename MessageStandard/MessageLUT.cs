@@ -150,7 +150,7 @@ namespace Megumin.Message
                 case KeyAlreadyHave.Skip:
                     if (dFormatter.ContainsKey(messageID))
                     {
-                        Debug.LogWarning($"[{type.FullName}]和[{dFormatter[messageID].type.FullName}]的消息ID[{messageID}]冲突。");
+                        DebugLogger.LogWarning($"[{type.FullName}]和[{dFormatter[messageID].type.FullName}]的消息ID[{messageID}]冲突。");
                         return;
                     }
                     else
@@ -202,7 +202,7 @@ namespace Megumin.Message
 
                 if (Seiralize == null)
                 {
-                    Debug.LogError($"消息[{type.Name}]的序列化函数没有找到。");
+                    DebugLogger.LogError($"消息[{type.Name}]的序列化函数没有找到。");
                     return (-1, default);
                 }
 
@@ -223,7 +223,7 @@ namespace Megumin.Message
             }
             else
             {
-                Debug.LogError($"消息[{type.Name}]的序列化函数没有找到。");
+                DebugLogger.LogError($"消息[{type.Name}]的序列化函数没有找到。");
                 return (-1, default);
             }
         }
@@ -243,7 +243,7 @@ namespace Megumin.Message
             }
             else
             {
-                Debug.LogError($"消息ID为[{messageID}]的反序列化函数没有找到。");
+                DebugLogger.LogError($"消息ID为[{messageID}]的反序列化函数没有找到。");
                 return null;
             }
         }
@@ -305,18 +305,26 @@ namespace Megumin.Message
             return false;
         }
     }
-
-
-    internal static class Debug
+    public interface ILogger
     {
-        const string moduleName = "Megumin.MessageLUT";
+        void Log(object message);
+        void LogError(object message);
+        void LogWarning(object message);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public static class DebugLogger
+    {
+        public static ILogger Logger { get; set; }
         public static void Log(object message)
-            => MeguminDebug.Log(message, moduleName);
+            => Logger?.Log(message);
 
         public static void LogError(object message)
-            => MeguminDebug.LogError(message, moduleName);
+            => Logger?.LogError(message);
 
         public static void LogWarning(object message)
-            => MeguminDebug.LogWarning(message, moduleName);
+            => Logger?.LogWarning(message);
     }
 }
