@@ -86,7 +86,7 @@ namespace Megumin.Message
             return source.Slice(offset, length - offset);
         }
 
-        public async void Unpack<T>(IMemoryOwner<byte> packet, T bufferReceiver)
+        public virtual async void Unpack<T>(IMemoryOwner<byte> packet, T bufferReceiver)
             where T : ISendMessage, IRemoteID, IUID<int>, IObjectMessageReceiver
         {
             try
@@ -126,6 +126,11 @@ namespace Megumin.Message
                         }
                     }
                 }
+            }
+            catch(Exception e)
+            {
+                UnityEngine.Debug.Log($"Unpack -- {e};");
+                throw;
             }
             finally
             {

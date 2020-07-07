@@ -283,7 +283,10 @@ namespace Megumin.Remote
         /// <param name="bufferMsg"></param>
         public override void SendAsync(IMemoryOwner<byte> bufferMsg)
         {
-            sendWaitList.Enqueue(bufferMsg);
+            lock (sendlock)
+            {
+                sendWaitList.Enqueue(bufferMsg);
+            }
             SendStart();
         }
 
@@ -321,29 +324,33 @@ namespace Megumin.Remote
             if (sendArgs == null)
             {
                 sendArgs = new MemoryArgs();
-                sendArgs.Completed += SendComplete;
             }
 
-            //移动等待队列到发送队列；
-            while (sendWaitList.TryDequeue(out var owner) || !sendWaitList.IsEmpty)
-            {
-                sendArgs.SetMemoryOwner((owner,owner.Memory.Length));
-            }
 
-            sendArgs.Flush();
-
-            if (!Client.SendAsync(sendArgs))
+            if (sendWaitList.TryDequeue(out var owner))
             {
-                SendComplete(Client, sendArgs);
+                if (owner != null)
+                {
+                    sendArgs.SetMemoryOwner(owner);
+
+                    sendArgs.Completed += SendComplete;
+                    if (!Client.SendAsync(sendArgs))
+                    {
+                        SendComplete(this, sendArgs);
+                    }
+                }
             }
         }
 
         void SendComplete(object sender, SocketAsyncEventArgs args)
         {
-            ///无论成功失败，都要清理发送缓冲
-            sendArgs.Release();
+            //UnityEngine.Debug.Log("SendComplete");
             ///这个方法由IOCP线程调用。需要尽快结束。
+            args.Completed -= SendComplete;
             isSending = false;
+
+            ///无论成功失败，都要清理发送缓冲
+            sendArgs.owner.Dispose();
 
             if (args.SocketError == SocketError.Success)
             {
@@ -369,6 +376,7 @@ namespace Megumin.Remote
     partial class TcpRemote : IReceiveMessage
     {
         bool isReceiving;
+        public bool IsReceiving => isReceiving;
         SocketAsyncEventArgs receiveArgs;
         /// <summary>
         /// 线程安全的，多次调用不应该发生错误
@@ -483,6 +491,10 @@ namespace Megumin.Remote
                     }
                     isReceiving = false;
                 }
+            }
+            catch(Exception e)
+            {
+                UnityEngine.Debug.LogError($"意料之外的网络错误7AC75EFD-12AF-4ABB-AFC3-C7F18FE6C4A8，网络接收已经停止 {e}");
             }
             finally
             {

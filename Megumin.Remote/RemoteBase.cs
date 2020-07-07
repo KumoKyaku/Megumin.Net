@@ -79,7 +79,7 @@ namespace Megumin.Remote
         /// 异步发送
         /// </summary>
         /// <param name="message"></param>
-        public void SendAsync(object message)
+        public virtual void SendAsync(object message)
         {
             SendAsync(0, message);
         }
@@ -152,7 +152,14 @@ namespace Megumin.Remote
 
         protected virtual void ReceiveByteMessage(IMemoryOwner<byte> byteMessage)
         {
-            MessagePipeline.Unpack(byteMessage, this);
+            try
+            {
+                MessagePipeline.Unpack(byteMessage, this);
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.Log($"消息管线出错63E5D783-C048-429C-9D26-3A8B898325A6:{Thread.CurrentThread.ManagedThreadId}-- {e}");
+            }
         }
     }
 

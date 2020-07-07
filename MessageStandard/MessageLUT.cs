@@ -239,13 +239,22 @@ namespace Megumin.Message
         {
             if (dFormatter.ContainsKey(messageID))
             {
-                return dFormatter[messageID].deserialize(body);
+                try
+                {
+                    return dFormatter[messageID].deserialize(body);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e);
+                }
+
             }
             else
             {
-                DebugLogger.LogError($"消息ID为[{messageID}]的反序列化函数没有找到。");
+                Debug.LogError($"消息ID为[{messageID}]的反序列化函数没有找到。");
                 return null;
             }
+            return null;
         }
 
         /// <summary>
