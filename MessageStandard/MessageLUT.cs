@@ -1,5 +1,6 @@
 ﻿using Megumin.Message.TestMessage;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -25,11 +26,38 @@ namespace Megumin.Message
     }
 
     /// <summary>
-    /// 等待所有框架支持完毕ReadOnlyMemory 切换为ReadOnlySpan，现在需要将ReadOnlyMemory包装成流
+    /// 通用序列化库接口
     /// </summary>
-    /// <param name="buffer"></param>
-    /// <returns></returns>
-    public delegate object Deserialize(ReadOnlyMemory<byte> buffer);
+    public interface IFormater
+    {
+        /// <summary>
+        /// 消息识别ID
+        /// </summary>
+        int MessageID { get; }
+        /// <summary>
+        /// 消息类型
+        /// </summary>
+        Type BindType { get; }
+        /// <summary>
+        /// 序列化函数
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="writer"></param>
+        /// <param name="value"></param>
+        /// <param name="options"></param>
+        /// <remarks>序列化函数不在提供序列化多少字节，需要在writer中自己统计</remarks>
+        void Serialize(IBufferWriter<byte> writer, object value, object options = null);
+        /// <summary>
+        /// 反序列化函数
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="byteSequence"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null);
+    }
+
+    
     /// <summary>
     /// 将消息从0位置开始 序列化 到 指定buffer中,返回序列化长度
     /// </summary>
