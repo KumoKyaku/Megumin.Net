@@ -20,8 +20,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\DCSContainer\DCSContainer.csproj" />
     <ProjectReference Include="..\..\MessagePackLUT\MessagePackLUT.csproj" />
+    <ProjectReference Include="..\..\Messages\Messages.csproj" />
     <ProjectReference Include="..\..\Protobuf-netLUT\Protobuf-netLUT.csproj" />
-    <ProjectReference Include="..\Message\Message.csproj" />
   </ItemGroup>
 
 </Project>

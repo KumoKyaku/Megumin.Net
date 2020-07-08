@@ -18,12 +18,13 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="System.IO.Pipelines" Version="4.7.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Example\Message\Message.csproj" />
     <ProjectReference Include="..\..\MessagePackLUT\MessagePackLUT.csproj" />
     <ProjectReference Include="..\..\MessageStandard\MessageStandard.csproj" />
+    <ProjectReference Include="..\..\Messages\Messages.csproj" />
     <ProjectReference Include="..\..\Protobuf-netLUT\Protobuf-netLUT.csproj" />
     <ProjectReference Include="..\..\ProtobufLUT\ProtobufLUT.csproj" />
   </ItemGroup>

@@ -18,9 +18,27 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="FakesAssemblies\**" />
+    <EmbeddedResource Remove="FakesAssemblies\**" />
+    <None Remove="FakesAssemblies\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Fakes\Messages.fakes" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Fakes Include="Fakes\Messages.fakes" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.QualityTools.Testing.Fakes" Version="16.6.2-beta.20207.6" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Megumin.Remote\Megumin.Remote.csproj" />
     <ProjectReference Include="..\..\MessagePackLUT\MessagePackLUT.csproj" />
-    <ProjectReference Include="..\Message\Message.csproj" />
+    <ProjectReference Include="..\..\Messages\Messages.csproj" />
   </ItemGroup>
 
 </Project>

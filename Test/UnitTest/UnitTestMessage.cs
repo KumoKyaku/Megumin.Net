@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
+using System.IO.Pipelines;
 using Megumin.Message;
 using Message;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -11,15 +12,15 @@ namespace UnitFunc
     [TestClass]
     public class UnitTestMessage
     {
+        static Login2Gate login2Gate = new Login2Gate()
+        {
+            Account = "test",
+            Password = "123456"
+        };
+
         [TestMethod]
         public void TestMessageLUT()
         {
-            Login2Gate login2Gate = new Login2Gate()
-            {
-                Account = "test",
-                Password = "123456"
-            };
-
             {
                 var b = MessagePack.MessagePackSerializer.Serialize(login2Gate);
                 var res = MessagePack.MessagePackSerializer.Deserialize<Login2Gate>(b);
@@ -36,15 +37,20 @@ namespace UnitFunc
                     Assert.AreEqual(login2Gate.Account, res.Account);
                     Assert.AreEqual(login2Gate.Password, res.Password);
                 }
-
-                Protobuf_netLUT.Regist(typeof(Login2Gate).Assembly);
-                var buffer = new byte[1024];
-                //var length = MessageLUT.Serialize(login2Gate, buffer.AsSpan());
-                //var res = MessageLUT.Deserialize(1003, buffer.Memory.Slice(0, length.length)) as Login2Gate;
-                //Assert.AreEqual(login2Gate.Account, res.Account);
-                //Assert.AreEqual(login2Gate.Password, res.Password);
-
             }
+        }
+
+        [TestMethod]
+        public void TestProtobuf_netLUT()
+        {
+            Protobuf_netLUT.Regist(typeof(Login2Gate).Assembly);
+            var pipe = new Pipe();
+            MessageLUT.Serialize(pipe.Writer, login2Gate);
+            pipe.Writer.Complete();
+            pipe.Reader.TryRead(out var readResult);
+            var res = MessageLUT.Deserialize(1003, readResult.Buffer) as Login2Gate;
+            Assert.AreEqual(login2Gate.Account, res.Account);
+            Assert.AreEqual(login2Gate.Password, res.Password);
         }
     }
 }

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>MMONET.Message</AssemblyName>
+    <AssemblyName>MMONET.Messages</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MessageStandard\MessageStandard.csproj" />
+    <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
   </ItemGroup>
 
 </Project>
