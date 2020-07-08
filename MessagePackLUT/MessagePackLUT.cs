@@ -11,7 +11,7 @@ namespace Megumin.Message
     /// <summary>
     /// 适用于MessagePack协议的查找表
     /// </summary>
-    public class MessagePackLUT: MessageLUT
+    public class MessagePackLUT : MessageLUT
     {
         /// <summary>
         /// 注册程序集中所有协议类
@@ -32,7 +32,7 @@ namespace Megumin.Message
         /// </summary>
         /// <param name="type"></param>
         /// <param name="key"></param>
-        protected internal static void Regist(Type type,KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        protected internal static void Regist(Type type, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             var attribute = type.GetCustomAttributes<MessagePackObjectAttribute>()?.FirstOrDefault();
             if (attribute != null)
@@ -40,8 +40,17 @@ namespace Megumin.Message
                 var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
                 if (MSGID != null)
                 {
-                    Regist(type, MSGID.ID,
-                        MessagePackSerializerEx.MakeS(type), MessagePackSerializerEx.MakeD(type), key);
+                    var ft = typeof(MPFormater<>);
+                    var t = ft.MakeGenericType(new Type[] { type });
+                    var instance = Activator.CreateInstance(t, new object[] { MSGID.ID });
+                    if (instance is IMeguminFormater formater)
+                    {
+                        Regist(formater, key);
+                    }
+                    else
+                    {
+                        //todo 序列化器构造失败。
+                    }
                 }
             }
         }
@@ -59,50 +68,31 @@ namespace Megumin.Message
                 var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
                 if (MSGID != null)
                 {
-                    Regist<T>(MSGID.ID,
-                        MessagePackSerializerEx.Serialize, MessagePackSerializerEx.MakeD(type), key);
+                    Regist(new MPFormater<T>(MSGID.ID), key);
                 }
             }
         }
     }
 
-    static class MessagePackSerializerEx
+    internal class MPFormater<T> : IMeguminFormater
     {
-        public static ushort Serialize<T>(T obj, Span<byte> buffer)
+        public int MessageID { get; }
+        public Type BindType { get; }
+
+        public MPFormater(int messageID)
         {
-            var sbuffer = MessagePackSerializer.Serialize(obj);
-            sbuffer.AsSpan().CopyTo(buffer);
-            return (ushort)sbuffer.Length;
+            MessageID = messageID;
+            BindType = typeof(T);
         }
 
-        public static Serialize MaskS2<T>() => MessageLUT.Convert<T>(Serialize);
-
-        public static Serialize MakeS(Type type)
+        public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
         {
-            var methodInfo = typeof(MessagePackSerializerEx).GetMethod(nameof(MaskS2),
-                BindingFlags.Static | BindingFlags.Public);
-
-            var method = methodInfo.MakeGenericMethod(type);
-
-            return method.Invoke(null,null) as Serialize;
+            MessagePackSerializer.Serialize<T>(writer, (T)value, options as MessagePackSerializerOptions);
         }
 
-        public static T Deserilizer<T>(ReadOnlyMemory<byte> buffer)
+        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
         {
-            using (var stream = new SpanStream(buffer))
-            {
-                return MessagePackSerializer.Deserialize<T>(stream);
-            }
-        }
-
-        public static Deserialize MakeD(Type type)
-        {
-            var methodInfo = typeof(MessagePackSerializerEx).GetMethod(nameof(Deserilizer),
-                BindingFlags.Static | BindingFlags.Public);
-
-            var method = methodInfo.MakeGenericMethod(type);
-
-            return method.CreateDelegate(typeof(Deserialize)) as Deserialize;
+            return MessagePackSerializer.Deserialize<T>(byteSequence, options as MessagePackSerializerOptions);
         }
     }
 }

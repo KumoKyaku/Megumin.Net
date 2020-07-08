@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using ProtoBuf;
+using static System.Buffers.ArrayPool<byte>;
 
 namespace Megumin.Message
 {
@@ -31,7 +32,7 @@ namespace Megumin.Message
         /// </summary>
         /// <param name="type"></param>
         /// <param name="key"></param>
-        protected internal static void Regist(Type type,KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        protected internal static void Regist(Type type, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             var attribute = type.GetCustomAttributes<ProtoContractAttribute>().FirstOrDefault();
             if (attribute != null)
@@ -39,8 +40,17 @@ namespace Megumin.Message
                 var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
                 if (MSGID != null)
                 {
-                    Regist(type, MSGID.ID,
-                        Protobuf_netSerializerEx.MakeS(type), Protobuf_netSerializerEx.MakeD(type), key);
+                    var ft = typeof(PBnetFormater<>);
+                    var t = ft.MakeGenericType(new Type[] { type });
+                    var instance = Activator.CreateInstance(t, new object[] { MSGID.ID });
+                    if (instance is IMeguminFormater formater)
+                    {
+                        Regist(formater, key);
+                    }
+                    else
+                    {
+                        //todo 序列化器构造失败。
+                    }
                 }
             }
         }
@@ -58,72 +68,66 @@ namespace Megumin.Message
                 var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
                 if (MSGID != null)
                 {
-                    Regist<T>(MSGID.ID,
-                        Protobuf_netSerializerEx.Serialize,
-                        Protobuf_netSerializerEx.MakeD(type), 
-                        key);
+                    Regist(new PBnetFormater<T>(MSGID.ID), key);
                 }
             }
         }
     }
 
-    static class Protobuf_netSerializerEx
+    internal class PBnetFormater<T> : IMeguminFormater
     {
-        [ThreadStatic]
-        static byte[] cacheBuffer;
+        public int MessageID { get; }
+        public Type BindType { get; }
 
-        public static byte[] CacheBuffer
+        public PBnetFormater(int messageID)
         {
-            get
-            {
-                if (cacheBuffer == null)
-                {
-                    cacheBuffer = new byte[16384];
-                }
-                return cacheBuffer;
-            }
+            MessageID = messageID;
+            BindType = typeof(T);
         }
 
-        public static ushort Serialize<T>(T obj, Span<byte> buffer)
+        public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
         {
-            ///等待序列化类库支持Span.
-            using (Stream s = new MemoryStream())
-            {
-                Serializer.Serialize(s, obj);
-                s.Seek(0,SeekOrigin.Begin);
-                int length = 0;
-                int cur;
-                while ((cur = s.Read(CacheBuffer, length, buffer.Length - length)) > 0)
-                {
-                    length += cur;
-                }
-                CacheBuffer.AsSpan().Slice(0,length).CopyTo(buffer);
-                return (ushort)length;
-            }
+            Serializer.Serialize<T>(writer, (T)value, options);
         }
 
-        public static Serialize MakeS2<T>() => MessageLUT.Convert<T>(Serialize);
-
-        public static Serialize MakeS(Type type)
+        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
         {
-            var methodInfo = typeof(Protobuf_netSerializerEx).GetMethod(nameof(MakeS2),
-                BindingFlags.Static | BindingFlags.Public);
+            var result = Serializer.Deserialize<T>(byteSequence, userState: options);
+            return result;
+        }
+    }
 
-            var method = methodInfo.MakeGenericMethod(type);
-            var res = method.Invoke(null, null);
+    internal class PBnetFormaterOld<T> : IMeguminFormater
+    {
+        public int MessageID { get; }
+        public Type BindType { get; }
 
-            return res as Serialize;
+        private BufferWriterBytesSteam bufferSteam;
+        private MemoryStream dmemoryS;
+
+        public PBnetFormaterOld(int messageID)
+        {
+            MessageID = messageID;
+            BindType = typeof(T);
+            bufferSteam = new BufferWriterBytesSteam();
+            dmemoryS = new MemoryStream();
         }
 
-        public static Deserialize MakeD(Type type)
+        public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
         {
-            return (buffer) =>
-            {
-                using (var st = new SpanStream(buffer))
-                {
-                    return Serializer.Deserialize(type, st);
-                }
-            };
+            bufferSteam.BufferWriter = writer;
+            Serializer.Serialize<T>(bufferSteam, (T)value);
+            bufferSteam.BufferWriter = null;
+        }
+
+        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        {
+            int length = (int)byteSequence.Length;
+            dmemoryS.Seek(0, SeekOrigin.Begin);
+            dmemoryS.SetLength(length);
+            byteSequence.CopyTo(dmemoryS.GetBuffer());
+            var result = Serializer.Deserialize<T>(dmemoryS);
+            return result;
         }
     }
 }
