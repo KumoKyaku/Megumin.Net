@@ -1,11 +1,9 @@
-﻿using System;
-using System.Buffers;
-using System.IO;
-using System.IO.Pipelines;
-using Megumin.Message;
-using Message;
+﻿using Megumin.Message;
+using Megumin.Message.Test;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ProtoBuf;
+using System.IO;
+using System.IO.Pipelines;
 
 namespace UnitTest
 {

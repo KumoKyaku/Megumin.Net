@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Megumin.Message.TestMessage
+namespace Megumin.Message.Test
 {
     /// <summary>
     /// 序列化后长度为1024字节
@@ -21,7 +22,7 @@ namespace Megumin.Message.TestMessage
         {
             var message = (TestPacket1)value;
             var buffer = writer.GetSpan(Size);
-            message.Value.WriteTo(buffer);
+            BinaryPrimitives.WriteInt32LittleEndian(buffer, message.Value);
             writer.Advance(Size);
         }
 
@@ -37,29 +38,47 @@ namespace Megumin.Message.TestMessage
             {
                 Span<byte> span = stackalloc byte[4];
                 byteSequence.Slice(0,4).CopyTo(span);
-                result.Value = span.ReadInt();
+                result.Value = BinaryPrimitives.ReadInt32LittleEndian(span);
             }
             return result;
         }
     }
 
-    public class TestPacket2
+    /// <summary>
+    /// 序列化后长度为1024字节
+    /// </summary>
+    public class TestPacket2 : IMeguminFormater
     {
-        public float Value { get; set; }
+        private const int Size = 1024;
 
-        public static ushort S(TestPacket2 message, Span<byte> buffer)
+        public float Value { get; set; }
+        ///<inheritdoc/>
+        public int MessageID { get; } = 1001;
+        public Type BindType => this.GetType();
+
+        public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
         {
+            var message = (TestPacket2)value;
+            var buffer = writer.GetSpan(Size);
             BitConverter.GetBytes(message.Value).AsSpan().CopyTo(buffer);
-            return 1000;
+            writer.Advance(Size);
         }
 
-        public static TestPacket2 D(ReadOnlyMemory<byte> buffer)
+        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
         {
-            var res = new TestPacket2();
-            var temp = new byte[4];
-            buffer.Span.Slice(0, 4).CopyTo(temp);
-            res.Value = BitConverter.ToSingle(temp,0);
-            return res;
+            if (byteSequence.Length < Size)
+            {
+                return null;
+            }
+
+            var result = new TestPacket2();
+            unsafe
+            {
+                byte[] span = new byte[4];
+                byteSequence.Slice(0, 4).CopyTo(span);
+                result.Value = BitConverter.ToSingle(span, 0);
+            }
+            return result;
         }
     }
 }

@@ -3,7 +3,7 @@ using MessagePack;
 using Megumin.Message;
 using ProtoBuf;
 
-namespace Message
+namespace Megumin.Message.Test
 {
 
     [MSGID(1000)]
