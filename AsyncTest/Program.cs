@@ -5,6 +5,9 @@ using System.Runtime.CompilerServices;
 
 namespace AsyncTest
 {
+    /// <summary>
+    /// 用与测试异步方法和反编译IL对照，备忘
+    /// </summary>
     class Program
     {
         public static TaskScheduler current { get; private set; }
