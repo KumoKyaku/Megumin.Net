@@ -7,7 +7,72 @@ using System.Threading.Tasks;
 
 namespace Megumin.Remote
 {
+    /// <summary>
+    /// rpc完成时方法签名
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="exception"></param>
+    public delegate void RpcCallback(object message, Exception exception);
 
+
+    /// <summary>
+    /// 更新Rpc结果，框架调用，协助处理Rpc封装
+    /// </summary>
+    public interface IRpcCallbackPool
+    {
+        /// <summary>
+        /// Rpc超时毫秒数
+        /// </summary>
+        int RpcTimeOutMilliseconds { get; set; }
+        /// <summary>
+        /// 注册一个rpc过程，并返回一个rpcID，后续可通过rpcID完成回调
+        /// </summary>
+        /// <param name="overrideMilliseconds">重写超时时间，如果没有指定，使用默认超时时间</param>
+        /// <typeparam name="RpcResult"></typeparam>
+        /// <returns></returns>
+        (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source) Regist<RpcResult>(int? overrideMilliseconds = null);
+        /// <summary>
+        /// 注册一个rpc过程，并返回一个rpcID，后续可通过rpcID完成回调
+        /// </summary>
+        /// <typeparam name="RpcResult"></typeparam>
+        /// <param name="OnException"></param>
+        /// <param name="overrideMilliseconds">重写超时时间，如果没有指定，使用默认超时时间</param>
+        /// <returns></returns>
+        (int rpcID, IMiniAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException, int? overrideMilliseconds = null);
+        /// <summary>
+        /// 取得rpc回调函数
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="rpc"></param>
+        /// <returns></returns>
+        bool TryGetValue(int rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
+        /// <summary>
+        /// 取得rpc回调函数，并从rpc回调池中移除
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="rpc"></param>
+        /// <returns></returns>
+        bool TryDequeue(int rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
+        /// <summary>
+        /// 从rpc回调池中移除
+        /// </summary>
+        /// <param name="rpcID"></param>
+        void Remove(int rpcID);
+        /// <summary>
+        /// 触发rpc回调
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        bool TrySetResult(int rpcID, object msg);
+        /// <summary>
+        /// 触发rpc回调
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="exception"></param>
+        /// <returns></returns>
+        bool TrySetException(int rpcID, Exception exception);
+    }
 
     /// <summary>
     /// Rpc回调注册池

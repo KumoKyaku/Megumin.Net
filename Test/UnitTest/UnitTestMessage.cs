@@ -7,7 +7,7 @@ using Message;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ProtoBuf;
 
-namespace UnitFunc
+namespace UnitTest
 {
     [TestClass]
     public class UnitTestMessage
@@ -44,6 +44,24 @@ namespace UnitFunc
         public void TestProtobuf_netLUT()
         {
             Protobuf_netLUT.Regist(typeof(Login2Gate).Assembly);
+            TestLogin2Gate();
+        }
+
+        [TestMethod]
+        public void TestMessagePackLUT()
+        {
+            MessagePackLUT.Regist(typeof(Login2Gate).Assembly);
+            TestLogin2Gate();
+        }
+
+        [TestMethod]
+        public void TestProtobufLUT()
+        {
+            //todo
+        }
+
+        private static void TestLogin2Gate()
+        {
             var pipe = new Pipe();
             MessageLUT.Serialize(pipe.Writer, login2Gate);
             pipe.Writer.Complete();
@@ -52,5 +70,6 @@ namespace UnitFunc
             Assert.AreEqual(login2Gate.Account, res.Account);
             Assert.AreEqual(login2Gate.Password, res.Password);
         }
+        
     }
 }

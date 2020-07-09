@@ -52,12 +52,23 @@ namespace System.Threading.Tasks
         void CancelWithNotExceptionAndContinuation();
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public struct MiniTaskAwaiter<T> : ICriticalNotifyCompletion
     {
         private IMiniAwaitable<T> CanAwaiter;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public bool IsCompleted => CanAwaiter.IsCompleted;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public T GetResult()
         {
             return CanAwaiter.Result;
@@ -83,8 +94,17 @@ namespace System.Threading.Tasks
     }
 }
 
+/// <summary>
+/// 
+/// </summary>
 public static class ICanAwaitableEx_D248AE7ECAD0420DAF1BCEA2801012FF
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="canAwaitable"></param>
+    /// <returns></returns>
     public static MiniTaskAwaiter<T> GetAwaiter<T>(this IMiniAwaitable<T> canAwaitable)
     {
         return new MiniTaskAwaiter<T>(canAwaitable);

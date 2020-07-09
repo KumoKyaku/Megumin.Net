@@ -3,7 +3,9 @@ using Megumin.Remote;
 using Net.Remote;
 using System;
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -393,7 +395,7 @@ namespace Megumin.Message
     }
 
     ///消息正文处理
-    partial class MessagePipeline:IFormater
+    partial class MessagePipeline//:IFormater
     {
         /// <summary>
         /// 序列化消息阶段
@@ -527,4 +529,171 @@ namespace Megumin.Message
             return null;
         }
     }
+
+
+    class RPipev2
+    {
+        async void R()
+        {
+            var pipe = new Pipe();
+            var result = await pipe.Reader.ReadAsync();
+            while (result.Buffer.Length > 4)
+            {
+                var length = 1000;//包体长度
+                if (true)
+                {
+                    //包体足够长
+
+
+                    //拆包过程
+
+                    //得到一个完整的包
+
+                    ReadOnlySequence<byte> byteSequence = default;
+                    object options = default;
+                    Process(byteSequence, options);
+
+                    //标记已使用数据
+                    var pos =  result.Buffer.GetPosition(length);
+                    pipe.Reader.AdvanceTo(pos);
+                }
+            }
+            
+            
+        }
+
+        /// <summary>
+        /// 处理一个完整的消息包
+        /// </summary>
+        void Process(in ReadOnlySequence<byte> byteSequence, object options = null)
+        {
+            //读取RpcID 和 消息ID
+            var (RpcID, MessageID) = Read(byteSequence);
+            if (TryDeserialize(MessageID,byteSequence.Slice(8),out var message, options))
+            {
+                Deal(RpcID, MessageID, message);
+            }
+            else
+            {
+
+            }
+        }
+
+        (int RpcID,int MessageID) Read(in ReadOnlySequence<byte> byteSequence)
+        {
+            unsafe
+            {
+                Span<byte> span = stackalloc byte[8];
+                byteSequence.CopyTo(span);
+                return (span.ReadInt(), span.Slice(4).ReadInt());
+            }
+        }
+
+        public bool TryDeserialize(int messageID, in ReadOnlySequence<byte> byteSequence,out object message, object options = null)
+        {
+            try
+            {
+                message = MessageLUT.Deserialize(messageID, byteSequence);
+                return true;
+            }
+            catch (Exception)
+            {
+                //log todo
+                message = default;
+                return false;
+            }
+        }
+   
+    
+        /// <summary>
+        /// 处理消息
+        /// </summary>
+        public static IMiniAwaitable<object> Deal(int RpcID,int MessageID,object message)
+        {
+            return default;
+        }
+    }
+}
+
+
+/// <summary>
+/// 小端
+/// </summary>
+internal static class SpanByteEX_3451DB8C29134366946FF9D778779EEC
+{
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="num"></param>
+    /// <param name="span"></param>
+    /// <returns>offset</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int WriteTo(this int num, Span<byte> span)
+    {
+        BinaryPrimitives.WriteInt32LittleEndian(span, num);
+        return 4;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int WriteTo(this ushort num, Span<byte> span)
+    {
+        BinaryPrimitives.WriteUInt16LittleEndian(span, num);
+        return 2;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int WriteTo(this short num, Span<byte> span)
+    {
+        BinaryPrimitives.WriteInt16LittleEndian(span, num);
+        return 2;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int WriteTo(this long num, Span<byte> span)
+    {
+        BinaryPrimitives.WriteInt64LittleEndian(span, num);
+        return 8;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int ReadInt(this ReadOnlySpan<byte> span)
+        => BinaryPrimitives.ReadInt32LittleEndian(span);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ushort ReadUshort(this ReadOnlySpan<byte> span)
+        => BinaryPrimitives.ReadUInt16LittleEndian(span);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static short ReadShort(this ReadOnlySpan<byte> span)
+        => BinaryPrimitives.ReadInt16LittleEndian(span);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static long ReadLong(this ReadOnlySpan<byte> span)
+        => BinaryPrimitives.ReadInt64LittleEndian(span);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int ReadInt(this Span<byte> span)
+        => BinaryPrimitives.ReadInt32LittleEndian(span);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ushort ReadUshort(this Span<byte> span)
+        => BinaryPrimitives.ReadUInt16LittleEndian(span);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static short ReadShort(this Span<byte> span)
+        => BinaryPrimitives.ReadInt16LittleEndian(span);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static long ReadLong(this Span<byte> span)
+        => BinaryPrimitives.ReadInt64LittleEndian(span);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int ReadInt(this Memory<byte> span)
+        => BinaryPrimitives.ReadInt32LittleEndian(span.Span);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ushort ReadUshort(this Memory<byte> span)
+        => BinaryPrimitives.ReadUInt16LittleEndian(span.Span);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static short ReadShort(this Memory<byte> span)
+        => BinaryPrimitives.ReadInt16LittleEndian(span.Span);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static long ReadLong(this Memory<byte> span)
+        => BinaryPrimitives.ReadInt64LittleEndian(span.Span);
 }

@@ -102,6 +102,9 @@ namespace Megumin.Message
                     {
                         return;
                     }
+
+                    IDDic[meguminFormater.MessageID] = meguminFormater;
+                    TypeDic[meguminFormater.BindType] = meguminFormater;
                     break;
                 case KeyAlreadyHave.ThrowException:
                     if (IDDic.ContainsKey(meguminFormater.MessageID))

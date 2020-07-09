@@ -34,7 +34,7 @@ namespace Megumin.Message
         /// <param name="byteMessage"></param>
         /// <param name="remote"></param>
         void Unpack<T>(IMemoryOwner<byte> byteMessage, T remote)
-            where T:ISendMessage,IRemoteID,IUID<int>,IObjectMessageReceiver;
+            where T:ISendMessage,IRemoteID,IUID<int>;
         /// <summary>
         /// object -> byte[]
         /// </summary>
@@ -60,39 +60,39 @@ namespace Megumin.Message
         IMemoryOwner<byte> Pack(int rpcID, object message, ReadOnlySpan<byte> extraMessage);
     }
 
-    /// <summary>
-    /// object消息 消费者接口
-    /// </summary>
-    public interface IObjectMessageReceiver
-    {
-        /// <summary>
-        /// 处理消息实例
-        /// </summary>
-        /// <param name="rpcID"></param>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        ValueTask<object> Deal(int rpcID, object message);
-    }
+    ///// <summary>
+    ///// object消息 消费者接口
+    ///// </summary>
+    //public interface IObjectMessageReceiver
+    //{
+    //    /// <summary>
+    //    /// 处理消息实例
+    //    /// </summary>
+    //    /// <param name="rpcID"></param>
+    //    /// <param name="message"></param>
+    //    /// <returns></returns>
+    //    ValueTask<object> Deal(int rpcID, object message);
+    //}
 
-    /// <summary>
-    /// 串行器接口
-    /// </summary>
-    public interface IFormater
-    {
-        /// <summary>
-        /// 反序列化
-        /// </summary>
-        /// <param name="messageID"></param>
-        /// <param name="messageBody"></param>
-        /// <returns></returns>
-        (int rpcID, object message) Deserialize(int messageID,in ReadOnlyMemory<byte> messageBody);
-        /// <summary>
-        /// 序列化
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="rpcID"></param>
-        /// <param name="span"></param>
-        /// <returns></returns>
-        (int messageID, ushort length) Serialize(object message, int rpcID, Span<byte> span);
-    }
+    ///// <summary>
+    ///// 串行器接口
+    ///// </summary>
+    //public interface IFormater
+    //{
+    //    /// <summary>
+    //    /// 反序列化
+    //    /// </summary>
+    //    /// <param name="messageID"></param>
+    //    /// <param name="messageBody"></param>
+    //    /// <returns></returns>
+    //    (int rpcID, object message) Deserialize(int messageID,in ReadOnlyMemory<byte> messageBody);
+    //    /// <summary>
+    //    /// 序列化
+    //    /// </summary>
+    //    /// <param name="message"></param>
+    //    /// <param name="rpcID"></param>
+    //    /// <param name="span"></param>
+    //    /// <returns></returns>
+    //    (int messageID, ushort length) Serialize(object message, int rpcID, Span<byte> span);
+    //}
 }
