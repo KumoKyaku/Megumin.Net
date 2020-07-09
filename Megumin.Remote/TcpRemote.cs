@@ -587,4 +587,16 @@ namespace Megumin.Remote
 
         List<ArraySegment<byte>> sendList = new List<ArraySegment<byte>>();
     }
+
+    /// <summary>
+    /// 全新版本
+    /// </summary>
+    public class TcpRemote2
+    {
+        Socket Client { get; }
+        public void ReceiveStart()
+        {
+            Client.ReceiveAsync
+        }
+    }
 }
