@@ -22,11 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MessagePackLUT\MessagePackLUT.csproj" />
-    <ProjectReference Include="..\..\MessageStandard\MessageStandard.csproj" />
-    <ProjectReference Include="..\..\Messages\Messages.csproj" />
-    <ProjectReference Include="..\..\Protobuf-netLUT\Protobuf-netLUT.csproj" />
-    <ProjectReference Include="..\..\ProtobufLUT\ProtobufLUT.csproj" />
+    <ProjectReference Include="..\MessagePackLUT\MessagePackLUT.csproj" />
+    <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
+    <ProjectReference Include="..\Protobuf-netLUT\Protobuf-netLUT.csproj" />
+    <ProjectReference Include="..\ProtobufLUT\ProtobufLUT.csproj" />
+    <ProjectReference Include="..\TestMessages\TestMessages.csproj" />
   </ItemGroup>
 
 </Project>
