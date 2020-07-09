@@ -29,10 +29,13 @@
 
   <!--依赖配置-->
   <ItemGroup>
-    <PackageReference Include="System.Memory" Version="4.5.0" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.3.0" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Memory" Version="4.5.0" />
+  </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6'">
+    <PackageReference Include="System.Memory" Version="4.5.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.0.0" />
   </ItemGroup>
