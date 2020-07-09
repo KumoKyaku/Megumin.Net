@@ -1,43 +1,85 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <!--主配置-->
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>云却</Authors>
+    
+    <!--版本配置-->
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.0.0.0</Version>
+    
+    <!--包配置-->
+    <Product>Remote</Product>
+    <PackageId>NetRemoteStandard</PackageId>
     <AssemblyName>NetRemoteStandard</AssemblyName>
     <RootNamespace>Net.Remote</RootNamespace>
-    <Version>0.0.3</Version>
+    <PackageTags>net,dotnetstandard2.0,unity</PackageTags>
     <Description>设计目的：为应用程序网络层提供一致API接口。</Description>
-    <Authors>云却</Authors>
-    <Company></Company>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Copyright>Copyright (c) 2019 云却</Copyright>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageLicenseUrl>https://github.com/KumoKyaku/Megumin.Net/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/KumoKyaku/Megumin.Net</PackageProjectUrl>
-    <PackageTags>net</PackageTags>
+    <RepositoryUrl>https://github.com/KumoKyaku/Megumin.Net</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    
+  </PropertyGroup> 
+
+  <!--目标框架配置-->
+  <PropertyGroup>
+    <TargetFrameworks>netstandard1.6;netstandard2.0;netstandard2.1</TargetFrameworks>
+  </PropertyGroup>
+
+  <!--依赖配置-->
+  <ItemGroup>
+    <PackageReference Include="System.Memory" Version="4.5.0" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.3.0" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6'">
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="System.Threading.Thread" Version="4.0.0" />
+  </ItemGroup>
+
+  <!--以下是项目通用配置-->
+  
+  <!--基本配置-->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>1701;1702;1591</NoWarn>
+    
+    <!--打包配置-->
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\OpenSource.snk</AssemblyOriginatorKeyFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    <AssemblyVersion>0.0.3.0</AssemblyVersion>
-    <FileVersion>0.0.3.0</FileVersion>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\netstandard2.0\NetRemoteStandard.xml</DocumentationFile>
-    <LangVersion>7.3</LangVersion>
-    <DebugType>full</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <LangVersion>7.3</LangVersion>
-    <DocumentationFile>bin\Release\netstandard2.0\NetRemoteStandard.xml</DocumentationFile>
-    <DebugType>full</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
-
+    
+    <!--xml注释生成-->
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    
+    <!--版权配置-->
+    <Copyright>Copyright (c) 2019 云却</Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+  </PropertyGroup> 
+  
+  <!--许可证文件配置-->
   <ItemGroup>
-    <PackageReference Include="System.Memory" Version="4.5.4" />
-    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
+  
+  <!--调试符号配置-->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE</DefineConstants>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>true</Optimize>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
 
 </Project>
