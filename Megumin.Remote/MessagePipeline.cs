@@ -533,78 +533,7 @@ namespace Megumin.Message
 
     class RPipev2
     {
-        async void R()
-        {
-            var pipe = new Pipe();
-            var result = await pipe.Reader.ReadAsync();
-            while (result.Buffer.Length > 4)
-            {
-                var length = 1000;//包体长度
-                if (true)
-                {
-                    //包体足够长
-
-
-                    //拆包过程
-
-                    //得到一个完整的包
-
-                    ReadOnlySequence<byte> byteSequence = default;
-                    object options = default;
-                    Process(byteSequence, options);
-
-                    //标记已使用数据
-                    var pos =  result.Buffer.GetPosition(length);
-                    pipe.Reader.AdvanceTo(pos);
-                }
-            }
-            
-            
-        }
-
-        /// <summary>
-        /// 处理一个完整的消息包
-        /// </summary>
-        void Process(in ReadOnlySequence<byte> byteSequence, object options = null)
-        {
-            //读取RpcID 和 消息ID
-            var (RpcID, MessageID) = Read(byteSequence);
-            if (TryDeserialize(MessageID,byteSequence.Slice(8),out var message, options))
-            {
-                Deal(RpcID, MessageID, message);
-            }
-            else
-            {
-
-            }
-        }
-
-        (int RpcID,int MessageID) Read(in ReadOnlySequence<byte> byteSequence)
-        {
-            unsafe
-            {
-                Span<byte> span = stackalloc byte[8];
-                byteSequence.CopyTo(span);
-                return (span.ReadInt(), span.Slice(4).ReadInt());
-            }
-        }
-
-        public bool TryDeserialize(int messageID, in ReadOnlySequence<byte> byteSequence,out object message, object options = null)
-        {
-            try
-            {
-                message = MessageLUT.Deserialize(messageID, byteSequence);
-                return true;
-            }
-            catch (Exception)
-            {
-                //log todo
-                message = default;
-                return false;
-            }
-        }
-   
-    
+        
         /// <summary>
         /// 处理消息
         /// </summary>
@@ -619,8 +548,20 @@ namespace Megumin.Message
 /// <summary>
 /// 小端
 /// </summary>
-internal static class SpanByteEX_3451DB8C29134366946FF9D778779EEC
+internal static class SpanByteEX_45F6E953
 {
+    public static int ReadInt(this in ReadOnlySequence<byte> byteSequence)
+    {
+        unsafe
+        {
+            Span<byte> span = stackalloc byte[4];
+            byteSequence.CopyTo(span);
+            return span.ReadInt();
+        }
+    }
+
+
+
     /// <summary>
     /// 
     /// </summary>

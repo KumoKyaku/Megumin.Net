@@ -63,16 +63,16 @@ namespace Megumin.Message
     ///// <summary>
     ///// object消息 消费者接口
     ///// </summary>
-    //public interface IObjectMessageReceiver
-    //{
-    //    /// <summary>
-    //    /// 处理消息实例
-    //    /// </summary>
-    //    /// <param name="rpcID"></param>
-    //    /// <param name="message"></param>
-    //    /// <returns></returns>
-    //    ValueTask<object> Deal(int rpcID, object message);
-    //}
+    public interface IObjectMessageReceiver
+    {
+        /// <summary>
+        /// 处理消息实例
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        ValueTask<object> Deal(int rpcID, object message);
+    }
 
     ///// <summary>
     ///// 串行器接口

@@ -25,6 +25,7 @@
     <LangVersion>7.3</LangVersion>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -39,10 +40,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Kcp" Version="2.0.0" />
+    <PackageReference Include="System.IO.Pipelines" Version="4.7.2" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
     <ProjectReference Include="..\NetRemoteStandard\NetRemoteStandard.csproj" />
   </ItemGroup>
 

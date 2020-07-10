@@ -10,6 +10,8 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using ByteMessageList = Megumin.Remote.ListPool<System.Buffers.IMemoryOwner<byte>>;
+using System.IO.Pipelines;
+using System.Threading;
 
 namespace Megumin.Remote
 {
@@ -594,9 +596,213 @@ namespace Megumin.Remote
     public class TcpRemote2
     {
         Socket Client { get; }
-        public void ReceiveStart()
+        RpcCallbackPool RpcCallbackPool { get; }
+        public async void ReceiveStart()
         {
-            Client.ReceiveAsync
+            var pipe = new Pipe();
+            FillPipe(pipe.Writer);
+            ReadPipe(pipe.Reader);
+        }
+
+        private async void FillPipe(PipeWriter pipeWriter)
+        {
+            var buffer = pipeWriter.GetMemory(512);
+            var count = await Client.ReceiveAsync(buffer, SocketFlags.None);
+            pipeWriter.Advance(count);
+            pipeWriter.FlushAsync();
+            FillPipe(pipeWriter);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pipeReader"></param>
+        private async void ReadPipe(PipeReader pipeReader)
+        {
+            var result = await pipeReader.ReadAsync();
+            var buffer = result.Buffer;
+
+            while (buffer.Length > 4)
+            {
+                var length = buffer.ReadInt();//包体长度
+                if (buffer.Length >= length + 4)
+                {
+                    ///取得消息体
+                    var body = buffer.Slice(4, length);
+
+                    ProcessBody(body, null);
+                    //标记已使用数据
+                    var pos = result.Buffer.GetPosition(length + 4);
+                    pipeReader.AdvanceTo(pos);
+
+                    buffer = buffer.Slice(length + 4);//切除已使用部分
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            //继续处理
+            ReadPipe(pipeReader);
+        }
+
+        /// <summary>
+        /// 处理一个完整的消息包
+        /// </summary>
+        void ProcessBody(in ReadOnlySequence<byte> byteSequence, object options = null)
+        {
+            //读取RpcID 和 消息ID
+            var (RpcID, MessageID) = Read(byteSequence);
+            if (TryDeserialize(MessageID, byteSequence.Slice(8), out var message, options))
+            {
+                Deal2(RpcID, MessageID, message);
+            }
+            else
+            {
+
+            }
+        }
+
+        public async void Deal2(int rpcID, int messageID, object message)
+        {
+            var post = true;//转换线程
+
+            //消息处理程序的返回对象
+            object reply = null;
+
+            if (post)
+            {
+                reply = await MessageThreadTransducer.Push(rpcID, message, this);
+            }
+            else
+            {
+                reply = await Deal(rpcID, messageID, message);
+
+                if (reply is Task<object> task)
+                {
+                    reply = await task;
+                }
+
+                if (reply is ValueTask<object> vtask)
+                {
+                    reply = await vtask;
+                }
+            }
+
+            if (reply != null)
+            {
+                Reply(rpcID, reply);
+            }
+        }
+
+        /// <summary>
+        /// 回复给远端
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="replyMessage"></param>
+        private void Reply(int rpcID, object replyMessage)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ValueTask<object> Deal(int rpcID,int messageID, object message)
+        {
+            if (rpcID < 0)
+            {
+                //这个消息是rpc返回（回复的RpcID为负数）
+                RpcCallbackPool?.TrySetResult(rpcID, message);
+                return new ValueTask<object>(result: null);
+            }
+            else
+            {
+                ///这个消息是非Rpc应答
+                ///普通响应onRely
+                return DealMessage(message);
+            }
+        }
+
+        /// <summary>
+        /// 通常用户接收反序列化完毕的消息的函数
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected virtual ValueTask<object> DealMessage(object message)
+        {
+            return new ValueTask<object>(result: null);
+        }
+
+
+
+        (int RpcID, int MessageID) Read(in ReadOnlySequence<byte> byteSequence)
+        {
+            unsafe
+            {
+                Span<byte> span = stackalloc byte[8];
+                byteSequence.CopyTo(span);
+                return (span.ReadInt(), span.Slice(4).ReadInt());
+            }
+        }
+
+        public bool TryDeserialize(int messageID, in ReadOnlySequence<byte> byteSequence, out object message, object options = null)
+        {
+            try
+            {
+                message = MessageLUT.Deserialize(messageID, byteSequence, options);
+                return true;
+            }
+            catch (Exception)
+            {
+                //log todo
+                message = default;
+                return false;
+            }
+        }
+
+        public void Send()
+        {
+
+        }
+
+        public bool TreSer(IBufferWriter<byte> writer, int rpcID, object message, object options = null)
+        {
+            try
+            {
+                var span = writer.GetSpan(8);
+                writer.Advance(8);
+                int messageID = MessageLUT.Serialize(writer, message, options);
+                rpcID.WriteTo(span);
+                messageID.WriteTo(span.Slice(4));
+                return true;
+            }
+            catch (Exception)
+            {
+                //todo log;
+                return false;
+            }
+        }
+
+        public bool TreSer(IBufferWriter<byte> writer, int rpcID, in ReadOnlySequence<byte> sequence, object options = null)
+        {
+            try
+            {
+                var span = writer.GetSpan(4);
+                writer.Advance(4);
+
+                foreach (var item in sequence)
+                {
+                    writer.Write(item.Span);
+                }
+
+                rpcID.WriteTo(span);
+                return true;
+            }
+            catch (Exception)
+            {
+                //todo log;
+                return false;
+            }
         }
     }
 }
