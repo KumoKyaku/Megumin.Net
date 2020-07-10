@@ -72,11 +72,7 @@ namespace Megumin.Remote
 
     }
 
-    /// <summary>
-    /// <para>TcpChannel内存开销 整体采用内存池优化</para>
-    /// <para>发送内存开销 对于TcpChannel实例 动态内存开销，取决于发送速度，内存实时占用为发送数据的1~2倍</para>
-    /// <para>                  接收的常驻开销8kb*2,随着接收压力动态调整</para>
-    /// </summary>
+    
     public partial class TcpRemote : RemoteBase,  IRemote
     {
         public Socket Client { get; }
@@ -374,159 +370,7 @@ namespace Megumin.Remote
         }
     }
 
-    /// 接收字节消息
-    partial class TcpRemote : IReceiveMessage
-    {
-        bool isReceiving;
-        public bool IsReceiving => isReceiving;
-        SocketAsyncEventArgs receiveArgs;
-        /// <summary>
-        /// 线程安全的，多次调用不应该发生错误
-        /// </summary>
-        /// <remarks> 使用TaskAPI 的本地Loopback 接收峰值能达到60,000,000 字节每秒。
-        /// 不使用TaskAPI 的本地Loopback 接收峰值能达到200,000,000 字节每秒。可以稳定在每秒6000 0000字节每秒。
-        /// 不是严格的测试，但是隐约表明异步task方法不适合性能敏感区域。
-        /// </remarks>
-        public override void ReceiveStart()
-        {
-            if (!Client.Connected || isReceiving || disposedValue)
-            {
-                return;
-            }
-
-            isReceiving = true;
-            InnerReveiveStart();
-        }
-
-        void InnerReveiveStart()
-        {
-            if (receiveArgs == null)
-            {
-                receiveArgs = new SocketAsyncEventArgs();
-                var bfo = BufferPool.Rent(MaxBufferLength);
-
-                if (MemoryMarshal.TryGetArray<byte>(bfo.Memory, out var buffer))
-                {
-                    receiveArgs.SetBuffer(buffer.Array, buffer.Offset, buffer.Count);
-                    receiveArgs.Completed += ReceiveComplete;
-                    receiveArgs.UserToken = bfo;
-                }
-                else
-                {
-                    throw new ArgumentException();
-                }
-            }
-
-            if (!Client.ReceiveAsync(receiveArgs))
-            {
-                ReceiveComplete(this, receiveArgs);
-            }
-        }
-
-        void ReceiveComplete(object sender, SocketAsyncEventArgs args)
-        {
-            IMemoryOwner<byte> owner = args.UserToken as IMemoryOwner<byte>;
-
-            try
-            {
-                if (args.SocketError == SocketError.Success)
-                {
-                    ///本次接收的长度
-                    int length = args.BytesTransferred;
-
-                    if (length == 0)
-                    {
-                        args.Completed -= ReceiveComplete;
-                        args = null;
-                        OnSocketException(SocketError.Shutdown);
-                        isReceiving = false;
-                        return;
-                    }
-
-                    LastReceiveTime = DateTime.Now;
-                    //////有效消息长度
-                    int totalValidLength = length + args.Offset;
-
-                    var list = ByteMessageList.Rent();
-                    ///由打包器处理分包
-                    var residual = MessagePipeline.CutOff(args.Buffer.AsSpan(0,totalValidLength), list);
-
-                    ///租用新内存
-                    var bfo = BufferPool.Rent(MaxBufferLength);
-
-                    if (MemoryMarshal.TryGetArray<byte>(bfo.Memory, out var newBuffer))
-                    {
-                        args.UserToken = bfo;
-                    }
-                    else
-                    {
-                        throw new ArgumentException();
-                    }
-
-                    if (residual.Length > 0)
-                    {
-                        ///半包复制
-                        residual.CopyTo(bfo.Memory.Span);
-                    }
-
-                    args.SetBuffer(newBuffer.Array, residual.Length, newBuffer.Count - residual.Length);
-
-
-                    ///这里先处理消息在继续接收，处理消息是异步的，耗时并不长，下N次继续接收消息都可能是同步完成，
-                    ///先接收可能导致比较大的消息时序错位。
-
-                    ///处理消息
-                    DealMessageAsync(list);
-
-                    ///继续接收
-                    InnerReveiveStart();
-                }
-                else
-                {
-                    args.Completed -= ReceiveComplete;
-                    SocketError socketError = args.SocketError;
-                    args = null;
-                    if (!manualDisconnecting)
-                    {
-
-                        OnSocketException(socketError);
-                    }
-                    isReceiving = false;
-                }
-            }
-            catch(Exception e)
-            {
-                UnityEngine.Debug.LogError($"意料之外的网络错误7AC75EFD-12AF-4ABB-AFC3-C7F18FE6C4A8，网络接收已经停止 {e}");
-            }
-            finally
-            {
-                ///重构后的BufferPool改为申请时清零数据，所以出不清零，节省性能。
-                ///owner.Memory.Span.Clear();
-                owner.Dispose();
-            }
-        }
-
-        
-        private void DealMessageAsync(List<IMemoryOwner<byte>> list)
-        {
-            if (list.Count == 0)
-            {
-                return;
-            }
-            //todo 排序
-            Task.Run(() =>
-            {
-                foreach (var item in list)
-                {
-                    ReceiveByteMessage(item);
-                }
-
-                ///回收池对象
-                list.Clear();
-                ByteMessageList.Return(list);
-            });
-        }
-    }
+    
 
     internal class MemoryArgs : SocketAsyncEventArgs
     {
@@ -609,7 +453,7 @@ namespace Megumin.Remote
             var buffer = pipeWriter.GetMemory(512);
             var count = await Client.ReceiveAsync(buffer, SocketFlags.None);
             pipeWriter.Advance(count);
-            pipeWriter.FlushAsync();
+            _ = pipeWriter.FlushAsync();
             FillPipe(pipeWriter);
         }
 
@@ -760,9 +604,35 @@ namespace Megumin.Remote
             }
         }
 
+        Queue<IMemoryOwner<byte>> sendQ;
+
+        /// <summary>
+        /// 取得下一个待发送队列。
+        /// </summary>
+        /// <returns></returns>
+        Task<IMemoryOwner<byte>> PeekNext()
+        {
+            throw new NotImplementedException();
+        }
+
         public void Send()
         {
 
+        }
+
+        public async void SendStart()
+        {
+            var target = await PeekNext();
+            var length = target.Memory.Length;
+            var result = await Client.SendAsync(target.Memory, SocketFlags.None);
+            if (result == length)
+            {
+                //dequeue?
+                //成功？
+                target.Dispose();
+            }
+
+            SendStart();
         }
 
         public bool TreSer(IBufferWriter<byte> writer, int rpcID, object message, object options = null)
