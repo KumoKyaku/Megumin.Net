@@ -14,15 +14,15 @@ using System.Threading.Tasks;
 namespace Megumin.Remote
 {
     
-    public partial class TcpRemote : RemoteBase,  IRemote
+    public partial class TcpRemoteold : RemoteBase,  IRemote
     {
         public Socket Client { get; }
         public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
 
         /// <summary>
-        /// Mono/IL2CPP 请使用中使用<see cref="TcpRemote.TcpRemote(AddressFamily)"/>
+        /// Mono/IL2CPP 请使用中使用<see cref="TcpRemoteold.TcpRemoteold(AddressFamily)"/>
         /// </summary>
-        public TcpRemote() : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
+        public TcpRemoteold() : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
         {
 
         }
@@ -31,18 +31,18 @@ namespace Megumin.Remote
         /// <para>SocketException: Protocol option not supported</para>
         /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
         /// </remarks>
-        public TcpRemote(AddressFamily addressFamily) 
+        public TcpRemoteold(AddressFamily addressFamily) 
             : this(new Socket(addressFamily,SocketType.Stream, ProtocolType.Tcp))
         {
 
         }
 
-        public TcpRemote(IMessagePipeline messagePipeline) : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
+        public TcpRemoteold(IMessagePipeline messagePipeline) : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
         {
             MessagePipeline = messagePipeline;
         }
 
-        public TcpRemote(IMessagePipeline messagePipeline, AddressFamily addressFamily)
+        public TcpRemoteold(IMessagePipeline messagePipeline, AddressFamily addressFamily)
             : this(new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp))
         {
             MessagePipeline = messagePipeline;
@@ -52,7 +52,7 @@ namespace Megumin.Remote
         /// 使用一个已连接的Socket创建远端
         /// </summary>
         /// <param name="client"></param>
-        internal TcpRemote(Socket client)
+        internal TcpRemoteold(Socket client)
         {
             this.Client = client;
             IsVaild = true;
@@ -124,7 +124,7 @@ namespace Megumin.Remote
         }
 
         // TODO: 仅当以上 Dispose(bool disposing) 拥有用于释放未托管资源的代码时才替代终结器。
-        ~TcpRemote()
+        ~TcpRemoteold()
         {
             // 请勿更改此代码。将清理代码放入以上 Dispose(bool disposing) 中。
             Dispose(false);
@@ -142,7 +142,7 @@ namespace Megumin.Remote
     }
 
     ///连接 断开连接
-    partial class TcpRemote:IConnectable
+    partial class TcpRemoteold:IConnectable
     {
         public event Action<SocketError> OnDisConnect;
 
@@ -191,13 +191,13 @@ namespace Megumin.Remote
     }
 
     /// 发送实例消息
-    partial class TcpRemote
+    partial class TcpRemoteold
     {
         public Task BroadCastSendAsync(ArraySegment<byte> msgBuffer) => Client.SendAsync(msgBuffer, SocketFlags.None);
     }
 
     /// 发送字节消息
-    partial class TcpRemote
+    partial class TcpRemoteold
     {
         ConcurrentQueue<IMemoryOwner<byte>> sendWaitList = new ConcurrentQueue<IMemoryOwner<byte>>();
         bool isSending;
