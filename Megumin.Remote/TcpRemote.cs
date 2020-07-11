@@ -1,77 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Sockets;
-using System.Threading.Tasks;
+﻿using Megumin.Message;
 using Net.Remote;
-using Megumin.Message;
+using System;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO.Pipelines;
 using System.Net;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using ByteMessageList = Megumin.Remote.ListPool<System.Buffers.IMemoryOwner<byte>>;
-using System.IO.Pipelines;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace Megumin.Remote
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    internal static class ListPool<T>
-    {
-        static ConcurrentQueue<List<T>> pool = new ConcurrentQueue<List<T>>();
-
-        /// <summary>
-        /// 默认容量10
-        /// </summary>
-        public static int MaxSize { get; set; } = 10;
-
-        public static List<T> Rent()
-        {
-            if (pool.TryDequeue(out var list))
-            {
-                if (list == null || list.Count != 0)
-                {
-                    return new List<T>();
-                }
-                return list;
-            }
-            else
-            {
-                return new List<T>();
-            }
-        }
-
-        /// <summary>
-        /// 调用者保证归还后不在使用当前list
-        /// </summary>
-        /// <param name="list"></param>
-        public static void Return(List<T> list)
-        {
-            if (list == null)
-            {
-                return;
-            }
-
-            if (pool.Count < MaxSize)
-            {
-                list.Clear();
-                pool.Enqueue(list);
-            }
-        }
-
-        public static void Clear()
-        {
-            while (pool.Count > 0)
-            {
-                pool.TryDequeue(out var list);
-            }
-        }
-
-    }
-
     
     public partial class TcpRemote : RemoteBase,  IRemote
     {
@@ -437,9 +378,9 @@ namespace Megumin.Remote
     /// <summary>
     /// 全新版本
     /// </summary>
-    public class TcpRemote2
+    public partial class TcpRemote2
     {
-        Socket Client { get; }
+        public Socket Client { get; private set; }
         RpcCallbackPool RpcCallbackPool { get; }
         public async void ReceiveStart()
         {
@@ -606,30 +547,33 @@ namespace Megumin.Remote
 
         Queue<IMemoryOwner<byte>> sendQ;
 
-        /// <summary>
-        /// 取得下一个待发送队列。
-        /// </summary>
-        /// <returns></returns>
-        Task<IMemoryOwner<byte>> PeekNext()
-        {
-            throw new NotImplementedException();
-        }
 
-        public void Send()
+        SendPipe sendpipe = new SendPipe();
+        public void Send(int rpcID, object message, object options = null)
         {
-
+            var writer = sendpipe.GetNewwriter();
+            if (TreSer(writer, rpcID, message, options))
+            {
+                //序列化成功
+                writer.PackSuccess();
+            }
+            else
+            {
+                //序列化失败
+                writer.Discard();
+            }
         }
 
         public async void SendStart()
         {
-            var target = await PeekNext();
-            var length = target.Memory.Length;
-            var result = await Client.SendAsync(target.Memory, SocketFlags.None);
+            var target = await sendpipe.PeekNext();
+            var length = target.SendMemory.Length;
+            var result = await Client.SendAsync(target.SendMemory, SocketFlags.None);
             if (result == length)
             {
                 //dequeue?
                 //成功？
-                target.Dispose();
+                target.SendSuccess();
             }
 
             SendStart();
@@ -672,6 +616,227 @@ namespace Megumin.Remote
             {
                 //todo log;
                 return false;
+            }
+        }
+    }
+
+    public partial class TcpRemote2
+    {
+        public static void BroadCast(object message,Span<TcpRemote2> target)
+        {
+
+        }
+
+        protected void Init(Socket socket)
+        {
+            Client = socket;
+        }
+
+        /// <summary>
+        /// 连接保护器，防止多次调用
+        /// </summary>
+        readonly object _connectlock = new object();
+        /// <summary>
+        /// 正在连接
+        /// </summary>
+        bool IsConnecting = false;
+        protected async Task ConnectAsync(Socket socket, IPEndPoint endPoint, int retryCount = 0)
+        {
+            lock (_connectlock)
+            {
+                if (IsConnecting)
+                {
+                    throw new InvalidOperationException("连接正在进行中");
+                }
+                IsConnecting = true;
+            }
+
+            if (socket.Connected)
+            {
+                throw new ArgumentException("socket已经连接");
+            }
+
+            while (retryCount >= 0)
+            {
+                try
+                {
+                    await Client.ConnectAsync(endPoint);
+                    IsConnecting = false;
+                }
+                catch (Exception)
+                {
+                    if (retryCount <= 0)
+                    {
+                        IsConnecting = false;
+                        throw;
+                    }
+                    else
+                    {
+                        retryCount--;
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 发送管道 多线程问题
+    /// </summary>
+    public class SendPipe
+    {
+        /// <summary>
+        /// 要发送的字节块
+        /// </summary>
+        public interface ISendBlock
+        {
+            /// <summary>
+            /// 发送成功
+            /// </summary>
+            void SendSuccess();
+            /// <summary>
+            /// 要发送的内存块
+            /// </summary>
+            ReadOnlyMemory<byte> SendMemory { get; }
+        }
+
+        /// <summary>
+        /// 消息字节写入器
+        /// </summary>
+        public interface IWriter : IBufferWriter<byte>
+        {
+            /// <summary>
+            /// 放弃发送，废弃当前写入器
+            /// </summary>
+            void Discard();
+            /// <summary>
+            /// 消息打包成功
+            /// </summary>
+            void PackSuccess();
+        }
+
+        internal protected class Writer: IBufferWriter<byte>,IWriter, ISendBlock
+        {
+            private SendPipe sendPipe;
+            private byte[] buffer;
+            /// <summary>
+            /// 当前游标位置
+            /// </summary>
+            int index = 4;
+
+            public Writer(SendPipe sendPipe)
+            {
+                this.sendPipe = sendPipe;
+                Reset();
+            }
+
+            void Reset()
+            {
+                if (buffer == null)
+                {
+                    buffer = ArrayPool<byte>.Shared.Rent(512);
+                }
+                
+                index = 4;
+            }
+
+            public void Advance(int count)
+            {
+                index += count;
+            }
+
+            public Memory<byte> GetMemory(int sizeHint = 0)
+            {
+                if (buffer.Length - index >= sizeHint)
+                {
+                    //现有数组足够长；
+                    return new Memory<byte>(buffer, index, sizeHint);
+                }
+                else
+                {
+                    return default;
+                }
+            }
+
+            public Span<byte> GetSpan(int sizeHint = 0)
+            {
+                if (buffer.Length - index >= sizeHint)
+                {
+                    //现有数组足够长；
+                    return new Span<byte>(buffer, index, sizeHint);
+                }
+                else
+                {
+                    return default;
+                }
+            }
+
+            public void Discard()
+            {
+                Reset();
+            }
+
+            public void PackSuccess()
+            {
+                buffer.AsSpan().Write(index);
+                sendPipe.Push2Queue(this);
+            }
+
+            public void SendSuccess()
+            {
+                Reset();
+            }
+
+            public ReadOnlyMemory<byte> SendMemory => new ReadOnlyMemory<byte>(buffer, 0, index);
+        }
+
+        ConcurrentQueue<Writer> sendQueue = new ConcurrentQueue<Writer>();
+
+        /// <summary>
+        /// 发送失败队列
+        /// </summary>
+        ConcurrentQueue<Writer> sendFailQueue = new ConcurrentQueue<Writer>();
+        private void Push2Queue(Writer writer)
+        {
+            if (source != null)//多线程问题
+            {
+                source.SetResult(writer);
+                source = null;
+            }
+            sendQueue.Enqueue(writer);
+        }
+
+        /// <summary>
+        /// 取得一个全新写入器
+        /// </summary>
+        /// <returns></returns>
+        internal IWriter GetNewwriter()
+        {
+            return new Writer(this);
+        }
+
+        TaskCompletionSource<ISendBlock> source;
+        /// <summary>
+        /// 取得下一个待发送消息。
+        /// </summary>
+        /// <returns></returns>
+        public ValueTask<ISendBlock> PeekNext()
+        {
+            if (sendFailQueue.TryDequeue(out var writer))
+            {
+                return new ValueTask<ISendBlock>(writer);
+            }
+            else if (sendQueue.TryDequeue(out var send))
+            {
+                return new ValueTask<ISendBlock>(send);
+            }
+            else if (source != null)
+            {
+                throw new Exception(); //todo
+            }
+            else
+            {
+                source = new TaskCompletionSource<ISendBlock>();
+                return new ValueTask<ISendBlock>(source.Task);
             }
         }
     }

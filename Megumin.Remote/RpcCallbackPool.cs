@@ -14,31 +14,32 @@ namespace Megumin.Remote
     /// <param name="exception"></param>
     public delegate void RpcCallback(object message, Exception exception);
 
-
     /// <summary>
     /// 更新Rpc结果，框架调用，协助处理Rpc封装
     /// </summary>
     public interface IRpcCallbackPool
     {
         /// <summary>
-        /// Rpc超时毫秒数
+        /// 默认Rpc超时毫秒数
         /// </summary>
-        int RpcTimeOutMilliseconds { get; set; }
+        int DefaultTimeout { get; set; }
         /// <summary>
         /// 注册一个rpc过程，并返回一个rpcID，后续可通过rpcID完成回调
         /// </summary>
-        /// <param name="overrideMilliseconds">重写超时时间，如果没有指定，使用默认超时时间</param>
+        /// <param name="options">参数表</param>
         /// <typeparam name="RpcResult"></typeparam>
         /// <returns></returns>
-        (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source) Regist<RpcResult>(int? overrideMilliseconds = null);
+        (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source) 
+            Regist<RpcResult>(object options = null);
         /// <summary>
         /// 注册一个rpc过程，并返回一个rpcID，后续可通过rpcID完成回调
         /// </summary>
         /// <typeparam name="RpcResult"></typeparam>
         /// <param name="OnException"></param>
-        /// <param name="overrideMilliseconds">重写超时时间，如果没有指定，使用默认超时时间</param>
+        /// <param name="options">参数表</param>
         /// <returns></returns>
-        (int rpcID, IMiniAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException, int? overrideMilliseconds = null);
+        (int rpcID, IMiniAwaitable<RpcResult> source) 
+            Regist<RpcResult>(Action<Exception> OnException, object options = null);
         /// <summary>
         /// 取得rpc回调函数
         /// </summary>
@@ -78,7 +79,8 @@ namespace Megumin.Remote
     /// Rpc回调注册池
     /// 每个session大约每秒30个包，超时时间默认为30秒；
     /// </summary>
-    public class RpcCallbackPool : Dictionary<int, (DateTime startTime, RpcCallback rpcCallback)>, IRpcCallbackPool
+    public class RpcCallbackPool : Dictionary<int, (DateTime startTime, RpcCallback rpcCallback)>,
+        IRpcCallbackPool
     {
         int rpcCursor = 0;
         readonly object rpcCursorLock = new object();
@@ -95,8 +97,8 @@ namespace Megumin.Remote
         /// <summary>
         /// 默认30000ms
         /// </summary>
-        public int RpcTimeOutMilliseconds { get; set; } = 30000;
-        delegate void RpcCallback(object message, Exception exception);
+        public int DefaultTimeout { get; set; } = 30000;
+
         /// <summary>
         /// 原子操作 取得RpcId,发送方的的RpcID为正数，回复的RpcID为负数，正负一一对应
         /// <para>0,int.MinValue 为无效值</para> 
@@ -122,11 +124,12 @@ namespace Megumin.Remote
         }
 
         public (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source) 
-            Regist<RpcResult>(int? overrideMilliseconds = null)
+            Regist<RpcResult>(object options = null)
         {
             int rpcID = GetRpcID();
 
-            IMiniAwaitable<(RpcResult result, Exception exception)> source = MiniTask<(RpcResult result, Exception exception)>.Rent();
+            IMiniAwaitable<(RpcResult result, Exception exception)> source
+                = MiniTask<(RpcResult result, Exception exception)>.Rent();
             var key = rpcID * -1;
 
             CheckKeyConflict(key);
@@ -151,7 +154,7 @@ namespace Megumin.Remote
                                 else
                                 {
                                     ///转换类型错误
-                                    source.SetResult((default, 
+                                    source.SetResult((default,
                                         new InvalidCastException($"Return {resp.GetType()} type, cannot be converted to {typeof(RpcResult)}" +
                                         $"/返回{resp.GetType()}类型，无法转换为{typeof(RpcResult)}")));
                                 }
@@ -169,11 +172,15 @@ namespace Megumin.Remote
                 );
             }
 
-            CreateCheckTimeout(key, overrideMilliseconds ?? RpcTimeOutMilliseconds);
+            CreateCheckTimeout(key, options);
 
             return (rpcID, source);
         }
 
+        /// <summary>
+        /// rpcID冲突检查
+        /// </summary>
+        /// <param name="key"></param>
         void CheckKeyConflict(int key)
         {
             if (TryDequeue(key, out var callback))
@@ -184,7 +191,7 @@ namespace Megumin.Remote
         }
 
         public (int rpcID, IMiniAwaitable<RpcResult> source) 
-            Regist<RpcResult>(Action<Exception> OnException, int? overrideMilliseconds = null)
+            Regist<RpcResult>(Action<Exception> OnException, object options = null)
         {
             int rpcID = GetRpcID();
             IMiniAwaitable<RpcResult> source = MiniTask<RpcResult>.Rent();
@@ -227,9 +234,29 @@ namespace Megumin.Remote
                 );
             }
 
-            CreateCheckTimeout(key, overrideMilliseconds ?? RpcTimeOutMilliseconds);
+            CreateCheckTimeout(key, options);
 
             return (rpcID, source);
+        }
+
+        /// <summary>
+        /// 创建超时检查
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="options"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void CreateCheckTimeout(int rpcID, object options)
+        {
+            int timeout = DefaultTimeout;
+            if (options is IRpcTimeoutOption option)
+            {
+                timeout = option.MillisecondsDelay;
+            }
+
+            if (timeout >= 0)
+            {
+                CreateCheckTimeout(rpcID, timeout);
+            }
         }
 
         /// <summary>
@@ -262,7 +289,7 @@ namespace Megumin.Remote
         }
 
         readonly object dequeueLock = new object();
-        public bool TryDequeue(int rpcID, out (DateTime startTime, Net.Remote.RpcCallback rpcCallback) rpc)
+        public bool TryDequeue(int rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc)
         {
             lock (dequeueLock)
             {

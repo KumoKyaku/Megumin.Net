@@ -9,8 +9,8 @@ using Megumin.Message;
 using Net.Remote;
 //using IRemoteDic = Megumin.IDictionary<int, System.Net.EndPoint, Net.Remote.IRemote>;
 
-namespace Megumin.Remote
-{
+//namespace Megumin.Remote
+//{
     ///// <summary>
     ///// 客户端不使用这个类，会发生Key冲突
     ///// </summary>
@@ -126,4 +126,4 @@ namespace Megumin.Remote
 
 
     //}
-}
+//}

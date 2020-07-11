@@ -13,13 +13,13 @@ namespace Megumin.Message
     /// </summary>
     public interface ITcpPacker
     {
-        /// <summary>
-        /// 处理粘包，将分好的包放入list中。这里产生一次数据拷贝。
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="pushCompleteMessage"></param>
-        /// <returns>返回剩余部分</returns>
-        ReadOnlySpan<byte> CutOff(ReadOnlySpan<byte> source, IList<IMemoryOwner<byte>> pushCompleteMessage);
+    //    /// <summary>
+    //    /// 处理粘包，将分好的包放入list中。这里产生一次数据拷贝。
+    //    /// </summary>
+    //    /// <param name="source"></param>
+    //    /// <param name="pushCompleteMessage"></param>
+    //    /// <returns>返回剩余部分</returns>
+    //    ReadOnlySpan<byte> CutOff(ReadOnlySpan<byte> source, IList<IMemoryOwner<byte>> pushCompleteMessage);
     }
 
     /// <summary>
@@ -27,42 +27,42 @@ namespace Megumin.Message
     /// </summary>
     public interface IMessagePipeline:ITcpPacker
     {
-        /// <summary>
-        /// byte[] -> object
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="byteMessage"></param>
-        /// <param name="remote"></param>
-        void Unpack<T>(IMemoryOwner<byte> byteMessage, T remote)
-            where T:ISendMessage,IRemoteID,IUID<int>;
-        /// <summary>
-        /// object -> byte[]
-        /// </summary>
-        /// <param name="rpcID"></param>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        IMemoryOwner<byte> Pack(int rpcID, object message);
-        /// <summary>
-        /// object -> byte[]
-        /// </summary>
-        /// <param name="rpcID"></param>
-        /// <param name="message"></param>
-        /// <param name="identifier"></param>
-        /// <returns></returns>
-        IMemoryOwner<byte> Pack(int rpcID, object message, int identifier);
-        /// <summary>
-        /// object -> byte[]
-        /// </summary>
-        /// <param name="rpcID"></param>
-        /// <param name="message"></param>
-        /// <param name="extraMessage"></param>
-        /// <returns></returns>
-        IMemoryOwner<byte> Pack(int rpcID, object message, ReadOnlySpan<byte> extraMessage);
+        ///// <summary>
+        ///// byte[] -> object
+        ///// </summary>
+        ///// <typeparam name="T"></typeparam>
+        ///// <param name="byteMessage"></param>
+        ///// <param name="remote"></param>
+        //void Unpack<T>(IMemoryOwner<byte> byteMessage, T remote)
+        //    where T:ISendMessage,IRemoteID,IUID<int>;
+        ///// <summary>
+        ///// object -> byte[]
+        ///// </summary>
+        ///// <param name="rpcID"></param>
+        ///// <param name="message"></param>
+        ///// <returns></returns>
+        //IMemoryOwner<byte> Pack(int rpcID, object message);
+        ///// <summary>
+        ///// object -> byte[]
+        ///// </summary>
+        ///// <param name="rpcID"></param>
+        ///// <param name="message"></param>
+        ///// <param name="identifier"></param>
+        ///// <returns></returns>
+        //IMemoryOwner<byte> Pack(int rpcID, object message, int identifier);
+        ///// <summary>
+        ///// object -> byte[]
+        ///// </summary>
+        ///// <param name="rpcID"></param>
+        ///// <param name="message"></param>
+        ///// <param name="extraMessage"></param>
+        ///// <returns></returns>
+        //IMemoryOwner<byte> Pack(int rpcID, object message, ReadOnlySpan<byte> extraMessage);
     }
 
-    ///// <summary>
-    ///// object消息 消费者接口
-    ///// </summary>
+    /// <summary>
+    /// object消息 消费者接口
+    /// </summary>
     public interface IObjectMessageReceiver
     {
         /// <summary>

@@ -225,4 +225,15 @@ namespace Net.Remote
         /// </summary>
         int MultiplexingCount { get; set; }
     }
+
+    /// <summary>
+    /// Rpc回调池参数，具体由实现库支持
+    /// </summary>
+    public interface IRpcTimeoutOption
+    {
+        /// <summary>
+        /// 指定毫秒后超时，-1表示永不超时。
+        /// </summary>
+        int MillisecondsDelay { get; }
+    }
 }

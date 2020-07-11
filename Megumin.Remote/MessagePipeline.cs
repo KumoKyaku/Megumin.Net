@@ -499,142 +499,28 @@ namespace Megumin.Message
         }
     }
 
-    internal class BattleServerMP:MessagePipeline
-    {
-        
-    }
 
-
-
-    public class TestFunction
-    {
-        static int totalCount = 0;
-        public static async ValueTask<object> DealMessage(object message,IReceiveMessage receiver)
-        {
-            totalCount++;
-            switch (message)
-            {
-                case TestPacket1 packet1:
-                    if (totalCount % 100 == 0)
-                    {
-                        Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}------总消息数{totalCount}"); 
-                    }
-                    return null;
-                case TestPacket2 packet2:
-                    Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
-                    return new TestPacket2 { Value = packet2.Value };
-                default:
-                    break;
-            }
-            return null;
-        }
-    }
-
-
-    class RPipev2
-    {
-        
-        /// <summary>
-        /// 处理消息
-        /// </summary>
-        public static IMiniAwaitable<object> Deal(int RpcID,int MessageID,object message)
-        {
-            return default;
-        }
-    }
-}
-
-
-/// <summary>
-/// 小端
-/// </summary>
-internal static class SpanByteEX_45F6E953
-{
-    public static int ReadInt(this in ReadOnlySequence<byte> byteSequence)
-    {
-        unsafe
-        {
-            Span<byte> span = stackalloc byte[4];
-            byteSequence.CopyTo(span);
-            return span.ReadInt();
-        }
-    }
-
-
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="num"></param>
-    /// <param name="span"></param>
-    /// <returns>offset</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int WriteTo(this int num, Span<byte> span)
-    {
-        BinaryPrimitives.WriteInt32LittleEndian(span, num);
-        return 4;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int WriteTo(this ushort num, Span<byte> span)
-    {
-        BinaryPrimitives.WriteUInt16LittleEndian(span, num);
-        return 2;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int WriteTo(this short num, Span<byte> span)
-    {
-        BinaryPrimitives.WriteInt16LittleEndian(span, num);
-        return 2;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int WriteTo(this long num, Span<byte> span)
-    {
-        BinaryPrimitives.WriteInt64LittleEndian(span, num);
-        return 8;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int ReadInt(this ReadOnlySpan<byte> span)
-        => BinaryPrimitives.ReadInt32LittleEndian(span);
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ushort ReadUshort(this ReadOnlySpan<byte> span)
-        => BinaryPrimitives.ReadUInt16LittleEndian(span);
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static short ReadShort(this ReadOnlySpan<byte> span)
-        => BinaryPrimitives.ReadInt16LittleEndian(span);
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long ReadLong(this ReadOnlySpan<byte> span)
-        => BinaryPrimitives.ReadInt64LittleEndian(span);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int ReadInt(this Span<byte> span)
-        => BinaryPrimitives.ReadInt32LittleEndian(span);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ushort ReadUshort(this Span<byte> span)
-        => BinaryPrimitives.ReadUInt16LittleEndian(span);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static short ReadShort(this Span<byte> span)
-        => BinaryPrimitives.ReadInt16LittleEndian(span);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long ReadLong(this Span<byte> span)
-        => BinaryPrimitives.ReadInt64LittleEndian(span);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int ReadInt(this Memory<byte> span)
-        => BinaryPrimitives.ReadInt32LittleEndian(span.Span);
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ushort ReadUshort(this Memory<byte> span)
-        => BinaryPrimitives.ReadUInt16LittleEndian(span.Span);
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static short ReadShort(this Memory<byte> span)
-        => BinaryPrimitives.ReadInt16LittleEndian(span.Span);
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long ReadLong(this Memory<byte> span)
-        => BinaryPrimitives.ReadInt64LittleEndian(span.Span);
+    //public class TestFunction
+    //{
+    //    static int totalCount = 0;
+    //    public static async ValueTask<object> DealMessage(object message,IReceiveMessage receiver)
+    //    {
+    //        totalCount++;
+    //        switch (message)
+    //        {
+    //            case TestPacket1 packet1:
+    //                if (totalCount % 100 == 0)
+    //                {
+    //                    Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}------总消息数{totalCount}"); 
+    //                }
+    //                return null;
+    //            case TestPacket2 packet2:
+    //                Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
+    //                return new TestPacket2 { Value = packet2.Value };
+    //            default:
+    //                break;
+    //        }
+    //        return null;
+    //    }
+    //}
 }
