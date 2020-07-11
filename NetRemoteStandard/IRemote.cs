@@ -8,7 +8,7 @@ namespace Net.Remote
     /// <summary>
     /// 事实上 无论UID是Int,long,还是string,都无法满足全部需求。当你需要其他类型是，请修改源码。
     /// </summary>
-    public interface IUID<T>
+    public interface IRemoteUID<T>
     {
         /// <summary>
         /// 预留给用户使用的ID，（用户自己赋值ID，自己管理引用，框架不做处理）
@@ -37,7 +37,7 @@ namespace Net.Remote
         /// </summary>
         IPEndPoint ConnectIPEndPoint { get; set; }
         /// <summary>
-        /// 连接后重映射的地址
+        /// 连接后重映射的地址,UDP可能会使用这个设计。
         /// <para>如果没有重映射, 返回<see cref="ConnectIPEndPoint"/> </para>
         /// </summary>
         EndPoint RemappedEndPoint { get; }
@@ -49,18 +49,17 @@ namespace Net.Remote
     public interface IConnectable : IRemoteEndPoint
     {
         /// <summary>
-        /// <para>异常在底层Task过程中捕获，返回值null表示成功，调用者不必写try catch</para>
         /// </summary>
         /// <param name="endPoint"></param>
         /// <param name="retryCount">重试次数，失败会返回最后一次的异常</param>
         /// <returns></returns>
-        Task<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0);
+        Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0);
         /// <summary>
         /// 主动断开连接 不会触发OnDisConnect事件
         /// </summary>
         /// <param name="triggerOnDisConnect">是否触发OnDisConnect</param>
         /// <param name="waitSendQueue">是否等待发送队列发送完成</param>
-        void Disconnect(bool triggerOnDisConnect = false,bool waitSendQueue = false);
+        void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false);
     }
 
     /// <summary>
@@ -170,9 +169,9 @@ namespace Net.Remote
     /// <param name="receiver"></param>
     /// <returns></returns>
     /// <remarks> 在接口中不要放事件</remarks>
-    [Obsolete("直接从实现中继承，回调函数不在触发",true)]
-    public delegate ValueTask<object> ReceiveCallback (object message,IReceiveMessage receiver);
-    
+    [Obsolete("直接从实现中继承，回调函数不在触发", true)]
+    public delegate ValueTask<object> ReceiveCallback(object message, IReceiveMessage receiver);
+
     /// <summary>
     /// 接收消息
     /// </summary>
@@ -198,7 +197,7 @@ namespace Net.Remote
     /// 应用网络层API封装
     /// </summary>
     public interface IRemote : IRemoteEndPoint, ISendable, IReceiveMessage,
-        IConnectable, IDisposable,IUID<int>,IRemoteID
+        IConnectable, IDisposable, IRemoteID
         , ISendCanAwaitable
     {
 

@@ -89,7 +89,7 @@ namespace Megumin.Message
         }
 
         public virtual async void Unpack<T>(IMemoryOwner<byte> packet, T bufferReceiver)
-            where T : ISendMessage, IRemoteID, IUID<int>, IObjectMessageReceiver
+            where T : ISendMessage, IRemoteID, IRemoteUID<int>, IObjectMessageReceiver
         {
             try
             {
@@ -162,7 +162,7 @@ namespace Megumin.Message
         /// <param name="rpcID"></param>
         /// <param name="resp"></param>
         protected virtual void Reply<T>(T bufferReceiver, ReadOnlyMemory<byte> extraMessage, int rpcID, object resp)
-            where T : ISendMessage, IRemoteID, IUID<int>, IObjectMessageReceiver
+            where T : ISendMessage, IRemoteID, IRemoteUID<int>, IObjectMessageReceiver
         {
             if (resp != null)
             {
@@ -184,7 +184,7 @@ namespace Megumin.Message
         /// <param name="messageBody"></param>
         /// <param name="forwarder"></param>
         public virtual void Forward<T>(T bufferReceiver, int messageID, ReadOnlyMemory<byte> extraMessage, ReadOnlyMemory<byte> messageBody, IForwarder forwarder) 
-            where T : IRemoteID,IUID<int>
+            where T : IRemoteID,IRemoteUID<int>
         {
             RoutingInformationModifier modifier = extraMessage;
             if (modifier.Mode == RouteMode.Null)
@@ -220,7 +220,7 @@ namespace Megumin.Message
         /// <returns></returns>
         public virtual ValueTask<bool> PreDeserialize<T>(int messageID,ReadOnlyMemory<byte> extraMessage,
             ReadOnlyMemory<byte> messageBody,T bufferReceiver)
-            where T:ISendMessage,IRemoteID,IUID<int>,IObjectMessageReceiver
+            where T:ISendMessage,IRemoteID,IRemoteUID<int>,IObjectMessageReceiver
         {
             return new ValueTask<bool>(true);
         }
@@ -238,7 +238,7 @@ namespace Megumin.Message
         /// <returns></returns>
         public virtual ValueTask<bool> PostDeserialize<T>(int messageID,ReadOnlyMemory<byte> extraMessage,
             int rpcID, object message,T bufferReceiver)
-            where T:ISendMessage,IRemoteID,IUID<int>,IObjectMessageReceiver
+            where T:ISendMessage,IRemoteID,IRemoteUID<int>,IObjectMessageReceiver
         {
             return new ValueTask<bool>(true);
         }

@@ -12,7 +12,7 @@ using Net.Remote;
 namespace Megumin.Remote
 {
 
-    public abstract partial class RemoteBase:IUID<int>
+    public abstract partial class RemoteBase:IRemoteUID<int>
     {
         public int ID { get; } = InterlockedID<IRemote>.NewID();
         /// <summary>
