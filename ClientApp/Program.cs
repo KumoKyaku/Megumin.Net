@@ -1,11 +1,10 @@
-﻿using System;
-using System.Net;
-using System.Threading;
-using Message;
-using Megumin;
-using Megumin.Message;
+﻿using Megumin.Message;
+using Megumin.Message.Test;
 using Megumin.Remote;
 using Net.Remote;
+using System;
+using System.Net;
+using System.Threading;
 
 namespace TestClient
 {

@@ -19,16 +19,11 @@
 
   <ItemGroup>
     <Compile Remove="FakesAssemblies\**" />
+    <Compile Remove="Fakes\**" />
     <EmbeddedResource Remove="FakesAssemblies\**" />
+    <EmbeddedResource Remove="Fakes\**" />
     <None Remove="FakesAssemblies\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="Fakes\Messages.fakes" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Fakes Include="Fakes\Messages.fakes" />
+    <None Remove="Fakes\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,9 +31,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Megumin.Remote\Megumin.Remote.csproj" />
-    <ProjectReference Include="..\..\MessagePackLUT\MessagePackLUT.csproj" />
-    <ProjectReference Include="..\..\Messages\Messages.csproj" />
+    <ProjectReference Include="..\Megumin.Remote\Megumin.Remote.csproj" />
+    <ProjectReference Include="..\MessagePackLUT\MessagePackLUT.csproj" />
+    <ProjectReference Include="..\TestMessages\TestMessages.csproj" />
   </ItemGroup>
 
 </Project>
