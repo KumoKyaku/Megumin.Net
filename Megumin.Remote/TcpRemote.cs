@@ -304,19 +304,187 @@ namespace Megumin.Remote
 
     public partial class TcpRemote : IReceiveMessage, IObjectMessageReceiver
     {
+        public Pipe pipe { get; } = new Pipe();
         /// <summary>
         /// 开始接收消息；
         /// </summary>
         private void ReceiveStart()
         {
-            throw new NotImplementedException();
+            FillPipe(pipe.Writer);
+            ReadPipe(pipe.Reader);
         }
 
-        public float LastReceiveTimeFloat { get; } = float.MaxValue;     
-
-        public virtual ValueTask<object> Deal(int rpcID, object message)
+        private async void FillPipe(PipeWriter pipeWriter)
         {
-            throw new NotImplementedException();
+            var buffer = pipeWriter.GetMemory(512);
+            var count = await Client.ReceiveAsync(buffer, SocketFlags.None);
+            pipeWriter.Advance(count);
+            _ = pipeWriter.FlushAsync();
+            FillPipe(pipeWriter);
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pipeReader"></param>
+        protected async void ReadPipe(PipeReader pipeReader)
+        {
+            var result = await pipeReader.ReadAsync();
+        
+            //剩余未处理消息buffer
+            var unDealBuffer = result.Buffer;
+
+            while (unDealBuffer.Length > 4)
+            {
+                //包体总长度
+                var length = unDealBuffer.ReadInt();
+                if (unDealBuffer.Length >= length)
+                {
+                    ///取得消息体
+                    var body = unDealBuffer.Slice(4, length - 4);
+
+                    ProcessBody(body, null);
+                    //标记已使用数据
+                    var pos = result.Buffer.GetPosition(length);
+                    pipeReader.AdvanceTo(pos);
+
+                    unDealBuffer = unDealBuffer.Slice(length);//切除已使用部分
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            //继续处理
+            ReadPipe(pipeReader);
+        }
+
+        protected virtual bool TryDeserialize
+            (int messageID, in ReadOnlySequence<byte> byteSequence,
+            out object message, object options = null)
+        {
+            try
+            {
+                message = MessageLUT.Deserialize(messageID, byteSequence, options);
+                return true;
+            }
+            catch (Exception)
+            {
+                //log todo
+                message = default;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 处理一个完整的消息包
+        /// </summary>
+        protected virtual void ProcessBody
+            (in ReadOnlySequence<byte> byteSequence, object options = null)
+        {
+            //读取RpcID 和 消息ID
+            var (RpcID, CMD, MessageID) = byteSequence.ReadHeader();
+            if (TryDeserialize(MessageID, byteSequence.Slice(10), out var message, options))
+            {
+                DeserializeSuccess(RpcID, MessageID, message);
+            }
+            else
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="messageID"></param>
+        /// <param name="message"></param>
+        protected async void DeserializeSuccess(int rpcID, int messageID, object message)
+        {
+            var post = true;//转换线程
+
+            //消息处理程序的返回对象
+            object reply = null;
+
+            if (post)
+            {
+                reply = await MessageThreadTransducer.Push(rpcID, message, this);
+            }
+            else
+            {
+                reply = await DiversionProcess(rpcID, message);
+
+                if (reply is Task<object> task)
+                {
+                    reply = await task;
+                }
+
+                if (reply is ValueTask<object> vtask)
+                {
+                    reply = await vtask;
+                }
+            }
+
+            if (reply != null)
+            {
+                Reply(rpcID, reply);
+            }
+        }
+
+        /// <summary>
+        /// 回复给远端
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="replyMessage"></param>
+        protected virtual void Reply(int rpcID, object replyMessage)
+        {
+            Send(rpcID, replyMessage);
+        }
+
+        public float LastReceiveTimeFloat { get; } = float.MaxValue;
+
+        ValueTask<object> IObjectMessageReceiver.Deal(int rpcID, object message)
+        {
+            return DiversionProcess(rpcID, message);
+        }
+
+        /// <summary>
+        /// 分流普通消息和RPC回复消息
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected virtual ValueTask<object> DiversionProcess(int rpcID,  object message)
+        {
+            if (rpcID < 0)
+            {
+                //这个消息是rpc返回（回复的RpcID为负数）
+                RpcCallbackPool?.TrySetResult(rpcID, message);
+                return new ValueTask<object>(result: null);
+            }
+            else
+            {
+                ///这个消息是非Rpc应答
+                ///普通响应onRely
+                return OnReceive(message);
+            }
+        }
+
+
+        /// <summary>
+        /// 通常用户在这里处理收到的消息
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        /// <remarks>含有远程返回的rpc回复消息会被直接通过回调函数发送到异步调用处，不会触发这里</remarks>
+        protected virtual ValueTask<object> OnReceive(object message)
+        {
+            return new ValueTask<object>(result: null);
+        }
+
+        
     }
 }

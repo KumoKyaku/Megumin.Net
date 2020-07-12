@@ -19,6 +19,20 @@ internal static class SpanByteEX_C9701074
         }
     }
 
+    public static (int RpcID, short CMD, int MessageID)
+        ReadHeader(this in ReadOnlySequence<byte> byteSequence)
+    {
+        unsafe
+        {
+            Span<byte> span = stackalloc byte[10];
+            byteSequence.CopyTo(span);
+            var rpcID = span.ReadInt();
+            var cmd = span.Slice(4).ReadShort();
+            var msgID = span.Slice(6).ReadInt();
+            return (rpcID, cmd, msgID);
+        }
+    }
+
     /// <summary>
     /// 
     /// </summary>
