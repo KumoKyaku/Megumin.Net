@@ -24,6 +24,10 @@ namespace Megumin.Remote
         /// 要发送的内存块
         /// </summary>
         ReadOnlyMemory<byte> SendMemory { get; }
+        /// <summary>
+        /// 要发送的内存块
+        /// </summary>
+        ArraySegment<byte> SendSegment { get; }
     }
 
     /// <summary>
@@ -124,6 +128,8 @@ namespace Megumin.Remote
             {
                 throw new NotImplementedException();
             }
+
+            public ArraySegment<byte> SendSegment => new ArraySegment<byte>(buffer, 0, index);
         }
 
         ConcurrentQueue<Writer> sendQueue = new ConcurrentQueue<Writer>();

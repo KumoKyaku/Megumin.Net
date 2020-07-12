@@ -163,8 +163,15 @@ namespace Megumin.Remote
         public async void SendStart()
         {
             var target = await SendPipe.PeekNext();
+
+#if NETSTANDARD2_1
             var length = target.SendMemory.Length;
             var result = await Client.SendAsync(target.SendMemory, SocketFlags.None);
+#else
+            var length = target.SendSegment.Count;
+            var result = await Client.SendAsync(target.SendSegment, SocketFlags.None);
+#endif
+
             if (result == length)
             {
                 //dequeue?
@@ -322,7 +329,21 @@ namespace Megumin.Remote
         private async void FillPipe(PipeWriter pipeWriter)
         {
             var buffer = pipeWriter.GetMemory(512);
+
+#if NETSTANDARD2_1
             var count = await Client.ReceiveAsync(buffer, SocketFlags.None);
+#else
+            int count = 0;
+            if (MemoryMarshal.TryGetArray<byte>(buffer,out var segment))
+            {
+                count = await Client.ReceiveAsync(segment, SocketFlags.None);
+            }
+            else
+            {
+                //todo log
+            }
+#endif
+
             pipeWriter.Advance(count);
             _ = pipeWriter.FlushAsync();
             FillPipe(pipeWriter);
