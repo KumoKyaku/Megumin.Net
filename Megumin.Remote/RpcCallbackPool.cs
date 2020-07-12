@@ -172,7 +172,7 @@ namespace Megumin.Remote
                 );
             }
 
-            CreateCheckTimeout(key, options);
+            CreateCheckTimeout<RpcResult>(key, options);
 
             return (rpcID, source);
         }
@@ -234,7 +234,7 @@ namespace Megumin.Remote
                 );
             }
 
-            CreateCheckTimeout(key, options);
+            CreateCheckTimeout<RpcResult>(key, options);
 
             return (rpcID, source);
         }
@@ -245,7 +245,7 @@ namespace Megumin.Remote
         /// <param name="rpcID"></param>
         /// <param name="options"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CreateCheckTimeout(int rpcID, object options)
+        void CreateCheckTimeout<RpcResult>(int rpcID, object options)
         {
             int timeout = DefaultTimeout;
             if (options is IRpcTimeoutOption option)
@@ -255,7 +255,7 @@ namespace Megumin.Remote
 
             if (timeout >= 0)
             {
-                CreateCheckTimeout(rpcID, timeout);
+                CreateCheckTimeout(rpcID,typeof(RpcResult).FullName, timeout);
             }
         }
 
@@ -264,7 +264,7 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="rpcID"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CreateCheckTimeout(int rpcID,int timeOutMilliseconds)
+        void CreateCheckTimeout(int rpcID,string resultTypeName, int timeOutMilliseconds)
         {
             ///备注：即使异步发送被同步调用，此处也不会发生错误。
             ///同步调用，当返回消息返回时，会从回调池移除，
@@ -281,7 +281,8 @@ namespace Megumin.Remote
                     {
                         MessageThreadTransducer.Invoke(() =>
                         {
-                            rpc.rpcCallback?.Invoke(null, new TimeoutException($"The RPC {rpcID} callback timed out and did not get a remote response./RPC {rpcID} 回调超时，没有得到远端响应。"));
+                            rpc.rpcCallback?.Invoke(null, 
+                                new TimeoutException($"The RPC [{rpcID}] callback timed out and did not get a remote response./RPC [{rpcID}] 回调超时，请求结果[{resultTypeName}],没有得到远端响应。"));
                         });
                     }
                 }
