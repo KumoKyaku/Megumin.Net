@@ -80,6 +80,11 @@ namespace Megumin.Remote
             ReceiveStart();
             SendStart();
         }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public partial class TcpRemote : IConnectable
@@ -396,7 +401,28 @@ namespace Megumin.Remote
         }
 
         /// <summary>
-        /// 
+        /// 默认关闭线程转换<see cref="MessageThreadTransducer.Update(double)"/>
+        /// </summary>
+        public bool Post2ThreadScheduler { get; set; } = false;
+
+        /// <summary>
+        /// 是否使用<see cref="MessageThreadTransducer"/>
+        /// <para>精确控制各个消息是否切换到主线程。</para>
+        /// <para>用于处理在某些时钟精确的且线程无关消息时跳过轮询等待。</para>
+        /// 例如：同步两个远端时间戳的消息。
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="messageID"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected virtual bool UseThreadSchedule(int rpcID, int messageID, object message)
+        {
+            return Post2ThreadScheduler;
+        }
+
+        /// <summary>
+        /// 解析消息成功
         /// </summary>
         /// <param name="rpcID"></param>
         /// <param name="messageID"></param>
@@ -408,7 +434,8 @@ namespace Megumin.Remote
             //消息处理程序的返回对象
             object reply = null;
 
-            if (post)
+            var trans = UseThreadSchedule(rpcID, messageID, message);
+            if (trans)
             {
                 reply = await MessageThreadTransducer.Push(rpcID, message, this);
             }
@@ -440,7 +467,7 @@ namespace Megumin.Remote
         /// <param name="replyMessage"></param>
         protected virtual void Reply(int rpcID, object replyMessage)
         {
-            Send(rpcID, replyMessage);
+            Send(rpcID * -1, replyMessage);
         }
 
         public float LastReceiveTimeFloat { get; } = float.MaxValue;

@@ -10,6 +10,20 @@ using MessageQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Messa
 
 namespace Megumin.Message
 {
+    /// <summary>
+    /// object消息 消费者接口
+    /// </summary>
+    public interface IObjectMessageReceiver
+    {
+        /// <summary>
+        /// 处理消息实例
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        ValueTask<object> Deal(int rpcID, object message);
+    }
+
     internal struct WorkRequest
     {
         readonly int rpcID;
