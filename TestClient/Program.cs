@@ -22,7 +22,7 @@ namespace TestClient
         }
 
         static int MessageCount = 10000;
-        static int RemoteCount = 100;
+        static int RemoteCount = 1;
         private static async void ConAsync()
         {
             //ThreadPool.QueueUserWorkItem((A) =>
