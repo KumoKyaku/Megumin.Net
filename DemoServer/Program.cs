@@ -1,6 +1,6 @@
 ﻿using Megumin.DCS;
-using Megumin.Message;
-using Megumin.Message.Test;
+using Megumin.Remote;
+using Megumin.Remote.Test;
 using System;
 using System.Threading;
 

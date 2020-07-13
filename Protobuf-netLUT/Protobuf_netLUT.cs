@@ -6,7 +6,7 @@ using System.Reflection;
 using ProtoBuf;
 using static System.Buffers.ArrayPool<byte>;
 
-namespace Megumin.Message
+namespace Megumin.Remote
 {
     /// <summary>
     /// 适用于Protobuf-net协议的查找表    没有测试

@@ -1,5 +1,5 @@
-﻿using Megumin.Message;
-using Megumin.Message.Test;
+﻿using Megumin.Remote;
+using Megumin.Remote.Test;
 using Megumin.Remote;
 using Net.Remote;
 using System;
@@ -100,16 +100,27 @@ namespace TestServer
     }
 
 
-    public class TestSpeedServerRemote:TcpRemote
+    public sealed class TestSpeedServerRemote:TcpRemote
     {
-        protected override ValueTask<object> OnReceive(object message)
+        static int totalCount;
+        protected async override ValueTask<object> OnReceive(object message)
         {
+            totalCount++;
             switch (message)
             {
+                case TestPacket1 packet1:
+                    if (totalCount % 100 == 0)
+                    {
+                        Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}------总消息数{totalCount}");
+                    }
+                    return null;
+                case TestPacket2 packet2:
+                    Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
+                    return packet2;
                 default:
                     break;
             }
-            return NullResult;
+            return null;
         }
     }
 }

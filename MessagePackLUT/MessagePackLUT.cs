@@ -6,7 +6,7 @@ using MessagePack;
 using System.Buffers;
 using System.Linq;
 
-namespace Megumin.Message
+namespace Megumin.Remote
 {
     /// <summary>
     /// 适用于MessagePack协议的查找表

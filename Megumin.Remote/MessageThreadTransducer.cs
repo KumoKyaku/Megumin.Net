@@ -1,4 +1,4 @@
-﻿using Megumin.Message;
+﻿using Megumin.Remote;
 using Megumin.Remote;
 using Net.Remote;
 using System;
@@ -6,9 +6,9 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using MessageQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Message.WorkRequest>;
+using MessageQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Remote.WorkRequest>;
 
-namespace Megumin.Message
+namespace Megumin.Remote
 {
     /// <summary>
     /// object消息 消费者接口

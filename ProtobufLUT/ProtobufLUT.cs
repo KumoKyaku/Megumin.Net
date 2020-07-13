@@ -8,7 +8,7 @@ using System.Buffers;
 using System.Linq;
 using static System.Buffers.ArrayPool<byte>;
 
-namespace Megumin.Message
+namespace Megumin.Remote
 {
     /// <summary>
     /// 适用于Protobuf协议的查找表           没有测试可能有BUG

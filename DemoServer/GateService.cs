@@ -1,5 +1,6 @@
 ﻿using Megumin.DCS;
-using Megumin.Message.Test;
+using Megumin.Remote.Test;
+using Megumin.Remote;
 using Net.Remote;
 using System;
 using System.Threading.Tasks;
@@ -19,28 +20,36 @@ namespace DemoServer
 
         public async void StartListenAsync()
         {
-            var remote = await listener.ListenAsync(DealMessage);
-            Console.WriteLine($"建立连接");
+            var remote = await listener.ListenAsync(Create);
             StartListenAsync();
+            Console.WriteLine($"建立连接");
         }
 
-        public static async ValueTask<object> DealMessage(object message,IReceiveMessage receiver)
+        GateRemote Create()
         {
-            switch (message)
+            return new GateRemote();
+        }
+
+        class GateRemote : TcpRemote
+        {
+            protected async override ValueTask<object> OnReceive(object message)
             {
-                case string str:
-                    return $"{str} world";
-                case Login2Gate login:
+                switch (message)
+                {
+                    case string str:
+                        return $"{str} world";
+                    case Login2Gate login:
 
-                    Console.WriteLine($"客户端登陆请求：{login.Account}-----{login.Password}");
+                        Console.WriteLine($"客户端登陆请求：{login.Account}-----{login.Password}");
 
-                    Login2GateResult resp = new Login2GateResult();
-                    resp.IsSuccess = true;
-                    return resp;
-                default:
-                    break;
+                        Login2GateResult resp = new Login2GateResult();
+                        resp.IsSuccess = true;
+                        return resp;
+                    default:
+                        break;
+                }
+                return null;
             }
-            return null;
         }
 
         public void Update(double deltaTime)

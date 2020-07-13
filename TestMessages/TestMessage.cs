@@ -4,7 +4,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Megumin.Message.Test
+namespace Megumin.Remote.Test
 {
     /// <summary>
     /// 序列化后长度为1024字节

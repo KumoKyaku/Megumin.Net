@@ -1,4 +1,4 @@
-﻿using Megumin.Message;
+﻿using Megumin.Remote;
 using Net.Remote;
 using System;
 using System.Buffers;

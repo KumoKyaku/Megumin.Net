@@ -1,9 +1,9 @@
 ﻿using System;
 using MessagePack;
-using Megumin.Message;
+using Megumin.Remote;
 using ProtoBuf;
 
-namespace Megumin.Message.Test
+namespace Megumin.Remote.Test
 {
 
     [MSGID(1000)]

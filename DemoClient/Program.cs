@@ -1,5 +1,5 @@
-﻿using Megumin.Message;
-using Megumin.Message.Test;
+﻿using Megumin.Remote;
+using Megumin.Remote.Test;
 using Megumin.Remote;
 using Net.Remote;
 using System;

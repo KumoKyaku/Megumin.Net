@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Megumin.Message.Test
+namespace Megumin.Remote.Test
 {
     /// <summary>
     /// 心跳包消息

@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 /// <summary>
 /// 小端
 /// </summary>
-internal static class SpanByteEX_C9701074
+internal static class SpanByteExtension_37AAF334E75041368C6B47A256F0F93F
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int ReadInt(this in ReadOnlySequence<byte> byteSequence)

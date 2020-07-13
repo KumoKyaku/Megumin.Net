@@ -3,7 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Megumin.Message
+namespace Megumin.Remote
 {
     /// <summary>
     /// Key冲突改怎么做
@@ -58,7 +58,7 @@ namespace Megumin.Message
 
     /// <summary>
     /// 消息查找表
-    /// <seealso cref="Message.Serialize"/>  <seealso cref="Message.Deserialize"/>
+    /// <seealso cref="Remote.Serialize"/>  <seealso cref="Remote.Deserialize"/>
     /// </summary>
     public class MessageLUT
     {
