@@ -1,7 +1,12 @@
-﻿using Net.Remote;
+﻿using Megumin.Message;
+using Megumin.Message.Test;
+using Megumin.Remote;
+using Net.Remote;
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace TestServer
 {
@@ -54,20 +59,12 @@ namespace TestServer
     {
         static void Main(string[] args)
         {
+            MessageLUT.Regist(new TestPacket1());
+            MessageLUT.Regist(new TestPacket2());
+
             ListenAsync();
-            //CoommonListen();
             Console.WriteLine("Hello World!");
             Console.ReadLine();
-        }
-
-        private static void CoommonListen()
-        {
-            Socket listener = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            listener.Bind(new IPEndPoint(IPAddress.IPv6Any, 54321));
-            bool IPV6 = Socket.OSSupportsIPv6;
-            listener.Listen(10);
-            var s = listener.Accept();
-            Console.WriteLine("接收到连接");
         }
 
         private static async void ListenAsync()
@@ -78,11 +75,6 @@ namespace TestServer
                 while (true)
                 {
                     MessageThreadTransducer.Update(0);
-                    //Thread.Sleep(1);
-                    //if (coolDown)
-                    //{
-                    //    GC.Collect();
-                    //}
                 }
 
             });
@@ -96,18 +88,28 @@ namespace TestServer
         private static async void Listen(TcpRemoteListener remote)
         {
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-            var re = await remote.ListenAsync(TestFunction.DealMessage);
-            Console.WriteLine($"接收到连接{connectCount++}");
+            var re = await remote.ListenAsync(Create);
             Listen(remote);
+            Console.WriteLine($"接收到连接{connectCount++}");
         }
 
-        private static void TestConnect(IRemote re)
+        public static TestSpeedServerRemote Create()
         {
-            re.UID = connectCount;
-            re.OnDisConnect += (er) =>
+            return new TestSpeedServerRemote() { Post2ThreadScheduler = true };
+        }
+    }
+
+
+    public class TestSpeedServerRemote:TcpRemote
+    {
+        protected override ValueTask<object> OnReceive(object message)
+        {
+            switch (message)
             {
-                Console.WriteLine($"连接断开{re.UID}");
-            };
+                default:
+                    break;
+            }
+            return NullResult;
         }
     }
 }

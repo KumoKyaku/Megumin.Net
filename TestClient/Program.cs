@@ -14,6 +14,8 @@ namespace TestClient
     {
         static void Main(string[] args)
         {
+            MessageLUT.Regist(new TestPacket1());
+            MessageLUT.Regist(new TestPacket2());
             ConAsync();
             Console.WriteLine("Hello World!");
             Console.ReadLine();
@@ -23,15 +25,15 @@ namespace TestClient
         static int RemoteCount = 100;
         private static async void ConAsync()
         {
-            ThreadPool.QueueUserWorkItem((A) =>
-            {
-                while (true)
-                {
-                    MessageThreadTransducer.Update(0);
-                    //Thread.Yield();
-                }
+            //ThreadPool.QueueUserWorkItem((A) =>
+            //{
+            //    while (true)
+            //    {
+            //        MessageThreadTransducer.Update(0);
+            //        //Thread.Yield();
+            //    }
 
-            });
+            //});
 
             ///性能测试
             TestSpeed();
@@ -56,19 +58,21 @@ namespace TestClient
             }
         }
 
-        static readonly Receiver receiver = new Receiver();
         private static async void NewRemote(int clientIndex)
         {
-            IRemote remote = new TcpRemote() { };
-            remote.OnReceiveCallback += receiver.TestReceive;
-            var res = await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
-            if (res == null)
+            IRemote remote = new TestSpeedRemote() 
+            { 
+                Index = clientIndex ,
+                MessageCount = MessageCount
+            };
+
+            try
             {
-                Console.WriteLine($"Remote{clientIndex}:Success");
+                await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
             }
-            else
+            catch (Exception)
             {
-                throw res;
+                throw;
             }
 
             await TestRpc(clientIndex, remote);
@@ -81,10 +85,8 @@ namespace TestClient
             {
                 for (int i = 0; i < MessageCount; i++)
                 {
-                    //Console.WriteLine($"Remote{clientIndex}:发送{nameof(Packet1)}=={i}");
                     msg.Value = i;
-                    remote.SendAsync(msg);
-
+                    remote.Send(msg);
                 }
             });
 
@@ -100,7 +102,7 @@ namespace TestClient
 
         private static async Task TestRpc(int clientIndex, IRemote remote)
         {
-            var res2 = await remote.SendAsyncSafeAwait<TestPacket2>(new TestPacket2() { Value = clientIndex },
+            var res2 = await remote.SendSafeAwait<TestPacket2>(new TestPacket2() { Value = clientIndex },
                             (ex) =>
                             {
                                 if (ex is TimeoutException timeout)
@@ -113,38 +115,6 @@ namespace TestClient
                                 }
                             });
             Console.WriteLine($"Rpc调用返回----------------------------------------- {res2.Value}");
-        }
-
-        class Receiver : MessagePipeline
-        {
-            public int Index { get; set; }
-            Stopwatch stopwatch = new Stopwatch();
-
-            public async ValueTask<object> TestReceive(object message, IReceiveMessage receiver)
-            {
-                switch (message)
-                {
-                    case TestPacket1 packet1:
-                        Console.WriteLine($"Remote{Index}:接收消息{nameof(TestPacket1)}--{packet1.Value}");
-                        return new TestPacket2 { Value = packet1.Value };
-                    case TestPacket2 packet2:
-                        Console.WriteLine($"Remote{Index}:接收消息{nameof(TestPacket2)}--{packet2.Value}");
-                        if (packet2.Value == 0)
-                        {
-                            stopwatch.Restart();
-                        }
-                        if (packet2.Value == MessageCount - 1)
-                        {
-                            stopwatch.Stop();
-
-                            Console.WriteLine($"Remote{Index}:TestReceive{MessageCount} ------ {stopwatch.ElapsedMilliseconds}----- 每秒:{MessageCount * 1000 / (stopwatch.ElapsedMilliseconds + 1)}");
-                        }
-                        return null;
-                    default:
-                        break;
-                }
-                return null;
-            }
         }
 
         #endregion
@@ -163,25 +133,49 @@ namespace TestClient
         private static async void Connect(int index)
         {
             IRemote remote = new TcpRemote();
-            var res = await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
-            if (res == null)
+            try
             {
-                Console.WriteLine($"Remote{index}:Success");
+                await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
             }
-            else
+            catch (Exception e)
             {
-                Console.WriteLine($"Remote:{res}");
+                Console.WriteLine(e);
             }
-
-            //remote.SendAsync(new Packet1());
         }
 
         #endregion
     }
 
 
-    public struct TestStruct
+    public sealed class TestSpeedRemote:TcpRemote
     {
+        public int Index { get; set; }
+        public int MessageCount { get; set; }
+        Stopwatch stopwatch = new Stopwatch();
+        protected async override ValueTask<object> OnReceive(object message)
+        {
+            switch (message)
+            {
+                case TestPacket1 packet1:
+                    Console.WriteLine($"Remote{Index}:接收消息{nameof(TestPacket1)}--{packet1.Value}");
+                    return new TestPacket2 { Value = packet1.Value };
+                case TestPacket2 packet2:
+                    Console.WriteLine($"Remote{Index}:接收消息{nameof(TestPacket2)}--{packet2.Value}");
+                    if (packet2.Value == 0)
+                    {
+                        stopwatch.Restart();
+                    }
+                    if (packet2.Value == MessageCount - 1)
+                    {
+                        stopwatch.Stop();
 
+                        Console.WriteLine($"Remote{Index}:TestReceive{MessageCount} ------ {stopwatch.ElapsedMilliseconds}----- 每秒:{MessageCount * 1000 / (stopwatch.ElapsedMilliseconds + 1)}");
+                    }
+                    return null;
+                default:
+                    break;
+            }
+            return null;
+        }
     }
 }

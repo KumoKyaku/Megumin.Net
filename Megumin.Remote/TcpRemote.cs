@@ -28,18 +28,16 @@ namespace Megumin.Remote
         public virtual int UID { get; set; }
         public bool IsVaild { get; protected set; } = true;
         public IPEndPoint ConnectIPEndPoint { get; set; }
-        public DateTime LastReceiveTime { get; protected set; } = DateTime.Now;
         public RpcCallbackPool RpcCallbackPool { get; } = new RpcCallbackPool(31);
 
-        public Socket Client { get; }
+        public Socket Client { get; protected set; }
         public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
 
 
         /// <summary>
-        /// Mono/IL2CPP 请使用中使用<see cref="TcpRemoteold.TcpRemoteold(AddressFamily)"/>
+        /// Mono/IL2CPP 请使用中使用<see cref="TcpRemote(AddressFamily)"/>
         /// </summary>
-        public TcpRemote() 
-            : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
+        public TcpRemote()
         {
 
         }
@@ -49,18 +47,27 @@ namespace Megumin.Remote
         /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
         /// </remarks>
         public TcpRemote(AddressFamily addressFamily)
-            : this(new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp))
         {
-
+            SetSocket(new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp));
         }
 
         /// <summary>
-        /// 使用一个已连接的Socket创建远端
+        /// 设置Client Socket
         /// </summary>
-        /// <param name="client"></param>
-        internal TcpRemote(Socket client)
+        /// <param name="socket"></param>
+        /// <param name="reconnectForce"></param>
+        public virtual void SetSocket(Socket socket,bool reconnectForce = false)
         {
-            this.Client = client;
+            if (Client != null)
+            {
+                throw new InvalidOperationException("当前已经有Socket了，不允许重设");
+            }
+
+            this.Client = socket;
+            if (Client.Connected)
+            {
+                //服务器接受设置Socket
+            }
             IsVaild = true;
         }
 
@@ -75,7 +82,7 @@ namespace Megumin.Remote
         /// <summary>
         /// 开始工作
         /// </summary>
-        protected virtual void WorkStart()
+        public virtual void WorkStart()
         {
             ReceiveStart();
             SendStart();
@@ -138,6 +145,10 @@ namespace Megumin.Remote
         public Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
         {
             ConnectIPEndPoint = endPoint;
+            if (Client == null)
+            {
+                SetSocket(new Socket(SocketType.Stream, ProtocolType.Tcp));
+            }
             return ConnectAsync(Client, endPoint, retryCount);
         }
 
@@ -417,7 +428,7 @@ namespace Megumin.Remote
             }
             else
             {
-
+                //todo 反序列化失败
             }
         }
 
@@ -521,7 +532,11 @@ namespace Megumin.Remote
             }
         }
 
-
+        /// <summary>
+        /// 返回一个空对象，在没有返回时使用。
+        /// </summary>
+        protected static readonly ValueTask<object> NullResult 
+            = new ValueTask<object>(result: null);
         /// <summary>
         /// 通常用户在这里处理收到的消息
         /// </summary>
@@ -530,9 +545,7 @@ namespace Megumin.Remote
         /// <remarks>含有远程返回的rpc回复消息会被直接通过回调函数发送到异步调用处，不会触发这里</remarks>
         protected virtual ValueTask<object> OnReceive(object message)
         {
-            return new ValueTask<object>(result: null);
+            return NullResult;
         }
-
-        
     }
 }
