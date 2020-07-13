@@ -1,11 +1,10 @@
-﻿using System;
-using System.Threading.Tasks;
-using Message;
-using Megumin.DCS;
-using Megumin.Remote;
+﻿using Megumin.DCS;
+using Megumin.Message.Test;
 using Net.Remote;
+using System;
+using System.Threading.Tasks;
 
-namespace ServerApp
+namespace DemoServer
 {
     internal class GateService : IService
     {

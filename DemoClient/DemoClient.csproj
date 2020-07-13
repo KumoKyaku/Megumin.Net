@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Megumin.Remote\Megumin.Remote.csproj" />
+    <ProjectReference Include="..\MessagePackLUT\MessagePackLUT.csproj" />
+    <ProjectReference Include="..\TestMessages\TestMessages.csproj" />
+  </ItemGroup>
+
+</Project>

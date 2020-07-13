@@ -6,7 +6,7 @@ using System;
 using System.Net;
 using System.Threading;
 
-namespace TestClient
+namespace DemoClient
 {
     class Program
     {
@@ -37,37 +37,36 @@ namespace TestClient
         private static async void ConnectAsync()
         {
             IRemote remote = new TcpRemote();
-            var ex = await remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback,54321));
-
-            if (ex == null)
+            try
             {
-                ///没有异常，连接成功
-                Console.WriteLine("连接成功");
+                await remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback, 54321));
 
-                ///创建一个登陆消息
-                var login = new Login2Gate
-                {
-                    Account = $"TestClient",
-                    Password = "123456"
-                };
-
-                ///有返回值，这个是一个RPC过程，Exception在网络中传递
-                var resp = await remote.SendAsyncSafeAwait<Login2GateResult>(login);
-                if (resp.IsSuccess)
-                {
-                    Console.WriteLine("登陆成功");
-                }
-                
-                ///没有返回值，不是RPC过程
             }
-            else
+            catch (Exception ex)
             {
                 ///连接失败
                 Console.WriteLine(ex.ToString());
+                return;
             }
+
+            ///没有异常，连接成功
+            Console.WriteLine("连接成功");
+
+            ///创建一个登陆消息
+            var login = new Login2Gate
+            {
+                Account = $"TestClient",
+                Password = "123456"
+            };
+
+            ///有返回值，这个是一个RPC过程，Exception在网络中传递
+            var resp = await remote.SendSafeAwait<Login2GateResult>(login);
+            if (resp.IsSuccess)
+            {
+                Console.WriteLine("登陆成功");
+            }
+
+            ///没有返回值，不是RPC过程
         }
-
-
-
     }
 }

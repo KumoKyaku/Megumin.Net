@@ -1,11 +1,10 @@
-﻿using System;
-using System.Threading;
-using Message;
-using Megumin;
-using Megumin.DCS;
+﻿using Megumin.DCS;
 using Megumin.Message;
+using Megumin.Message.Test;
+using System;
+using System.Threading;
 
-namespace ServerApp
+namespace DemoServer
 {
     class Program
     {
@@ -29,8 +28,6 @@ namespace ServerApp
                 }
 
             });
-
-            await DCSContainer.Start();
 
             //FightService service = new FightService();
             //BusinessContainer.Instance.AddService(service);

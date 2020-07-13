@@ -1,4 +1,4 @@
-﻿namespace ServerApp
+﻿namespace DemoServer
 {
     internal class Config
     {

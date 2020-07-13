@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Megumin.Message;
+using Megumin.Message.Test;
+using Megumin.Remote;
+using Net.Remote;
+using System;
+using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Megumin.Remote;
-using System.Diagnostics;
-using Megumin;
-using Megumin.Message;
-using Net.Remote;
-using Megumin.Message.TestMessage;
 
-namespace RemoteTestClient
+namespace TestClient
 {
     class Program
     {
@@ -117,12 +115,12 @@ namespace RemoteTestClient
             Console.WriteLine($"Rpc调用返回----------------------------------------- {res2.Value}");
         }
 
-        class Receiver:MessagePipeline
+        class Receiver : MessagePipeline
         {
             public int Index { get; set; }
             Stopwatch stopwatch = new Stopwatch();
 
-            public async ValueTask<object> TestReceive(object message,IReceiveMessage receiver)
+            public async ValueTask<object> TestReceive(object message, IReceiveMessage receiver)
             {
                 switch (message)
                 {
@@ -139,7 +137,7 @@ namespace RemoteTestClient
                         {
                             stopwatch.Stop();
 
-                            Console.WriteLine($"Remote{Index}:TestReceive{MessageCount} ------ {stopwatch.ElapsedMilliseconds}----- 每秒:{MessageCount * 1000 / (stopwatch.ElapsedMilliseconds +1)}");
+                            Console.WriteLine($"Remote{Index}:TestReceive{MessageCount} ------ {stopwatch.ElapsedMilliseconds}----- 每秒:{MessageCount * 1000 / (stopwatch.ElapsedMilliseconds + 1)}");
                         }
                         return null;
                     default:

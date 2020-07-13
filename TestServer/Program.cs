@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Net.Remote;
+using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
-using Megumin;
-using Megumin.Message;
-using Megumin.Message.TestMessage;
-using Megumin.Remote;
-using Net.Remote;
 
-namespace RemoteTest
+namespace TestServer
 {
     /// <summary>
     /// 
@@ -81,7 +74,7 @@ namespace RemoteTest
         {
             ThreadPool.QueueUserWorkItem((A) =>
             {
-                CoolDownTime coolDown = new CoolDownTime() {  MinDelta = TimeSpan.FromSeconds(30) };
+                CoolDownTime coolDown = new CoolDownTime() { MinDelta = TimeSpan.FromSeconds(30) };
                 while (true)
                 {
                     MessageThreadTransducer.Update(0);
