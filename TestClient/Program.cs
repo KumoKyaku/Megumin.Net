@@ -60,7 +60,7 @@ namespace TestClient
 
         private static async void NewRemote(int clientIndex)
         {
-            IRemote remote = new TestSpeedRemote() 
+            TestSpeedRemote remote = new TestSpeedRemote() 
             { 
                 Index = clientIndex ,
                 MessageCount = MessageCount
