@@ -126,6 +126,7 @@ namespace Megumin.Remote
                 {
                     await Client.ConnectAsync(endPoint);
                     IsConnecting = false;
+                    return;
                 }
                 catch (Exception)
                 {

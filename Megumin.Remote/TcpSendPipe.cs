@@ -50,6 +50,7 @@ namespace Megumin.Remote
     /// </summary>
     public class TcpSendPipe
     {
+        public int DefaultWriterSize { get; set; } = 8192;
         internal protected class Writer : IBufferWriter<byte>, IWriter, ISendBlock
         {
             private TcpSendPipe sendPipe;
@@ -58,7 +59,7 @@ namespace Megumin.Remote
             /// 当前游标位置
             /// </summary>
             int index = 4;
-
+            readonly object syncLock = new object();
             public Writer(TcpSendPipe sendPipe)
             {
                 this.sendPipe = sendPipe;
@@ -67,12 +68,15 @@ namespace Megumin.Remote
 
             void Reset()
             {
-                if (buffer == null)
+                lock (syncLock)
                 {
-                    buffer = ArrayPool<byte>.Shared.Rent(512);
-                }
+                    if (buffer == null)
+                    {
+                        buffer = ArrayPool<byte>.Shared.Rent(sendPipe.DefaultWriterSize);
+                    }
 
-                index = 4;
+                    index = 4;
+                }
             }
 
             public void Advance(int count)
@@ -82,27 +86,41 @@ namespace Megumin.Remote
 
             public Memory<byte> GetMemory(int sizeHint = 0)
             {
-                if (buffer.Length - index >= sizeHint)
+                lock (syncLock)
                 {
-                    //现有数组足够长；
+                    Ensure(sizeHint);
                     return new Memory<byte>(buffer, index, sizeHint);
-                }
-                else
-                {
-                    return default;
                 }
             }
 
             public Span<byte> GetSpan(int sizeHint = 0)
             {
-                if (buffer.Length - index >= sizeHint)
+                lock (syncLock)
+                {
+                    Ensure(sizeHint);
+                    return new Span<byte>(buffer, index, sizeHint);
+                }
+            }
+
+            /// <summary>
+            /// 确保当前buffer足够大
+            /// </summary>
+            /// <param name="sizeHint"></param>
+            void Ensure(int sizeHint)
+            {
+                var leftLength = buffer.Length - index;
+                if (leftLength >= sizeHint)
                 {
                     //现有数组足够长；
-                    return new Span<byte>(buffer, index, sizeHint);
                 }
                 else
                 {
-                    return default;
+                    //扩容
+                    var newCount = ((buffer.Length + sizeHint) / 4096 + 1) * 4096;
+                    var newbuffer = ArrayPool<byte>.Shared.Rent(newCount);
+                    buffer.AsSpan().CopyTo(newbuffer);
+                    ArrayPool<byte>.Shared.Return(buffer);
+                    buffer = newbuffer;
                 }
             }
 
