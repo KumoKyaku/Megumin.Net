@@ -14,7 +14,7 @@ internal static class SpanByteExtension_37AAF334E75041368C6B47A256F0F93F
         unsafe
         {
             Span<byte> span = stackalloc byte[4];
-            byteSequence.CopyTo(span);
+            byteSequence.Slice(0,4).CopyTo(span);
             return span.ReadInt();
         }
     }
@@ -25,7 +25,7 @@ internal static class SpanByteExtension_37AAF334E75041368C6B47A256F0F93F
         unsafe
         {
             Span<byte> span = stackalloc byte[10];
-            byteSequence.CopyTo(span);
+            byteSequence.Slice(0,10).CopyTo(span);
             var rpcID = span.ReadInt();
             var cmd = span.Slice(4).ReadShort();
             var msgID = span.Slice(6).ReadInt();
@@ -57,6 +57,19 @@ internal static class SpanByteExtension_37AAF334E75041368C6B47A256F0F93F
     {
         BinaryPrimitives.WriteInt32LittleEndian(span, value);
         return 4;
+    }
+
+    /// <summary>
+    /// 写入一个short
+    /// </summary>
+    /// <param name="span"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int Write(this Span<byte> span, short value)
+    {
+        BinaryPrimitives.WriteInt16LittleEndian(span, value);
+        return 2;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

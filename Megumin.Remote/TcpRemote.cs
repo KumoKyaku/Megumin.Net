@@ -233,7 +233,7 @@ namespace Megumin.Remote
                 //写入rpcID CMD
                 var span = writer.GetSpan(10);
                 span.Write(rpcID);
-                //有CMD 长度2预留 
+                span.Slice(4).Write((short)0); //CMD 为预留，填0
                 writer.Advance(10);
 
                 int messageID = MessageLUT.Serialize(writer, message, options);
@@ -264,7 +264,7 @@ namespace Megumin.Remote
                 //写入rpcID CMD
                 var span = writer.GetSpan(6);
                 span.Write(rpcID);
-                //有CMD 长度2预留 
+                span.Slice(4).Write((short)0); //CMD 为预留，填0
                 writer.Advance(6);
 
                 foreach (var item in sequence)
@@ -340,7 +340,8 @@ namespace Megumin.Remote
 
         private async void FillPipe(PipeWriter pipeWriter)
         {
-            var buffer = pipeWriter.GetMemory(512);
+            int queryCount = 8192;
+            var buffer = pipeWriter.GetMemory(queryCount);
 
 #if NETSTANDARD2_1
             var count = await Client.ReceiveAsync(buffer, SocketFlags.None);
@@ -348,6 +349,8 @@ namespace Megumin.Remote
             int count = 0;
             if (MemoryMarshal.TryGetArray<byte>(buffer,out var segment))
             {
+                //重设长度
+                segment = new ArraySegment<byte>(segment.Array,segment.Offset,buffer.Length);
                 count = await Client.ReceiveAsync(segment, SocketFlags.None);
             }
             else
