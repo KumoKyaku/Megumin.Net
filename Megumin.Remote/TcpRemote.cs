@@ -169,12 +169,21 @@ namespace Megumin.Remote
 
     public partial class TcpRemote : ISendable, ISendCanAwaitable
     {
+        public bool IsSending { get; protected set; }
         /// <summary>
         /// 开始发送消息
         /// </summary>
         public async void SendStart()
         {
-            var target = await SendPipe.PeekNext();
+            lock (SendPipe)
+            {
+                if (IsSending)
+                {
+                    return;
+                }
+                IsSending = true;
+            }
+            var target = await SendPipe.ReadNext();
 
 #if NETSTANDARD2_1
             var length = target.SendMemory.Length;
@@ -190,8 +199,9 @@ namespace Megumin.Remote
                 //成功？
                 target.SendSuccess();
             }
-
             //todo 发送失败。
+
+            IsSending = false;
             SendStart();
         }
 
@@ -203,7 +213,7 @@ namespace Megumin.Remote
 
         protected virtual void Send(int rpcID, object message, object options = null)
         {
-            var writer = SendPipe.GetNewwriter();
+            var writer = SendPipe.GetWriter();
             if (TrySerialize(writer, rpcID, message, options))
             {
                 //序列化成功
@@ -338,8 +348,21 @@ namespace Megumin.Remote
             ReadPipe(pipe.Reader);
         }
 
-        private async void FillPipe(PipeWriter pipeWriter)
+        /// <summary>
+        /// 当前socket是不是在接收。
+        /// </summary>
+        public bool IsReceiving { get; protected set; }
+        protected virtual async void FillPipe(PipeWriter pipeWriter)
         {
+            lock (pipeWriter)
+            {
+                if (IsReceiving)
+                {
+                    return;
+                }
+                IsReceiving = true;
+            }
+
             int queryCount = 8192;
             var buffer = pipeWriter.GetMemory(queryCount);
 
@@ -358,18 +381,30 @@ namespace Megumin.Remote
                 //todo log
             }
 #endif
-
             pipeWriter.Advance(count);
             _ = pipeWriter.FlushAsync();
+            IsReceiving = false;
             FillPipe(pipeWriter);
         }
 
+        /// <summary>
+        /// 正在处理消息
+        /// </summary>
+        public bool IsDealReceiving { get; protected set; }
         /// <summary>
         /// 
         /// </summary>
         /// <param name="pipeReader"></param>
         protected async void ReadPipe(PipeReader pipeReader)
         {
+            lock (pipeReader)
+            {
+                if (IsDealReceiving)
+                {
+                    return;
+                }
+                IsDealReceiving = true;
+            }
             var result = await pipeReader.ReadAsync();
         
             //剩余未处理消息buffer
@@ -397,6 +432,7 @@ namespace Megumin.Remote
                 }
             }
 
+            IsDealReceiving = false;
             //继续处理
             ReadPipe(pipeReader);
         }

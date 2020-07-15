@@ -167,10 +167,10 @@ namespace Megumin.Remote
         }
 
         /// <summary>
-        /// 取得一个全新写入器
+        /// 取得一个可用写入器
         /// </summary>
         /// <returns></returns>
-        internal IWriter GetNewwriter()
+        internal IWriter GetWriter()
         {
             return new Writer(this);
         }
@@ -180,7 +180,7 @@ namespace Megumin.Remote
         /// 取得下一个待发送消息。
         /// </summary>
         /// <returns></returns>
-        public ValueTask<ISendBlock> PeekNext()
+        public ValueTask<ISendBlock> ReadNext()
         {
             if (sendFailQueue.TryDequeue(out var writer))
             {
