@@ -52,6 +52,8 @@ namespace Megumin.Remote
             var remoteSocket = await Accept();
             var remote = createFunc.Invoke();
             remote.SetSocket(remoteSocket);
+
+            //异步启动remote，防止阻塞监听
             Task.Run(
                 () =>
                 {
