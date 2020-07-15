@@ -47,12 +47,17 @@ namespace Megumin.Remote
         /// </summary>
         /// <returns></returns>
         public async ValueTask<T> ListenAsync<T>(Func<T> createFunc)
-            where T:TcpRemote
+            where T : TcpRemote
         {
             var remoteSocket = await Accept();
             var remote = createFunc.Invoke();
             remote.SetSocket(remoteSocket);
-            remote.WorkStart();
+            Task.Run(
+                () =>
+                {
+                    remote.WorkStart();
+                });
+
             return remote;
         }
 
