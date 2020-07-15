@@ -16,8 +16,8 @@ namespace TestClient
         {
             MessageLUT.Regist(new TestPacket1());
             MessageLUT.Regist(new TestPacket2());
+            Console.WriteLine("客户端/Client");
             ConAsync();
-            Console.WriteLine("Hello World!");
             Console.ReadLine();
         }
 

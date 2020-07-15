@@ -61,9 +61,9 @@ namespace TestServer
         {
             MessageLUT.Regist(new TestPacket1());
             MessageLUT.Regist(new TestPacket2());
-
+            Console.WriteLine("服务器/Server");
             ListenAsync();
-            Console.WriteLine("Hello World!");
+
             Console.ReadLine();
         }
 
@@ -90,7 +90,7 @@ namespace TestServer
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
             var re = await remote.ListenAsync(Create);
             Listen(remote);
-            Console.WriteLine($"接收到连接{connectCount++}");
+            Console.WriteLine($"总接收到连接{connectCount++}");
         }
 
         public static TestSpeedServerRemote Create()
