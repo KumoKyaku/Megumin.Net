@@ -81,17 +81,17 @@ namespace TestClient
             var msg = new TestPacket1 { Value = 0 };
             look1.Start();
 
-            //await Task.Run(() =>
-            //{
-            //    for (int i = 0; i < MessageCount; i++)
-            //    {
-            //        msg.Value = i;
-            //        remote.Send(msg);
-            //    }
-            //});
+            await Task.Run(() =>
+            {
+                for (int i = 0; i < MessageCount; i++)
+                {
+                    msg.Value = i;
+                    remote.Send(msg);
+                }
+            });
 
             look1.Stop();
-            Console.WriteLine($"Remote{clientIndex}: SendAsync{MessageCount}包 ------ 发送总时间: {look1.ElapsedMilliseconds}----- 平均每秒发送:{MessageCount * 1000 / (look1.ElapsedMilliseconds + 1)}");
+            Console.WriteLine($"Remote{clientIndex}: SendAsync{MessageCount}包 ---- 用时: {look1.ElapsedMilliseconds}ms----- 平均每秒发送:{MessageCount * 1024 / (look1.ElapsedMilliseconds + 1)}");
 
 
             //Remote.BroadCastAsync(new Packet1 { Value = -99999 },remote);
