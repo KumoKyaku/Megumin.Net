@@ -156,14 +156,25 @@ namespace Megumin.Remote
         /// 发送失败队列
         /// </summary>
         ConcurrentQueue<Writer> sendFailQueue = new ConcurrentQueue<Writer>();
+
+        protected readonly object _pushLock = new object();
         private void Push2Queue(Writer writer)
         {
-            if (source != null)//多线程问题 todo lock
+            TaskCompletionSource<ISendBlock> curSource = null;
+            lock (_pushLock)
             {
-                source.SetResult(writer);
-                source = null;
+                if (source != null)
+                {
+                    curSource = source;
+                    source = null;
+                }
+                else
+                {
+                    sendQueue.Enqueue(writer);
+                }
             }
-            sendQueue.Enqueue(writer);
+
+            curSource?.SetResult(writer);
         }
 
         /// <summary>

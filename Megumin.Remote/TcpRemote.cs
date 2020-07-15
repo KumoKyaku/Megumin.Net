@@ -175,34 +175,37 @@ namespace Megumin.Remote
         /// </summary>
         public async void SendStart()
         {
-            lock (SendPipe)
+            while (true)
             {
-                if (IsSending)
+                lock (SendPipe)
                 {
-                    return;
+                    if (IsSending)
+                    {
+                        return;
+                    }
+                    IsSending = true;
                 }
-                IsSending = true;
-            }
-            var target = await SendPipe.ReadNext();
+
+                var target = await SendPipe.ReadNext();
 
 #if NETSTANDARD2_1
             var length = target.SendMemory.Length;
             var result = await Client.SendAsync(target.SendMemory, SocketFlags.None);
 #else
-            var length = target.SendSegment.Count;
-            var result = await Client.SendAsync(target.SendSegment, SocketFlags.None);
+                var length = target.SendSegment.Count;
+                var result = await Client.SendAsync(target.SendSegment, SocketFlags.None);
 #endif
 
-            if (result == length)
-            {
-                //dequeue?
-                //成功？
-                target.SendSuccess();
-            }
-            //todo 发送失败。
+                if (result == length)
+                {
+                    //dequeue?
+                    //成功？
+                    target.SendSuccess();
+                }
+                //todo 发送失败。
 
-            IsSending = false;
-            SendStart();
+                IsSending = false;
+            }
         }
 
         /// <summary>
@@ -354,37 +357,39 @@ namespace Megumin.Remote
         public bool IsReceiving { get; protected set; }
         protected virtual async void FillPipe(PipeWriter pipeWriter)
         {
-            lock (pipeWriter)
+            while (true)
             {
-                if (IsReceiving)
+                lock (pipeWriter)
                 {
-                    return;
+                    if (IsReceiving)
+                    {
+                        return;
+                    }
+                    IsReceiving = true;
                 }
-                IsReceiving = true;
-            }
 
-            int queryCount = 8192;
-            var buffer = pipeWriter.GetMemory(queryCount);
+                int queryCount = 8192;
+                var buffer = pipeWriter.GetMemory(queryCount);
 
 #if NETSTANDARD2_1
             var count = await Client.ReceiveAsync(buffer, SocketFlags.None);
 #else
-            int count = 0;
-            if (MemoryMarshal.TryGetArray<byte>(buffer,out var segment))
-            {
-                //重设长度
-                segment = new ArraySegment<byte>(segment.Array,segment.Offset,buffer.Length);
-                count = await Client.ReceiveAsync(segment, SocketFlags.None);
-            }
-            else
-            {
-                //todo log
-            }
+                int count = 0;
+                if (MemoryMarshal.TryGetArray<byte>(buffer, out var segment))
+                {
+                    //重设长度
+                    segment = new ArraySegment<byte>(segment.Array, segment.Offset, buffer.Length);
+                    count = await Client.ReceiveAsync(segment, SocketFlags.None);
+                }
+                else
+                {
+                    //todo log
+                }
 #endif
-            pipeWriter.Advance(count);
-            _ = pipeWriter.FlushAsync();
-            IsReceiving = false;
-            FillPipe(pipeWriter);
+                pipeWriter.Advance(count);
+                _ = pipeWriter.FlushAsync();
+                IsReceiving = false;
+            }
         }
 
         /// <summary>
@@ -397,44 +402,45 @@ namespace Megumin.Remote
         /// <param name="pipeReader"></param>
         protected async void ReadPipe(PipeReader pipeReader)
         {
-            lock (pipeReader)
+            while (true)
             {
-                if (IsDealReceiving)
+                lock (pipeReader)
                 {
-                    return;
+                    if (IsDealReceiving)
+                    {
+                        return;
+                    }
+                    IsDealReceiving = true;
                 }
-                IsDealReceiving = true;
+                var result = await pipeReader.ReadAsync();
+
+                //剩余未处理消息buffer
+                var unDealBuffer = result.Buffer;
+
+                while (unDealBuffer.Length > 4)
+                {
+                    //包体总长度
+                    var length = unDealBuffer.ReadInt();
+                    if (unDealBuffer.Length >= length)
+                    {
+                        ///取得消息体
+                        var body = unDealBuffer.Slice(4, length - 4);
+
+                        ProcessBody(body, null);
+                        //标记已使用数据
+                        var pos = result.Buffer.GetPosition(length);
+                        pipeReader.AdvanceTo(pos);
+
+                        unDealBuffer = unDealBuffer.Slice(length);//切除已使用部分
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                IsDealReceiving = false;
             }
-            var result = await pipeReader.ReadAsync();
-        
-            //剩余未处理消息buffer
-            var unDealBuffer = result.Buffer;
-
-            while (unDealBuffer.Length > 4)
-            {
-                //包体总长度
-                var length = unDealBuffer.ReadInt();
-                if (unDealBuffer.Length >= length)
-                {
-                    ///取得消息体
-                    var body = unDealBuffer.Slice(4, length - 4);
-
-                    ProcessBody(body, null);
-                    //标记已使用数据
-                    var pos = result.Buffer.GetPosition(length);
-                    pipeReader.AdvanceTo(pos);
-
-                    unDealBuffer = unDealBuffer.Slice(length);//切除已使用部分
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            IsDealReceiving = false;
-            //继续处理
-            ReadPipe(pipeReader);
         }
 
         protected virtual bool TryDeserialize
