@@ -19,7 +19,7 @@ namespace Megumin.Remote
     /// </summary>
     /// <remarks>消息报头结构：
     /// Lenght(总长度，包含自身报头) [int] [4] + RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
-    public partial class TcpRemote:IRemote
+    public partial class TcpRemote : IRemote
     {
         public int ID { get; } = InterlockedID<IRemote>.NewID();
         /// <summary>
@@ -56,7 +56,7 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="socket"></param>
         /// <param name="reconnectForce"></param>
-        public virtual void SetSocket(Socket socket,bool reconnectForce = false)
+        public virtual void SetSocket(Socket socket, bool reconnectForce = false)
         {
             if (Client != null)
             {
@@ -470,7 +470,7 @@ namespace Megumin.Remote
             var (RpcID, CMD, MessageID) = byteSequence.ReadHeader();
             if (TryDeserialize(MessageID, byteSequence.Slice(10), out var message, options))
             {
-                DeserializeSuccess(RpcID, MessageID, message);
+                DeserializeSuccess(RpcID, CMD, MessageID, message);
             }
             else
             {
@@ -494,7 +494,7 @@ namespace Megumin.Remote
         /// <param name="message"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual bool UseThreadSchedule(int rpcID, int messageID, object message)
+        protected virtual bool UseThreadSchedule(int rpcID, short cmd, int messageID, object message)
         {
             return Post2ThreadScheduler;
         }
@@ -503,23 +503,24 @@ namespace Megumin.Remote
         /// 解析消息成功
         /// </summary>
         /// <param name="rpcID"></param>
+        /// <param name="cmd"></param>
         /// <param name="messageID"></param>
         /// <param name="message"></param>
-        protected async void DeserializeSuccess(int rpcID, int messageID, object message)
+        protected async void DeserializeSuccess(int rpcID, short cmd, int messageID, object message)
         {
             var post = true;//转换线程
 
             //消息处理程序的返回对象
             object reply = null;
 
-            var trans = UseThreadSchedule(rpcID, messageID, message);
+            var trans = UseThreadSchedule(rpcID, cmd, messageID, message);
             if (trans)
             {
-                reply = await MessageThreadTransducer.Push(rpcID, message, this);
+                reply = await MessageThreadTransducer.Push(rpcID, cmd, messageID, message, this);
             }
             else
             {
-                reply = await DiversionProcess(rpcID, message);
+                reply = await DiversionProcess(rpcID, cmd, messageID, message);
 
                 if (reply is Task<object> task)
                 {
@@ -550,19 +551,21 @@ namespace Megumin.Remote
 
         public float LastReceiveTimeFloat { get; } = float.MaxValue;
 
-        ValueTask<object> IObjectMessageReceiver.Deal(int rpcID, object message)
+        ValueTask<object> IObjectMessageReceiver.Deal(int rpcID, short cmd, int messageID, object message)
         {
-            return DiversionProcess(rpcID, message);
+            return DiversionProcess(rpcID, cmd, messageID, message);
         }
 
         /// <summary>
         /// 分流普通消息和RPC回复消息
         /// </summary>
         /// <param name="rpcID"></param>
+        /// <param name="cmd"></param>
+        /// <param name="messageID"></param>
         /// <param name="message"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual ValueTask<object> DiversionProcess(int rpcID,  object message)
+        protected virtual ValueTask<object> DiversionProcess(int rpcID, short cmd, int messageID, object message)
         {
             if (rpcID < 0)
             {
@@ -574,22 +577,24 @@ namespace Megumin.Remote
             {
                 ///这个消息是非Rpc应答
                 ///普通响应onRely
-                return OnReceive(message);
+                return OnReceive(cmd, messageID, message);
             }
         }
 
         /// <summary>
         /// 返回一个空对象，在没有返回时使用。
         /// </summary>
-        protected static readonly ValueTask<object> NullResult 
+        protected static readonly ValueTask<object> NullResult
             = new ValueTask<object>(result: null);
         /// <summary>
         /// 通常用户在这里处理收到的消息
         /// </summary>
+        /// <param name="cmd"></param>
+        /// <param name="messageID"></param>
         /// <param name="message"></param>
         /// <returns></returns>
         /// <remarks>含有远程返回的rpc回复消息会被直接通过回调函数发送到异步调用处，不会触发这里</remarks>
-        protected virtual ValueTask<object> OnReceive(object message)
+        protected virtual ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
             return NullResult;
         }

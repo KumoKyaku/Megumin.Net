@@ -21,7 +21,7 @@ namespace TestClient
             Console.ReadLine();
         }
 
-        static int MessageCount = 10000;
+        static int MessageCount = 1;
         static int RemoteCount = 1;
         private static async void ConAsync()
         {
@@ -152,7 +152,7 @@ namespace TestClient
         public int Index { get; set; }
         public int MessageCount { get; set; }
         Stopwatch stopwatch = new Stopwatch();
-        protected async override ValueTask<object> OnReceive(object message)
+        protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
             switch (message)
             {

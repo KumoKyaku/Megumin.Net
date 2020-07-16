@@ -21,19 +21,24 @@ namespace Megumin.Remote
         /// <param name="rpcID"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        ValueTask<object> Deal(int rpcID, object message);
+        ValueTask<object> Deal(int rpcID, short cmd, int messageID, object message);
     }
 
     internal struct WorkRequest
     {
         readonly int rpcID;
+        readonly short cmd;
+        readonly int messageID;
         readonly MiniTask<object> task;
         readonly object message;
         readonly IObjectMessageReceiver r;
 
-        internal WorkRequest(MiniTask<object> task, int rpcID, object message, IObjectMessageReceiver r)
+        internal WorkRequest(MiniTask<object> task, int rpcID, short cmd, int messageID,
+            object message, IObjectMessageReceiver r)
         {
             this.rpcID = rpcID;
+            this.cmd = cmd;
+            this.messageID = messageID;
             this.task = task;
             this.message = message;
             this.r = r;
@@ -47,7 +52,7 @@ namespace Megumin.Remote
             }
             ///此处可以忽略异常处理
             ///
-            var response = await r.Deal(rpcID, message);
+            var response = await r.Deal(rpcID, cmd, messageID, message);
 
             if (response is Task<object> task)
             {
@@ -87,11 +92,11 @@ namespace Megumin.Remote
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static IMiniAwaitable<object> Push(int rpcID, object message, IObjectMessageReceiver r)
+        internal static IMiniAwaitable<object> Push(int rpcID, short cmd, int messageID, object message, IObjectMessageReceiver r)
         {
             //这里是性能敏感区域，使用结构体优化，不使用action闭包
             MiniTask<object> task = MiniTask<object>.Rent();
-            WorkRequest work = new WorkRequest(task, rpcID, message, r);
+            WorkRequest work = new WorkRequest(task, rpcID, cmd, messageID, message, r);
             receivePool.Enqueue(work);
             return task;
         }

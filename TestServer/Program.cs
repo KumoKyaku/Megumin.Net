@@ -103,7 +103,7 @@ namespace TestServer
     public sealed class TestSpeedServerRemote:TcpRemote
     {
         static int totalCount;
-        protected async override ValueTask<object> OnReceive(object message)
+        protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
             totalCount++;
             switch (message)
