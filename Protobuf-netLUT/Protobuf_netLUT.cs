@@ -40,7 +40,7 @@ namespace Megumin.Remote
                 var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
                 if (MSGID != null)
                 {
-                    var ft = typeof(PBnetFormater<>);
+                    var ft = typeof(DefaultFormater<>);
                     var t = ft.MakeGenericType(new Type[] { type });
                     var instance = Activator.CreateInstance(t, new object[] { MSGID.ID });
                     if (instance is IMeguminFormater formater)
@@ -68,18 +68,29 @@ namespace Megumin.Remote
                 var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
                 if (MSGID != null)
                 {
-                    Regist(new PBnetFormater<T>(MSGID.ID), key);
+                    Regist(new DefaultFormater<T>(MSGID.ID), key);
                 }
             }
         }
+
+        /// <summary>
+        /// 注册基础类型
+        /// </summary>
+        /// <param name="key"></param>
+        public static void RegistBasicType(KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        {
+            Regist(new DefaultFormater<string>(MSGID.StringID), key);
+            Regist(new DefaultFormater<int>(MSGID.IntID), key);
+            Regist(new DefaultFormater<double>(MSGID.DoubleID), key);
+        }
     }
 
-    internal class PBnetFormater<T> : IMeguminFormater
+    internal class DefaultFormater<T> : IMeguminFormater
     {
         public int MessageID { get; }
         public Type BindType { get; }
 
-        public PBnetFormater(int messageID)
+        public DefaultFormater(int messageID)
         {
             MessageID = messageID;
             BindType = typeof(T);

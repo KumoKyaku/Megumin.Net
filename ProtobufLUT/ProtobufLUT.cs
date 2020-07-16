@@ -41,7 +41,7 @@ namespace Megumin.Remote
                 var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
                 if (MSGID != null)
                 {
-                    var ft = typeof(PBFormater<>);
+                    var ft = typeof(DefaultFormater<>);
                     var t = ft.MakeGenericType(new Type[] { type });
                     var instance = Activator.CreateInstance(t, new object[] { MSGID.ID });
                     if (instance is IMeguminFormater formater)
@@ -67,12 +67,23 @@ namespace Megumin.Remote
             var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
             if (MSGID != null)
             {
-                Regist(new PBFormater<T>(MSGID.ID), key);
+                Regist(new DefaultFormater<T>(MSGID.ID), key);
             }
+        }
+
+        /// <summary>
+        /// 注册基础类型
+        /// </summary>
+        /// <param name="key"></param>
+        public static void RegistBasicType(KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        {
+            //Regist(new DefaultFormater<string>(MSGID.StringID), key);
+            //Regist(new DefaultFormater<int>(MSGID.IntID), key);
+            //Regist(new DefaultFormater<double>(MSGID.DoubleID), key);
         }
     }
 
-    internal class PBFormater<T> : IMeguminFormater where T : IMessage<T>
+    internal class DefaultFormater<T> : IMeguminFormater where T : IMessage<T>
     {
         public int MessageID { get; }
         public Type BindType { get; }
@@ -82,7 +93,7 @@ namespace Megumin.Remote
 
         MessageParser<T> parser =
                 typeof(T).GetProperty("Parser", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) as MessageParser<T>;
-        public PBFormater(int messageID)
+        public DefaultFormater(int messageID)
         {
             MessageID = messageID;
             BindType = typeof(T);
