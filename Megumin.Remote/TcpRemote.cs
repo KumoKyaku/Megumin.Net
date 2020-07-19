@@ -32,7 +32,10 @@ namespace Megumin.Remote
 
         public Socket Client { get; protected set; }
         public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
-
+        /// <summary>
+        /// 当前工作状态0：发送接收都正常； 1:从未尝试开始； 2：手动终止； 3：远端断开连接；
+        /// </summary>
+        public int WorkState { get; protected set; } = 1;
 
         /// <summary>
         /// Mono/IL2CPP 请使用中使用<see cref="TcpRemote(AddressFamily)"/>
@@ -80,12 +83,14 @@ namespace Megumin.Remote
         }
 
         /// <summary>
-        /// 开始工作
+        /// 开始发送接收
         /// </summary>
-        public virtual void WorkStart()
+        public virtual void StartWork()
         {
-            ReceiveStart();
-            SendStart();
+            WorkState = 0;
+            FillRecvPipe(pipe.Writer);
+            ReadRecePipe(pipe.Reader);
+            ReadSendPipe(SendPipe);
         }
 
         public void Dispose()
@@ -126,6 +131,7 @@ namespace Megumin.Remote
                 {
                     await Client.ConnectAsync(endPoint);
                     IsConnecting = false;
+                    StartWork();
                     return;
                 }
                 catch (Exception)
@@ -170,14 +176,15 @@ namespace Megumin.Remote
     public partial class TcpRemote : ISendable, ISendCanAwaitable
     {
         public bool IsSending { get; protected set; }
+
         /// <summary>
-        /// 开始发送消息
+        /// 开始读取发送管道，使用Socket发送消息
         /// </summary>
-        public async void SendStart()
+        public async void ReadSendPipe(TcpSendPipe sendPipe)
         {
             while (true)
             {
-                lock (SendPipe)
+                lock (sendPipe)
                 {
                     if (IsSending)
                     {
@@ -186,7 +193,7 @@ namespace Megumin.Remote
                     IsSending = true;
                 }
 
-                var target = await SendPipe.ReadNext();
+                var target = await sendPipe.ReadNext();
 
 #if NETSTANDARD2_1
             var length = target.SendMemory.Length;
@@ -228,7 +235,7 @@ namespace Megumin.Remote
                 writer.Discard();
             }
 
-            SendStart();
+            StartWork();
         }
 
         /// <summary>
@@ -302,8 +309,6 @@ namespace Megumin.Remote
         public IMiniAwaitable<(RpcResult result, Exception exception)>
             Send<RpcResult>(object message, object options = null)
         {
-            ReceiveStart();
-
             var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(options);
 
             try
@@ -321,8 +326,6 @@ namespace Megumin.Remote
         public IMiniAwaitable<RpcResult> SendSafeAwait<RpcResult>
             (object message, Action<Exception> OnException = null, object options = null)
         {
-            ReceiveStart();
-
             var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(OnException, options);
 
             try
@@ -342,20 +345,12 @@ namespace Megumin.Remote
     public partial class TcpRemote : IReceiveMessage, IObjectMessageReceiver
     {
         public Pipe pipe { get; } = new Pipe();
-        /// <summary>
-        /// 开始接收消息；
-        /// </summary>
-        private void ReceiveStart()
-        {
-            FillPipe(pipe.Writer);
-            ReadPipe(pipe.Reader);
-        }
 
         /// <summary>
         /// 当前socket是不是在接收。
         /// </summary>
         public bool IsReceiving { get; protected set; }
-        protected virtual async void FillPipe(PipeWriter pipeWriter)
+        protected virtual async void FillRecvPipe(PipeWriter pipeWriter)
         {
             while (true)
             {
@@ -370,22 +365,40 @@ namespace Megumin.Remote
 
                 int queryCount = 8192;
                 var buffer = pipeWriter.GetMemory(queryCount);
+                int count = 0;
+
+                try
+                {
 
 #if NETSTANDARD2_1
-            var count = await Client.ReceiveAsync(buffer, SocketFlags.None);
+                    count = await Client.ReceiveAsync(buffer, SocketFlags.None);
 #else
-                int count = 0;
-                if (MemoryMarshal.TryGetArray<byte>(buffer, out var segment))
-                {
-                    //重设长度
-                    segment = new ArraySegment<byte>(segment.Array, segment.Offset, buffer.Length);
+
+                    if (MemoryMarshal.TryGetArray<byte>(buffer, out var segment))
+                    {
+                        //重设长度
+                        segment = new ArraySegment<byte>(segment.Array, segment.Offset, buffer.Length);
+                    }
+                    else
+                    {
+                        //无法获取数组片段。
+                        //todo log
+                    }
                     count = await Client.ReceiveAsync(segment, SocketFlags.None);
-                }
-                else
-                {
-                    //todo log
-                }
 #endif
+
+                    if (count == 0)
+                    {
+                        //收到0字节 表示远程主动断开连接？
+                    }
+                }
+                catch (SocketException e)
+                {
+                    pipeWriter.Complete();
+                    WorkState = 3;
+                    return;
+                }
+
                 pipeWriter.Advance(count);
                 _ = pipeWriter.FlushAsync();
                 IsReceiving = false;
@@ -400,7 +413,7 @@ namespace Megumin.Remote
         /// 
         /// </summary>
         /// <param name="pipeReader"></param>
-        protected async void ReadPipe(PipeReader pipeReader)
+        protected async void ReadRecePipe(PipeReader pipeReader)
         {
             while (true)
             {
@@ -439,6 +452,10 @@ namespace Megumin.Remote
                     }
                 }
 
+                if (result.IsCompleted || result.IsCanceled)
+                {
+                    throw new Exception("这里处理终止");
+                }
                 IsDealReceiving = false;
             }
         }

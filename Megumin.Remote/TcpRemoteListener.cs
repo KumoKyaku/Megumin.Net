@@ -57,7 +57,7 @@ namespace Megumin.Remote
             Task.Run(
                 () =>
                 {
-                    remote.WorkStart();
+                    remote.StartWork();
                 });
 
             return remote;
