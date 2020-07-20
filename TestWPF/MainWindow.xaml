@@ -7,6 +7,11 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
+        <Rectangle HorizontalAlignment="Left" Height="322" Margin="61,103,0,0" Stroke="Black" VerticalAlignment="Top" Width="241"/>
+        <Rectangle HorizontalAlignment="Left" Height="322" Margin="497,103,0,0" Stroke="Black" VerticalAlignment="Top" Width="241"/>
+        <TextBox HorizontalAlignment="Left" Margin="21,6,0,0" Text="TextBox" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" TextChanged="TextBox_TextChanged"/>
+        <Button Content="开始监听" HorizontalAlignment="Left" Margin="497,35,0,0" VerticalAlignment="Top" Width="91" Click="Button_Click"/>
+        <Label x:Name="监听状态" HorizontalAlignment="Left" Margin="603,32,0,0" VerticalAlignment="Top" Width="163" Height="25" Content="空闲"/>
 
     </Grid>
 </Window>
