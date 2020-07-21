@@ -5,13 +5,17 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TestWPF"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <Rectangle HorizontalAlignment="Left" Height="322" Margin="61,103,0,0" Stroke="Black" VerticalAlignment="Top" Width="241"/>
-        <Rectangle HorizontalAlignment="Left" Height="322" Margin="497,103,0,0" Stroke="Black" VerticalAlignment="Top" Width="241"/>
-        <TextBox HorizontalAlignment="Left" Margin="21,6,0,0" Text="TextBox" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" TextChanged="TextBox_TextChanged"/>
-        <Button Content="开始监听" HorizontalAlignment="Left" Margin="497,35,0,0" VerticalAlignment="Top" Width="91" Click="Button_Click"/>
-        <Label x:Name="监听状态" HorizontalAlignment="Left" Margin="603,32,0,0" VerticalAlignment="Top" Width="163" Height="25" Content="空闲"/>
+        Title="MainWindow" Height="345" Width="518">
+    <Grid Margin="0,0,10,3">
+        <Rectangle HorizontalAlignment="Left" Height="267" Margin="61,24,0,0" Stroke="Black" VerticalAlignment="Top" Width="173"/>
+        <Rectangle HorizontalAlignment="Left" Height="267" Margin="271,24,0,0" Stroke="Black" VerticalAlignment="Top" Width="195"/>
+        <Button Content="开始监听" HorizontalAlignment="Left" Margin="293,39,0,0" VerticalAlignment="Top" Width="91" Click="Button_Click"/>
+        <Label x:Name="监听状态" HorizontalAlignment="Left" Margin="293,73,0,0" VerticalAlignment="Top" Width="116" Height="25" Content="空闲"/>
+        <Button Content="创建一个连接" HorizontalAlignment="Left" Margin="82,39,0,0" VerticalAlignment="Top" Width="110" Click="Button_Click_1"/>
+        <Button Content="ShutDownSend" HorizontalAlignment="Left" Margin="82,143,0,0" VerticalAlignment="Top" Width="110" Click="Button_Click_4"/>
+        <Button Content="发送一个消息" HorizontalAlignment="Left" Margin="296,115,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.346,0.389" Width="88" Click="Button_Click_2"/>
+        <Button Content="TestRPC" HorizontalAlignment="Left" Margin="82,71,0,0" VerticalAlignment="Top" Width="110" Click="Button_Click_3"/>
+        <Label x:Name="result1" HorizontalAlignment="Left" Margin="82,216,0,0" VerticalAlignment="Top" Width="110" Height="66"/>
 
     </Grid>
 </Window>
