@@ -14,7 +14,7 @@ internal static class SpanByteExtension_37AAF334E75041368C6B47A256F0F93F
         unsafe
         {
             Span<byte> span = stackalloc byte[4];
-            byteSequence.Slice(0,4).CopyTo(span);
+            byteSequence.Slice(0, 4).CopyTo(span);
             return span.ReadInt();
         }
     }
@@ -25,7 +25,7 @@ internal static class SpanByteExtension_37AAF334E75041368C6B47A256F0F93F
         unsafe
         {
             Span<byte> span = stackalloc byte[10];
-            byteSequence.Slice(0,10).CopyTo(span);
+            byteSequence.Slice(0, 10).CopyTo(span);
             var rpcID = span.ReadInt();
             var cmd = span.Slice(4).ReadShort();
             var msgID = span.Slice(6).ReadInt();
@@ -160,3 +160,20 @@ internal static class InterlockedID<T>
     }
 }
 
+namespace Megumin.Remote
+{
+    /// <summary>
+    /// 主动还是被动
+    /// </summary>
+    public enum ActiveOrPassive
+    {
+        /// <summary>
+        /// 主动的
+        /// </summary>
+        Active,
+        /// <summary>
+        /// 被动的
+        /// </summary>
+        Passive,
+    }
+}
