@@ -196,20 +196,19 @@ namespace Net.Remote
     /// <summary>
     /// 应用网络层API封装
     /// </summary>
+    /// <remarks>不需要实现<see cref="IDisposable"/>,实现起来繁琐，工程中没有太太价值。</remarks>
     public interface IRemote : IRemoteEndPoint, ISendable, IReceiveMessage,
-        IConnectable, IDisposable, IRemoteID
+        IConnectable, IRemoteID
         , ISendCanAwaitable
     {
-
         /// <summary>
-        /// 
+        /// 实际连接的Socket
         /// </summary>
         Socket Client { get; }
         /// <summary>
         /// 当前是否正常工作
         /// </summary>
         bool IsVaild { get; }
-
     }
 
     /// <summary>
