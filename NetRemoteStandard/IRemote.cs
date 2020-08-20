@@ -55,10 +55,10 @@ namespace Net.Remote
         /// <returns></returns>
         Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0);
         /// <summary>
-        /// 主动断开连接 不会触发OnDisConnect事件
+        /// 主动断开连接
         /// </summary>
         /// <param name="triggerOnDisConnect">是否触发OnDisConnect</param>
-        /// <param name="waitSendQueue">是否等待发送队列发送完成</param>
+        /// <param name="waitSendQueue">是否等待发送队列发送完成，如果等待会，具体实现应该触发异步，不应该阻塞</param>
         void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false);
     }
 
