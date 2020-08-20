@@ -59,7 +59,7 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="socket"></param>
         /// <param name="reconnectForce"></param>
-        public virtual void SetSocket(Socket socket, bool reconnectForce = false)
+        internal protected virtual void SetSocket(Socket socket, bool reconnectForce = false)
         {
             if (Client != null)
             {
@@ -75,14 +75,6 @@ namespace Megumin.Remote
         }
 
         /// <summary>
-        /// 认证阶段
-        /// </summary>
-        protected virtual ValueTask<int> Auth()
-        {
-            return new ValueTask<int>(0);
-        }
-
-        /// <summary>
         /// 开始发送接收
         /// </summary>
         public virtual void StartWork()
@@ -91,11 +83,6 @@ namespace Megumin.Remote
             FillRecvPipe(pipe.Writer);
             ReadRecePipe(pipe.Reader);
             ReadSendPipe(SendPipe);
-        }
-
-        public void Dispose()
-        {
-            throw new NotImplementedException();
         }
     }
 
@@ -131,6 +118,7 @@ namespace Megumin.Remote
                 {
                     await Client.ConnectAsync(endPoint);
                     IsConnecting = false;
+                    WaitSocketError();//注册断开流程
                     StartWork();
                     return;
                 }
@@ -161,13 +149,91 @@ namespace Megumin.Remote
 
         public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
         {
-            throw new NotImplementedException();
+            //todo 进入断开流程，不允许外部继续Send
+
+
+            if (waitSendQueue)
+            {
+                //todo 等待当前发送缓冲区发送结束。
+            }
+
+            //进入清理阶段
+            StopWork();
+
+            if (triggerOnDisConnect)
+            {
+                //触发回调
+                OnDisconnect(SocketError.SocketError, ActiveOrPassive.Active);
+                PostDisconnect(SocketError.SocketError, ActiveOrPassive.Active);
+            }
+
+            IsVaild = false;
+        }
+
+        /// <summary>
+        /// 开始被动断开流程
+        /// </summary>
+        async void WaitSocketError()
+        {
+            var errorCode = await OnSocketError.Task;
+            //socket已经发生了错误。
+
+            //进入清理阶段
+            StopWork();
+
+            //触发回调
+            OnDisconnect(errorCode);
+            PostDisconnect(errorCode);
+            IsVaild = false;
+        }
+
+        /// <summary>
+        /// 停止接收工作
+        /// </summary>
+        void StopWork()
+        {
+            //关闭接收，这个过程中可能调用本身出现异常。
+            //也可能导致异步接收部分抛出，由于disconnectSignal只能使用一次，所有这个阶段异常都会被忽略。
+            try
+            {
+                Client.Shutdown(SocketShutdown.Both);
+                Client.Disconnect(false);
+            }
+            finally
+            {
+                Client.Close();
+                Client.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// 用一个handle来保证一个socket只触发一次断开连接。
+        /// 触发断开，清理发送接收，调用OnDisconnect 和 PostDisconnect
+        /// </summary>
+        readonly TaskCompletionSource<SocketError> OnSocketError = new TaskCompletionSource<SocketError>();
+
+        /// <summary>
+        /// 当网络连接已经断开
+        /// </summary>
+        /// <param name="error"></param>
+        /// <param name="activeOrPassive">主动断开还是被动断开</param>
+        /// <remarks>主要用于通知外部停止继续发送，在这个函数被动调用前，允许Send，在这个函数调用后，不在允许Send</remarks>
+        protected virtual void OnDisconnect(
+            SocketError error = SocketError.SocketError,
+            ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+
         }
 
         /// <summary>
         /// 断开连接之后
         /// </summary>
-        protected virtual void PostDisconnect()
+        /// /// <param name="error"></param>
+        /// <param name="activeOrPassive">主动断开还是被动断开</param>
+        /// <remarks>可以用于触发重连，并将现有发送缓冲区转移到心得连接中</remarks>
+        protected virtual void PostDisconnect(
+            SocketError error = SocketError.SocketError,
+            ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
         {
 
         }
@@ -223,6 +289,21 @@ namespace Megumin.Remote
 
         protected virtual void Send(int rpcID, object message, object options = null)
         {
+            //todo 检查当前是否允许发送，可能已经处于断开阶段，不在允许新消息进入发送缓存区
+            var allowSend = true;
+            if (!allowSend)
+            {
+                if (rpcID > 0)
+                {
+                    //对于已经注册了Rpc的消息,直接触发异常。
+                    RpcCallbackPool.TrySetException(rpcID * -1, new SocketException(-1));
+                }
+                else
+                {
+                    throw new SocketException(-1);
+                }
+            }
+
             var writer = SendPipe.GetWriter();
             if (TrySerialize(writer, rpcID, message, options))
             {
@@ -382,14 +463,15 @@ namespace Megumin.Remote
                     else
                     {
                         //无法获取数组片段。
-                        //todo log
+                        throw new NotSupportedException($"buffer 无法转化为数组。");
                     }
                     count = await Client.ReceiveAsync(segment, SocketFlags.None);
 #endif
 
                     if (count == 0)
                     {
-                        //收到0字节 表示远程主动断开连接？
+                        //收到0字节 表示远程主动断开连接
+                        this.ToString();//debug
                     }
                 }
                 catch (SocketException e)
