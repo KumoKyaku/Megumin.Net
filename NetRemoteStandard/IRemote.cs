@@ -49,6 +49,7 @@ namespace Net.Remote
     public interface IConnectable : IRemoteEndPoint
     {
         /// <summary>
+        /// 尝试连接。可以重写具体实现并将Auth过程合并在一起。
         /// </summary>
         /// <param name="endPoint"></param>
         /// <param name="retryCount">重试次数，失败会返回最后一次的异常</param>
