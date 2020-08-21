@@ -19,7 +19,7 @@ namespace Megumin.Remote
     /// </summary>
     /// <remarks>消息报头结构：
     /// Lenght(总长度，包含自身报头) [int] [4] + RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
-    public partial class TcpRemote : IRemote
+    public partial class TcpRemote : RpcRemote, IRemote
     {
         public int ID { get; } = InterlockedID<IRemote>.NewID();
         /// <summary>
@@ -28,8 +28,6 @@ namespace Megumin.Remote
         public virtual int UID { get; set; }
         public bool IsVaild { get; protected set; } = true;
         public IPEndPoint ConnectIPEndPoint { get; set; }
-        public RpcCallbackPool RpcCallbackPool { get; } = new RpcCallbackPool(31);
-
         public Socket Client { get; protected set; }
         public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
         /// <summary>
@@ -77,7 +75,7 @@ namespace Megumin.Remote
         /// <summary>
         /// 开始发送接收
         /// </summary>
-        public virtual void StartWork()
+        internal protected virtual void StartWork()
         {
             WorkState = 0;
             FillRecvPipe(pipe.Writer);
@@ -137,7 +135,7 @@ namespace Megumin.Remote
             }
         }
 
-        public Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
+        public virtual Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
         {
             ConnectIPEndPoint = endPoint;
             if (Client == null)
@@ -212,26 +210,14 @@ namespace Megumin.Remote
         /// </summary>
         readonly TaskCompletionSource<SocketError> OnSocketError = new TaskCompletionSource<SocketError>();
 
-        /// <summary>
-        /// 当网络连接已经断开
-        /// </summary>
-        /// <param name="error"></param>
-        /// <param name="activeOrPassive">主动断开还是被动断开</param>
-        /// <remarks>主要用于通知外部停止继续发送，在这个函数被动调用前，允许Send，在这个函数调用后，不在允许Send</remarks>
-        protected virtual void OnDisconnect(
+        protected override void OnDisconnect(
             SocketError error = SocketError.SocketError,
             ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
         {
 
         }
 
-        /// <summary>
-        /// 断开连接之后
-        /// </summary>
-        /// /// <param name="error"></param>
-        /// <param name="activeOrPassive">主动断开还是被动断开</param>
-        /// <remarks>可以用于触发重连，并将现有发送缓冲区转移到心得连接中</remarks>
-        protected virtual void PostDisconnect(
+        protected override void PostDisconnect(
             SocketError error = SocketError.SocketError,
             ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
         {
@@ -319,69 +305,6 @@ namespace Megumin.Remote
             StartWork();
         }
 
-        /// <summary>
-        /// 序列化消息
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="rpcID"></param>
-        /// <param name="message"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        protected virtual bool TrySerialize(IBufferWriter<byte> writer, int rpcID, object message, object options = null)
-        {
-            try
-            {
-                //写入rpcID CMD
-                var span = writer.GetSpan(10);
-                span.Write(rpcID);
-                span.Slice(4).Write((short)0); //CMD 为预留，填0
-                writer.Advance(10);
-
-                int messageID = MessageLUT.Serialize(writer, message, options);
-                //补写消息ID到指定位置。 前面已经Advance了，这里不在Advance。
-                span.Slice(6).Write(messageID);
-
-                return true;
-            }
-            catch (Exception)
-            {
-                //todo log;
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// 序列化消息
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="rpcID"></param>
-        /// <param name="sequence"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        protected virtual bool TrySerialize(IBufferWriter<byte> writer, int rpcID, in ReadOnlySequence<byte> sequence, object options = null)
-        {
-            try
-            {
-                //写入rpcID CMD
-                var span = writer.GetSpan(6);
-                span.Write(rpcID);
-                span.Slice(4).Write((short)0); //CMD 为预留，填0
-                writer.Advance(6);
-
-                foreach (var item in sequence)
-                {
-                    writer.Write(item.Span);
-                }
-
-                return true;
-            }
-            catch (Exception)
-            {
-                //todo log;
-                return false;
-            }
-        }
-
         public void Send(object message, object options = null)
         {
             Send(0, message, options);
@@ -404,7 +327,7 @@ namespace Megumin.Remote
             }
         }
 
-        public IMiniAwaitable<RpcResult> SendSafeAwait<RpcResult>
+        public virtual IMiniAwaitable<RpcResult> SendSafeAwait<RpcResult>
             (object message, Action<Exception> OnException = null, object options = null)
         {
             var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(OnException, options);
@@ -423,7 +346,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class TcpRemote : IReceiveMessage, IObjectMessageReceiver
+    public partial class TcpRemote : IReceiveMessage
     {
         public Pipe pipe { get; } = new Pipe();
 
@@ -542,160 +465,16 @@ namespace Megumin.Remote
             }
         }
 
-        protected virtual bool TryDeserialize
-            (int messageID, in ReadOnlySequence<byte> byteSequence,
-            out object message, object options = null)
-        {
-            try
-            {
-                message = MessageLUT.Deserialize(messageID, byteSequence, options);
-                return true;
-            }
-            catch (Exception)
-            {
-                //log todo
-                message = default;
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// 处理一个完整的消息包
-        /// </summary>
-        protected virtual void ProcessBody
-            (in ReadOnlySequence<byte> byteSequence, object options = null)
-        {
-            //读取RpcID 和 消息ID
-            var (RpcID, CMD, MessageID) = byteSequence.ReadHeader();
-            if (TryDeserialize(MessageID, byteSequence.Slice(10), out var message, options))
-            {
-                DeserializeSuccess(RpcID, CMD, MessageID, message);
-            }
-            else
-            {
-                //todo 反序列化失败
-            }
-        }
-
-        /// <summary>
-        /// 默认关闭线程转换<see cref="MessageThreadTransducer.Update(double)"/>
-        /// </summary>
-        public bool Post2ThreadScheduler { get; set; } = false;
-
-        /// <summary>
-        /// 是否使用<see cref="MessageThreadTransducer"/>
-        /// <para>精确控制各个消息是否切换到主线程。</para>
-        /// <para>用于处理在某些时钟精确的且线程无关消息时跳过轮询等待。</para>
-        /// 例如：同步两个远端时间戳的消息。
-        /// </summary>
-        /// <param name="rpcID"></param>
-        /// <param name="messageID"></param>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual bool UseThreadSchedule(int rpcID, short cmd, int messageID, object message)
-        {
-            return Post2ThreadScheduler;
-        }
-
-        /// <summary>
-        /// 解析消息成功
-        /// </summary>
-        /// <param name="rpcID"></param>
-        /// <param name="cmd"></param>
-        /// <param name="messageID"></param>
-        /// <param name="message"></param>
-        protected async void DeserializeSuccess(int rpcID, short cmd, int messageID, object message)
-        {
-            var post = true;//转换线程
-
-            //消息处理程序的返回对象
-            object reply = null;
-
-            var trans = UseThreadSchedule(rpcID, cmd, messageID, message);
-            if (trans)
-            {
-                reply = await MessageThreadTransducer.Push(rpcID, cmd, messageID, message, this);
-            }
-            else
-            {
-                reply = await DiversionProcess(rpcID, cmd, messageID, message);
-
-                if (reply is Task<object> task)
-                {
-                    reply = await task;
-                }
-
-                if (reply is ValueTask<object> vtask)
-                {
-                    reply = await vtask;
-                }
-            }
-
-            if (reply != null)
-            {
-                Reply(rpcID, reply);
-            }
-        }
-
         /// <summary>
         /// 回复给远端
         /// </summary>
         /// <param name="rpcID"></param>
         /// <param name="replyMessage"></param>
-        protected virtual void Reply(int rpcID, object replyMessage)
+        protected override void Reply(int rpcID, object replyMessage)
         {
             Send(rpcID * -1, replyMessage);
         }
 
         public float LastReceiveTimeFloat { get; } = float.MaxValue;
-
-        ValueTask<object> IObjectMessageReceiver.Deal(int rpcID, short cmd, int messageID, object message)
-        {
-            return DiversionProcess(rpcID, cmd, messageID, message);
-        }
-
-        /// <summary>
-        /// 分流普通消息和RPC回复消息
-        /// </summary>
-        /// <param name="rpcID"></param>
-        /// <param name="cmd"></param>
-        /// <param name="messageID"></param>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual ValueTask<object> DiversionProcess(int rpcID, short cmd, int messageID, object message)
-        {
-            if (rpcID < 0)
-            {
-                //这个消息是rpc返回（回复的RpcID为负数）
-                RpcCallbackPool?.TrySetResult(rpcID, message);
-                return new ValueTask<object>(result: null);
-            }
-            else
-            {
-                ///这个消息是非Rpc应答
-                ///普通响应onRely
-                return OnReceive(cmd, messageID, message);
-            }
-        }
-
-        /// <summary>
-        /// 返回一个空对象，在没有返回时使用。
-        /// </summary>
-        protected static readonly ValueTask<object> NullResult
-            = new ValueTask<object>(result: null);
-        /// <summary>
-        /// 通常用户在这里处理收到的消息
-        /// </summary>
-        /// <param name="cmd"></param>
-        /// <param name="messageID"></param>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        /// <remarks>含有远程返回的rpc回复消息会被直接通过回调函数发送到异步调用处，不会触发这里</remarks>
-        protected virtual ValueTask<object> OnReceive(short cmd, int messageID, object message)
-        {
-            return NullResult;
-        }
     }
 }

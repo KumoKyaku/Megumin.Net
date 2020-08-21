@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 /// <summary>
 /// 小端
@@ -175,5 +176,10 @@ namespace Megumin.Remote
         /// 被动的
         /// </summary>
         Passive,
+    }
+
+    public class Utility
+    {
+        
     }
 }
