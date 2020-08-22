@@ -96,7 +96,7 @@ namespace Net.Remote
         /// 异步发送消息，封装Rpc过程。
         /// </summary>
         /// <typeparam name="RpcResult">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
-        /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表<see cref="MessageLUT"/> 中指定ID和序列化函数</param>
+        /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表 MessageLUT 中指定ID和序列化函数</param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
         /// <returns>需要检测空值</returns>
         /// <exception cref="NullReferenceException">返回值是空的</exception>
