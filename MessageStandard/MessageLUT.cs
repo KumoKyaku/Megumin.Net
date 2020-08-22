@@ -40,7 +40,6 @@ namespace Megumin.Remote
         /// <summary>
         /// 序列化函数
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="writer"></param>
         /// <param name="value"></param>
         /// <param name="options"></param>
@@ -49,7 +48,6 @@ namespace Megumin.Remote
         /// <summary>
         /// 反序列化函数
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="byteSequence"></param>
         /// <param name="options"></param>
         /// <returns></returns>
@@ -58,7 +56,6 @@ namespace Megumin.Remote
 
     /// <summary>
     /// 消息查找表
-    /// <seealso cref="Remote.Serialize"/>  <seealso cref="Remote.Deserialize"/>
     /// </summary>
     public class MessageLUT
     {

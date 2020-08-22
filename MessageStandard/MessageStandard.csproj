@@ -1,45 +1,85 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <!--主配置-->
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>Megumin.Message</RootNamespace>
-    <AssemblyName>Megumin.MessageStandard</AssemblyName>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.0.3</Version>
     <Authors>云却</Authors>
+    
+    <!--版本配置-->
+    <Version>0.0.4.0</Version>
+    <AssemblyVersion>0.0.4.0</AssemblyVersion>
+    <FileVersion>0.0.4.0</FileVersion>
+    
+    <!--包配置-->
     <Product>MeguminNet</Product>
+    <PackageId>Megumin.MessageStandard</PackageId><!--指定生成的包的名称。 如果未指定，pack 操作将默认使用 AssemblyName 或目录名称作为包的名称。-->
+    <AssemblyName>Megumin.MessageStandard</AssemblyName>
+    <RootNamespace>Megumin.Message</RootNamespace>
+    <PackageTags>net,dotnetstandard2.0,unity</PackageTags>
     <Description>MeguminNet中的消息序列化部分。</Description>
-    <Copyright>Copyright (c) 2019 云却</Copyright>
-    <PackageLicenseUrl>https://github.com/KumoKyaku/Megumin.Net/blob/master/LICENSE</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/KumoKyaku/Megumin.Net</RepositoryUrl>
     <PackageProjectUrl>https://github.com/KumoKyaku/Megumin.Net</PackageProjectUrl>
-    <PackageTags>net</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    
+  </PropertyGroup> 
+
+  <!--目标框架配置-->
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+  </PropertyGroup>
+
+  <!--依赖配置-->
+  <ItemGroup>
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.3.0" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Memory" Version="4.5.0" />
+  </ItemGroup>
+
+  <!--以下是项目通用配置-->
+  
+  <!--基本配置-->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>
+      1701;1702;1591;1587
+    </NoWarn>
+    
+    <!--打包配置-->
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\OpenSource.snk</AssemblyOriginatorKeyFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    <FileVersion>0.0.3.0</FileVersion>
-    <AssemblyVersion>0.0.3.0</AssemblyVersion>
-    <RepositoryType></RepositoryType>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\netstandard2.0\Megumin.MessageStandard.xml</DocumentationFile>
-    <LangVersion>7.2</LangVersion>
-    <DebugType>full</DebugType>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netstandard2.0\Megumin.MessageStandard.xml</DocumentationFile>
-    <LangVersion>7.2</LangVersion>
-    <DebugType>full</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-
+    
+    <!--xml注释生成-->
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    
+    <!--版权配置-->
+    <Copyright>Copyright (c) 2019 云却</Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+  </PropertyGroup> 
+  
+  <!--许可证文件配置-->
   <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="System.Memory" Version="4.5.4" />
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
+  
+  <!--调试符号配置-->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE</DefineConstants>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>true</Optimize>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
 
 </Project>
