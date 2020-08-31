@@ -43,8 +43,8 @@ namespace Megumin.Remote
             }
             else
             {
-                ///这个消息是非Rpc应答
-                ///普通响应onRely
+                //这个消息非Rpc返回
+                //普通响应onRely
                 return OnReceive(cmd, messageID, message);
             }
         }
@@ -76,10 +76,9 @@ namespace Megumin.Remote
 
             if (reply != null)
             {
-                Reply(rpcID, reply);
+                Reply(rpcID * -1, reply);
             }
         }
-
 
         ValueTask<object> IObjectMessageReceiver.Deal(int rpcID, short cmd, int messageID, object message)
         {

@@ -98,10 +98,8 @@ namespace Net.Remote
         /// <typeparam name="RpcResult">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
         /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表 MessageLUT 中指定ID和序列化函数</param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
-        /// <returns>需要检测空值</returns>
-        /// <exception cref="NullReferenceException">返回值是空的</exception>
-        /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
-        /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
+        /// <returns>需要检测空值
+        /// </returns>
         IMiniAwaitable<(RpcResult result, Exception exception)> Send<RpcResult>(object message, object options = null);
 
         /// <summary>
@@ -116,10 +114,7 @@ namespace Net.Remote
         /// <param name="OnException">发生异常时的回调函数</param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
         /// <returns></returns>
-        /// <exception cref="NullReferenceException">返回值是空的</exception>
-        /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
-        /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
-        /// <remarks>可能会有内存泄漏，参考具体实现。也许这个方法应该叫UnSafe。</remarks>
+        /// <remarks></remarks>
         IMiniAwaitable<RpcResult> SendSafeAwait<RpcResult>(object message, Action<Exception> OnException = null, object options = null);
     }
 

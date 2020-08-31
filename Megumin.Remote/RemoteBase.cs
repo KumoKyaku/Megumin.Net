@@ -33,6 +33,11 @@ namespace Megumin.Remote
     public abstract class RemoteBase
     {
         /// <summary>
+        /// 记录器
+        /// </summary>
+        public IMeguminRemoteLogger Logger { get; set; }
+
+        /// <summary>
         /// 当网络连接已经断开
         /// </summary>
         /// <param name="error"></param>
@@ -79,9 +84,9 @@ namespace Megumin.Remote
 
                 return true;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                //todo log;
+                Logger?.Log($"序列化过程出现异常。Message:{message}。\n {e}");
                 return false;
             }
         }
@@ -112,9 +117,9 @@ namespace Megumin.Remote
 
                 return true;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                //todo log;
+                Logger?.Log($"转发用序列化过程出现异常。Lenght:{sequence.Length}。\n {e}");
                 return false;
             }
         }
@@ -137,9 +142,9 @@ namespace Megumin.Remote
                 message = MessageLUT.Deserialize(messageID, byteSequence, options);
                 return true;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                //log todo
+                Logger?.Log($"反序列化过程出现异常。MessageID:{messageID}--Lenght:{byteSequence.Length}。\n {e}");
                 message = default;
                 return false;
             }
@@ -195,20 +200,28 @@ namespace Megumin.Remote
         protected abstract void DeserializeSuccess(int rpcID, short cmd, int messageID, object message);
 
         /// <summary>
-        /// 处理一个完整的消息包
+        /// 处理一个完整的消息包，未解析报头
         /// </summary>
-        protected virtual void ProcessBody
-            (in ReadOnlySequence<byte> byteSequence, object options = null)
+        protected virtual void ProcessBody(in ReadOnlySequence<byte> byteSequence,
+                                           object options = null)
         {
             //读取RpcID 和 消息ID
             var (RpcID, CMD, MessageID) = byteSequence.ReadHeader();
-            if (TryDeserialize(MessageID, byteSequence.Slice(10), out var message, options))
+            ProcessBody(byteSequence.Slice(10), options, RpcID, CMD, MessageID);
+        }
+
+        /// <summary>
+        /// 处理一个完整的消息包，已分离报头
+        /// </summary>
+        protected virtual void ProcessBody(in ReadOnlySequence<byte> byteSequence,
+                                           object options,
+                                           int RpcID,
+                                           short CMD,
+                                           int MessageID)
+        {
+            if (TryDeserialize(MessageID, byteSequence, out var message, options))
             {
                 DeserializeSuccess(RpcID, CMD, MessageID, message);
-            }
-            else
-            {
-                //todo 反序列化失败
             }
         }
     }

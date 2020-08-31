@@ -19,12 +19,9 @@ namespace Megumin.Remote
     /// </summary>
     /// <remarks>消息报头结构：
     /// Lenght(总长度，包含自身报头) [int] [4] + RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
-    public partial class TcpRemote : RpcRemote, IRemote
+    public partial class TcpRemote : RpcRemote, IRemote, IRemoteUID<int>
     {
         public int ID { get; } = InterlockedID<IRemote>.NewID();
-        /// <summary>
-        /// 这是留给用户赋值的
-        /// </summary>
         public virtual int UID { get; set; }
         public bool IsVaild { get; protected set; } = true;
         public IPEndPoint ConnectIPEndPoint { get; set; }
@@ -472,7 +469,7 @@ namespace Megumin.Remote
         /// <param name="replyMessage"></param>
         protected override void Reply(int rpcID, object replyMessage)
         {
-            Send(rpcID * -1, replyMessage);
+            Send(rpcID, replyMessage);
         }
 
         public float LastReceiveTimeFloat { get; } = float.MaxValue;

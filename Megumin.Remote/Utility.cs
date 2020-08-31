@@ -178,8 +178,15 @@ namespace Megumin.Remote
         Passive,
     }
 
+    /// <summary>
+    /// 记录器
+    /// </summary>
+    public interface IMeguminRemoteLogger
+    {
+        void Log(string error);
+    }
+
     public class Utility
     {
-        
     }
 }
