@@ -113,4 +113,9 @@ public class TestRemote : TcpRemote
         }
         return null;
     }
+
+    protected override void PostDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+    {
+        UI.result1.Content = $"网络已断开";
+    }
 }

@@ -1,12 +1,56 @@
-﻿//using Megumin.Message;
-//using Net.Remote;
-//using System;
-//using System.Buffers;
-//using System.Net;
-//using System.Net.Sockets;
-//using System.Runtime.InteropServices;
-//using System.Threading;
-//using System.Threading.Tasks;
+﻿using Net.Remote;
+using System;
+using System.Buffers;
+using System.Net;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Megumin.Remote
+{
+    public class UdpRemote:RpcRemote
+    {
+        UdpClient udp;
+
+        public UdpRemote(int port)
+        {
+            udp = new UdpClient(port);
+        }
+
+        public void Connect(IPEndPoint endPoint)
+        {
+            udp.Connect(endPoint);
+        }
+
+        async void Recv()
+        {
+            while (true)
+            {
+                var result = await udp.ReceiveAsync();
+                ProcessBody(new ReadOnlySequence<byte>(result.Buffer));
+            }
+        }
+
+
+        protected override void Reply(int rpcID, object replyMessage)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void PostDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}
+
+
 
 //namespace Megumin.Remote
 //{
@@ -308,7 +352,7 @@
 //                    OnSocketException(e.SocketErrorCode);
 //                }
 //            }
-            
+
 //        }
 
 //        public Task BroadCastSendAsync(ArraySegment<byte> msgBuffer)
@@ -364,7 +408,7 @@
 //                {
 //                    throw new ArgumentException();
 //                }
-                
+
 //            }
 //            catch (SocketException e)
 //            {
