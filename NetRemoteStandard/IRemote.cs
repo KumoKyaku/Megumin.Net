@@ -37,8 +37,8 @@ namespace Net.Remote
         /// </summary>
         IPEndPoint ConnectIPEndPoint { get; set; }
         /// <summary>
-        /// 连接后重映射的地址,UDP可能会使用这个设计。
-        /// <para>如果没有重映射, 返回<see cref="ConnectIPEndPoint"/> </para>
+        /// 连接后重映射的地址,Udp,Kcp可能会使用这个设计。
+        /// <para>如果没有重映射, 返回<see cref="Socket.RemoteEndPoint"/> </para>
         /// </summary>
         EndPoint RemappedEndPoint { get; }
     }
@@ -98,8 +98,7 @@ namespace Net.Remote
         /// <typeparam name="RpcResult">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
         /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表 MessageLUT 中指定ID和序列化函数</param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
-        /// <returns>需要检测空值
-        /// </returns>
+        /// <returns>需要检测空值</returns>
         ValueTask<(RpcResult result, Exception exception)> Send<RpcResult>(object message, object options = null);
 
         /// <summary>
