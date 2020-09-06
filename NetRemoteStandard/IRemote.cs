@@ -170,6 +170,7 @@ namespace Net.Remote
     /// <summary>
     /// 接收消息
     /// </summary>
+    /// <remarks>不要定义OnReceive函数，由于具体业务逻辑不同，这个函数的签名可能有很多中变化，不能标准化。</remarks>
     public interface IReceiveMessage
     {
         ///// <summary>
@@ -190,8 +191,9 @@ namespace Net.Remote
 
     /// <summary>
     /// 应用网络层API封装
+    /// <para>不需要实现<see cref="IDisposable"/>,实现起来繁琐，工程中没有太太价值。</para>
     /// </summary>
-    /// <remarks>不需要实现<see cref="IDisposable"/>,实现起来繁琐，工程中没有太太价值。</remarks>
+    /// <inheritdoc/>
     public interface IRemote : IRemoteEndPoint, ISendable, IReceiveMessage,
         IConnectable, IRemoteID
         , ISendCanAwaitable

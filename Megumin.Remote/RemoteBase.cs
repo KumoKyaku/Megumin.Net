@@ -184,7 +184,10 @@ namespace Megumin.Remote
         /// <param name="messageID"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        /// <remarks>含有远程返回的rpc回复消息会被直接通过回调函数发送到异步调用处，不会触发这里</remarks>
+        /// <remarks>含有远程返回的rpc回复消息会被直接通过回调函数发送到异步调用处，不会触发这里
+        /// <para/> 这个函数不要定义在<see cref="IReceiveMessage"/>里，
+        /// 由于具体业务逻辑不同，这个函数的签名可能有很多中变化，不能标准化。
+        /// </remarks>
         protected virtual ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
             return NullResult;
