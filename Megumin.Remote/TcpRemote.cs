@@ -10,7 +10,7 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-
+using System.Threading.Tasks.Sources;
 
 namespace Megumin.Remote
 {
@@ -307,8 +307,15 @@ namespace Megumin.Remote
             Send(0, message, options);
         }
 
-        public IMiniAwaitable<(RpcResult result, Exception exception)>
+        //todo 使用 IValueTaskSource 优化
+        public virtual async ValueTask<(RpcResult result, Exception exception)>
             Send<RpcResult>(object message, object options = null)
+        {
+            return await InnerSend<RpcResult>(message, options);
+        }
+
+        protected virtual IMiniAwaitable<(RpcResult result, Exception exception)>
+            InnerSend<RpcResult>(object message, object options = null)
         {
             var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(options);
 
@@ -324,7 +331,14 @@ namespace Megumin.Remote
             }
         }
 
-        public virtual IMiniAwaitable<RpcResult> SendSafeAwait<RpcResult>
+        //todo 使用 IValueTaskSource 优化
+        public virtual async ValueTask<RpcResult> SendSafeAwait<RpcResult>
+            (object message, Action<Exception> OnException = null, object options = null)
+        {
+            return await InnerSendSafeAwait<RpcResult>(message, OnException, options);
+        }
+        
+        protected virtual IMiniAwaitable<RpcResult> InnerSendSafeAwait<RpcResult>
             (object message, Action<Exception> OnException = null, object options = null)
         {
             var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(OnException, options);

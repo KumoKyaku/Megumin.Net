@@ -100,7 +100,7 @@ namespace Net.Remote
         /// <param name="options">参数项，在整个发送管线中传递</param>
         /// <returns>需要检测空值
         /// </returns>
-        IMiniAwaitable<(RpcResult result, Exception exception)> Send<RpcResult>(object message, object options = null);
+        ValueTask<(RpcResult result, Exception exception)> Send<RpcResult>(object message, object options = null);
 
         /// <summary>
         /// 异步发送消息，封装Rpc过程
@@ -115,7 +115,7 @@ namespace Net.Remote
         /// <param name="options">参数项，在整个发送管线中传递</param>
         /// <returns></returns>
         /// <remarks></remarks>
-        IMiniAwaitable<RpcResult> SendSafeAwait<RpcResult>(object message, Action<Exception> OnException = null, object options = null);
+        ValueTask<RpcResult> SendSafeAwait<RpcResult>(object message, Action<Exception> OnException = null, object options = null);
     }
 
     //广播一定是个静态方法，没法通过接口调用

@@ -10,6 +10,7 @@ namespace System.Threading.Tasks
     /// <summary>
     /// 一个简单异步任务实现，特点是缓存任务不构造任务实例。
     /// todo 如果任务没有完成访问Result,会返回null而不是阻塞。以后会改为和Task一致
+    /// todo 使用 IValueTaskSource 优化
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class MiniTask<T> : IMiniAwaitable<T>
