@@ -102,7 +102,7 @@ namespace Megumin.Remote
         /// <summary>
         /// 原子操作 取得RpcId,发送方的的RpcID为正数，回复的RpcID为负数，正负一一对应
         /// <para>0,int.MinValue 为无效值</para> 
-        /// <seealso cref="RpcRemote.DiversionProcess(int, short, int, object)"/>
+        /// <seealso cref="RpcRemoteOld.DiversionProcess(int, short, int, object)"/>
         /// </summary>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
