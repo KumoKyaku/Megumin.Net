@@ -16,7 +16,7 @@ namespace Megumin.Remote
     /// 没有设计成扩展函数或者静态函数是方便子类重写。
     /// </summary>
     /// <remarks>一些与RPC支持相关的函数写在这里。</remarks>
-    public abstract class RpcRemote2 : RemoteBase, IDealMessageable, ISendCanAwaitable
+    public abstract class RpcRemote : RemoteBase, IDealMessageable, ISendCanAwaitable
     {
         public ObjectRpcCallbackPool RpcCallbackPool { get; } = new ObjectRpcCallbackPool(31);
 
