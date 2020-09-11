@@ -30,7 +30,7 @@ namespace Megumin.Remote
     /// <see cref="TryDeserialize(int, in ReadOnlySequence{byte}, out object, object)"/>
     /// 没有设计成扩展函数或者静态函数是方便子类重写。
     /// </remarks>
-    public abstract class RemoteBase
+    public abstract class RemoteBase : ISendable
     {
         /// <summary>
         /// 记录器
@@ -154,6 +154,11 @@ namespace Megumin.Remote
         /// 发送rpcID和消息
         /// </summary>
         protected abstract void Send(int rpcID, object message, object options = null);
+
+        public void Send(object message, object options = null)
+        {
+            Send(0, message, options);
+        }
 
         /// <summary>
         /// 默认关闭线程转换<see cref="MessageThreadTransducer.Update(double)"/>

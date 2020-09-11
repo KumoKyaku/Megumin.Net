@@ -19,7 +19,7 @@ namespace Megumin.Remote
     /// </summary>
     /// <remarks>消息报头结构：
     /// Lenght(总长度，包含自身报头) [int] [4] + RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
-    public partial class TcpRemote : RpcRemote, IRemote, IRemoteUID<int>
+    public partial class TcpRemote2 : RpcRemote2, IRemote, IRemoteUID<int>
     {
         public int ID { get; } = InterlockedID<IRemote>.NewID();
         public virtual int UID { get; set; }
@@ -35,7 +35,7 @@ namespace Megumin.Remote
         /// <summary>
         /// Mono/IL2CPP 请使用中使用<see cref="TcpRemote(AddressFamily)"/>
         /// </summary>
-        public TcpRemote()
+        public TcpRemote2()
         {
 
         }
@@ -44,7 +44,7 @@ namespace Megumin.Remote
         /// <para>SocketException: Protocol option not supported</para>
         /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
         /// </remarks>
-        public TcpRemote(AddressFamily addressFamily)
+        public TcpRemote2(AddressFamily addressFamily)
         {
             SetSocket(new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp));
         }
@@ -81,7 +81,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class TcpRemote : IConnectable
+    public partial class TcpRemote2 : IConnectable
     {
         /// <summary>
         /// 连接保护器，防止多次调用
@@ -222,7 +222,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class TcpRemote : ISendable, ISendCanAwaitable
+    public partial class TcpRemote2 : ISendable, ISendCanAwaitable
     {
         public bool IsSending { get; protected set; }
 
@@ -301,58 +301,9 @@ namespace Megumin.Remote
 
             StartWork();
         }
-
-        //todo 使用 IValueTaskSource 优化
-        public virtual async ValueTask<(RpcResult result, Exception exception)>
-            Send<RpcResult>(object message, object options = null)
-        {
-            return await InnerSend<RpcResult>(message, options);
-        }
-
-        protected virtual IMiniAwaitable<(RpcResult result, Exception exception)>
-            InnerSend<RpcResult>(object message, object options = null)
-        {
-            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(options);
-
-            try
-            {
-                Send(rpcID, message);
-                return source;
-            }
-            catch (Exception e)
-            {
-                RpcCallbackPool.TrySetException(rpcID * -1, e);
-                return source;
-            }
-        }
-
-        //todo 使用 IValueTaskSource 优化
-        public virtual async ValueTask<RpcResult> SendSafeAwait<RpcResult>
-            (object message, Action<Exception> OnException = null, object options = null)
-        {
-            return await InnerSendSafeAwait<RpcResult>(message, OnException, options);
-        }
-        
-        protected virtual IMiniAwaitable<RpcResult> InnerSendSafeAwait<RpcResult>
-            (object message, Action<Exception> OnException = null, object options = null)
-        {
-            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(OnException, options);
-
-            try
-            {
-                Send(rpcID, message);
-                return source;
-            }
-            catch (Exception e)
-            {
-                source.CancelWithNotExceptionAndContinuation();
-                OnException?.Invoke(e);
-                return source;
-            }
-        }
     }
 
-    public partial class TcpRemote : IReceiveMessage
+    public partial class TcpRemote2 : IReceiveMessage
     {
         public Pipe pipe { get; } = new Pipe();
 
@@ -469,16 +420,6 @@ namespace Megumin.Remote
                 }
                 IsDealReceiving = false;
             }
-        }
-
-        /// <summary>
-        /// 回复给远端
-        /// </summary>
-        /// <param name="rpcID"></param>
-        /// <param name="replyMessage"></param>
-        protected override void Reply(int rpcID, object replyMessage)
-        {
-            Send(rpcID, replyMessage);
         }
 
         public float LastReceiveTimeFloat { get; } = float.MaxValue;
