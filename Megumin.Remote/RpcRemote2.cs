@@ -102,7 +102,7 @@ namespace Megumin.Remote
         }
 
         /// <summary>
-        /// 验证resp空引用和返回类型
+        /// 验证resp空引用和返回类型,补充和转化异常
         /// </summary>
         /// <typeparam name="RpcResult"></typeparam>
         /// <param name="request"></param>
@@ -151,23 +151,23 @@ namespace Megumin.Remote
         }
 
         public virtual async ValueTask<RpcResult> SendSafeAwait<RpcResult>
-            (object message, Action<Exception> OnException = null, object options = null)
+            (object message, Action<Exception> onException = null, object options = null)
         {
             var (tempresp, tempex) = await InnerRpcSend(message, options);
 
             IMiniAwaitable<RpcResult> tempsource = MiniTask<RpcResult>.Rent();
 
-            var res = ValidResult<RpcResult>(message, tempresp, tempex, options);
+            var validResult = ValidResult<RpcResult>(message, tempresp, tempex, options);
 
-            if (res.exception == null)
+            if (validResult.exception == null)
             {
-                tempsource.SetResult(res.result);
+                tempsource.SetResult(validResult.result);
             }
             else
             {
                 //取消异步后续，转为调用OnException
                 tempsource.CancelWithNotExceptionAndContinuation();
-                OnSendSafeAwaitException(message, tempresp, OnException, res.exception);
+                OnSendSafeAwaitException(message, tempresp, onException, validResult.exception);
             }
 
             var result = await tempsource;
@@ -179,11 +179,11 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="request"></param>
         /// <param name="response"></param>
-        /// <param name="OnException"></param>
+        /// <param name="onException"></param>
         /// <param name="finnalException"></param>
-        protected virtual void OnSendSafeAwaitException(object request, object response, Action<Exception> OnException, Exception finnalException)
+        protected virtual void OnSendSafeAwaitException(object request, object response, Action<Exception> onException, Exception finnalException)
         {
-            OnException?.Invoke(finnalException);
+            onException?.Invoke(finnalException);
         }
 
         /// <summary>

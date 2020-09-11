@@ -110,11 +110,11 @@ namespace Net.Remote
         /// </summary>
         /// <typeparam name="RpcResult"></typeparam>
         /// <param name="message"></param>
-        /// <param name="OnException">发生异常时的回调函数</param>
+        /// <param name="onException">发生异常时的回调函数</param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
         /// <returns></returns>
         /// <remarks></remarks>
-        ValueTask<RpcResult> SendSafeAwait<RpcResult>(object message, Action<Exception> OnException = null, object options = null);
+        ValueTask<RpcResult> SendSafeAwait<RpcResult>(object message, Action<Exception> onException = null, object options = null);
     }
 
     //广播一定是个静态方法，没法通过接口调用
