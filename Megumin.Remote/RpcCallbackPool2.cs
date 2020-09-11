@@ -169,7 +169,7 @@ namespace Megumin.Remote
     }
 
     /// <summary>
-    /// rpc超时
+    /// rpc超时异常
     /// </summary>
     public class RcpTimeoutException : TimeoutException
     {

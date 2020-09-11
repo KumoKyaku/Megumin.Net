@@ -16,7 +16,7 @@ namespace Megumin.Remote
     /// 没有设计成扩展函数或者静态函数是方便子类重写。
     /// </summary>
     /// <remarks>一些与RPC支持相关的函数写在这里。</remarks>
-    public abstract class RpcRemote2 : RemoteBase, IObjectMessageReceiver2, ISendCanAwaitable
+    public abstract class RpcRemote2 : RemoteBase, IDealMessageable, ISendCanAwaitable
     {
         public RpcCallbackPool2 RpcCallbackPool { get; } = new RpcCallbackPool2(31);
 
@@ -80,13 +80,14 @@ namespace Megumin.Remote
         /// <param name="cmd"></param>
         /// <param name="messageID"></param>
         /// <param name="message"></param>
-        /// <remarks>独立一个函数，不然<see cref="MessageThreadTransducer.Push2(int, short, int, object, IObjectMessageReceiver2)"/>继承者无法调用</remarks>
+        /// <remarks>独立一个函数，不然<see cref="MessageThreadTransducer.Push(int, short, int, object, IDealMessageable)"/>继承者无法调用</remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Push2MessageThreadTransducer(int rpcID, short cmd, int messageID, object message)
         {
-            MessageThreadTransducer.Push2(rpcID, cmd, messageID, message, this);
+            MessageThreadTransducer.Push(rpcID, cmd, messageID, message, this);
         }
 
-        void IObjectMessageReceiver2.Deal(int rpcID, short cmd, int messageID, object message)
+        void IDealMessageable.Deal(int rpcID, short cmd, int messageID, object message)
         {
             DiversionProcess(rpcID, cmd, messageID, message);
         }

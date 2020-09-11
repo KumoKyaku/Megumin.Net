@@ -93,7 +93,7 @@ namespace Megumin.Remote
             return MessageThreadTransducer.Push(rpcID, cmd, messageID, message, this);
         }
 
-        ValueTask<object> IObjectMessageReceiver.Deal(int rpcID, short cmd, int messageID, object message)
+        ValueTask<object> IObjectMessageReceiver.ObjectMessageReceive(int rpcID, short cmd, int messageID, object message)
         {
             return DiversionProcess(rpcID, cmd, messageID, message);
         }

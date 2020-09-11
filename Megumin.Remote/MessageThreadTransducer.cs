@@ -6,8 +6,8 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using MessageQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Remote.WorkRequest>;
-using MessageQueue2 = System.Collections.Concurrent.ConcurrentQueue<Megumin.Remote.WorkRequest2>;
+using RequestWorkQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Remote.RequestWork>;
+using DealWorkQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Remote.DealWork>;
 
 namespace Megumin.Remote
 {
@@ -24,13 +24,13 @@ namespace Megumin.Remote
         /// <param name="messageID"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        ValueTask<object> Deal(int rpcID, short cmd, int messageID, object message);
+        ValueTask<object> ObjectMessageReceive(int rpcID, short cmd, int messageID, object message);
     }
 
     /// <summary>
-    /// object消息 消费者接口
+    /// 处理object消息 消费者接口
     /// </summary>
-    public interface IObjectMessageReceiver2
+    public interface IDealMessageable
     {
         /// <summary>
         /// 处理消息实例
@@ -42,7 +42,7 @@ namespace Megumin.Remote
         void Deal(int rpcID, short cmd, int messageID, object message);
     }
 
-    internal struct WorkRequest
+    internal struct RequestWork
     {
         readonly int rpcID;
         readonly short cmd;
@@ -51,7 +51,7 @@ namespace Megumin.Remote
         readonly object message;
         readonly IObjectMessageReceiver r;
 
-        internal WorkRequest(MiniTask<object> task, int rpcID, short cmd, int messageID,
+        internal RequestWork(MiniTask<object> task, int rpcID, short cmd, int messageID,
             object message, IObjectMessageReceiver r)
         {
             this.rpcID = rpcID;
@@ -70,7 +70,7 @@ namespace Megumin.Remote
             }
             ///此处可以忽略异常处理
             ///
-            var response = await r.Deal(rpcID, cmd, messageID, message);
+            var response = await r.ObjectMessageReceive(rpcID, cmd, messageID, message);
 
             if (response is Task<object> task)
             {
@@ -86,33 +86,26 @@ namespace Megumin.Remote
         }
     }
 
-    internal struct WorkRequest2
+    internal struct DealWork
     {
         readonly int rpcID;
         readonly short cmd;
         readonly int messageID;
-        readonly MiniTask<object> task;
         readonly object message;
-        readonly IObjectMessageReceiver2 r;
+        readonly IDealMessageable r;
 
-        internal WorkRequest2(MiniTask<object> task, int rpcID, short cmd, int messageID,
-            object message, IObjectMessageReceiver2 r)
+        internal DealWork(int rpcID, short cmd, int messageID,
+            object message, IDealMessageable r)
         {
             this.rpcID = rpcID;
             this.cmd = cmd;
             this.messageID = messageID;
-            this.task = task;
             this.message = message;
             this.r = r;
         }
 
         public void Invoke()
         {
-            if (this.task == null)
-            {
-                return;
-            }
-
             r.Deal(rpcID, cmd, messageID, message);
         }
     }
@@ -121,20 +114,20 @@ namespace Megumin.Remote
     /// </summary>
     public partial class MessageThreadTransducer
     {
-        static MessageQueue receivePool = new MessageQueue();
-        static MessageQueue2 receivePool2 = new MessageQueue2();
+        static readonly RequestWorkQueue requestWorkQueue = new RequestWorkQueue();
+        static readonly DealWorkQueue dealWorkQueue = new DealWorkQueue();
         /// <summary>
         /// 在控制执行顺序的线程中刷新，所有异步方法的后续部分都在这个方法中执行
         /// </summary>
         /// <param name="delta"></param>
         public static void Update(double delta)
         {
-            while (receivePool.TryDequeue(out var res))
+            while (requestWorkQueue.TryDequeue(out var res))
             {
                 res.Invoke();
             }
 
-            while (receivePool2.TryDequeue(out var res))
+            while (dealWorkQueue.TryDequeue(out var res))
             {
                 res.Invoke();
             }
@@ -150,18 +143,17 @@ namespace Megumin.Remote
         {
             //这里是性能敏感区域，使用结构体优化，不使用action闭包
             MiniTask<object> task = MiniTask<object>.Rent();
-            WorkRequest work = new WorkRequest(task, rpcID, cmd, messageID, message, r);
-            receivePool.Enqueue(work);
+            RequestWork work = new RequestWork(task, rpcID, cmd, messageID, message, r);
+            requestWorkQueue.Enqueue(work);
             return task;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Push2(int rpcID, short cmd, int messageID, object message, IObjectMessageReceiver2 r)
+        internal static void Push(int rpcID, short cmd, int messageID, object message, IDealMessageable r)
         {
             //这里是性能敏感区域，使用结构体优化，不使用action闭包
-            MiniTask<object> task = MiniTask<object>.Rent();
-            WorkRequest2 work = new WorkRequest2(task, rpcID, cmd, messageID, message, r);
-            receivePool2.Enqueue(work);
+            DealWork work = new DealWork(rpcID, cmd, messageID, message, r);
+            dealWorkQueue.Enqueue(work);
         }
 
         static readonly ConcurrentQueue<Action> actions = new ConcurrentQueue<Action>();
