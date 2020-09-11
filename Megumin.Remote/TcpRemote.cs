@@ -270,7 +270,7 @@ namespace Megumin.Remote
         /// <remarks>发送管道没有涵盖所有案例，尽量不要给外界访问</remarks>
         protected TcpSendPipe SendPipe { get; } = new TcpSendPipe();
 
-        protected virtual void Send(int rpcID, object message, object options = null)
+        protected override void Send(int rpcID, object message, object options = null)
         {
             //todo 检查当前是否允许发送，可能已经处于断开阶段，不在允许新消息进入发送缓存区
             var allowSend = true;

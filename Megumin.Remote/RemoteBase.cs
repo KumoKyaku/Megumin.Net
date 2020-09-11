@@ -151,6 +151,11 @@ namespace Megumin.Remote
         }
 
         /// <summary>
+        /// 发送rpcID和消息
+        /// </summary>
+        protected abstract void Send(int rpcID, object message, object options = null);
+
+        /// <summary>
         /// 默认关闭线程转换<see cref="MessageThreadTransducer.Update(double)"/>
         /// </summary>
         public bool Post2ThreadScheduler { get; set; } = false;
