@@ -20,7 +20,10 @@ namespace System.Threading.Tasks
             InPool,
             Waiting,
             Success,
-            Faild,
+            /// <summary>
+            /// 取消的
+            /// </summary>
+            Canceled,
         }
 
         /// <summary>
@@ -63,7 +66,11 @@ namespace System.Threading.Tasks
         /// </summary>
         private bool alreadyEnterAsync = false;
 
-        public bool IsCompleted => state == State.Success || state == State.Faild;
+
+        /// <inheritdoc/>
+        /// <remarks><see cref="State.Canceled"/> 不能算完成状态，
+        /// 否则 先取消后await 会触发异步状态机同步完成，会直接取结果，一定要走一下UnsafeOnCompleted 触发回池。后续优化</remarks>
+        public bool IsCompleted => state == State.Success;
         /// <summary>
         /// 请不要同步访问Result。即使同步完成也应该使用await 关键字。同步访问可能无法取得正确的值，或抛出异常。
         /// </summary>
@@ -88,22 +95,27 @@ namespace System.Threading.Tasks
             }
         }
 
+        /// <summary>
+        /// 无需实现
+        /// </summary>
+        /// <param name="continuation"></param>
         public void OnCompleted(Action continuation)
         {
-            lock (innerlock)
-            {
-                if (state == State.InPool)
-                {
-                    ///这里被触发一定是是类库BUG。
-                    throw new ArgumentException($"{nameof(MiniTask<T>)} task conflict, underlying error, please contact the framework author." +
-                        $"/{nameof(MiniTask<T>)}任务冲突，底层错误，请联系框架作者。");
-                }
+            //lock (innerlock)
+            //{
+            //    if (state == State.InPool)
+            //    {
+            //        ///这里被触发一定是是类库BUG。
+            //        throw new ArgumentException($"{nameof(MiniTask<T>)} task conflict, underlying error, please contact the framework author." +
+            //            $"/{nameof(MiniTask<T>)}任务冲突，底层错误，请联系框架作者。");
+            //    }
 
-                alreadyEnterAsync = true;
-                this.continuation -= continuation;
-                this.continuation += continuation;
-                TryComplete();
-            }
+            //    alreadyEnterAsync = true;
+            //    this.continuation -= continuation;
+            //    this.continuation += continuation;
+            //    TryComplete();
+            //}
+            throw new NotImplementedException();
         }
 
         public void SetResult(T result)
@@ -149,7 +161,7 @@ namespace System.Threading.Tasks
                 }
 
                 Result = default;
-                state = State.Faild;
+                state = State.Canceled;
                 TryComplete();
             }
         }
