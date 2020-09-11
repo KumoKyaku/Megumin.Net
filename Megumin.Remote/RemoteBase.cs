@@ -167,6 +167,7 @@ namespace Megumin.Remote
         /// 例如：同步两个远端时间戳的消息。
         /// </summary>
         /// <param name="rpcID"></param>
+        /// <param name="cmd"></param>
         /// <param name="messageID"></param>
         /// <param name="message"></param>
         /// <returns></returns>

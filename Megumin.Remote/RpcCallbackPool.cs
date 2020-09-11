@@ -58,7 +58,7 @@ namespace Megumin.Remote
         /// 从rpc回调池中移除
         /// </summary>
         /// <param name="rpcID"></param>
-        void Remove(int rpcID);
+        bool Remove(int rpcID);
         /// <summary>
         /// 触发rpc回调
         /// </summary>
@@ -263,6 +263,8 @@ namespace Megumin.Remote
         /// 创建超时检查
         /// </summary>
         /// <param name="rpcID"></param>
+        /// <param name="resultTypeName"></param>
+        /// <param name="timeOutMilliseconds"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void CreateCheckTimeout(int rpcID,string resultTypeName, int timeOutMilliseconds)
         {
@@ -303,8 +305,6 @@ namespace Megumin.Remote
 
             return false;
         }
-
-        void IRpcCallbackPool.Remove(int rpcID) => Remove(rpcID);
 
         public bool TrySetResult(int rpcID, object msg)
         {

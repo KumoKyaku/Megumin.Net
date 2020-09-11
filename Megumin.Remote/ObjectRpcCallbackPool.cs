@@ -12,17 +12,17 @@ namespace Megumin.Remote
     /// Rpc回调注册池
     /// 每个session大约每秒30个包，超时时间默认为30秒；
     /// </summary>
-    public class RpcCallbackPool2 : Dictionary<int, (DateTime startTime, RpcSource source)>
+    public class ObjectRpcCallbackPool : Dictionary<int, (DateTime startTime, RpcSource source)>
     {
         int rpcCursor = 0;
         readonly object rpcCursorLock = new object();
 
-        public RpcCallbackPool2()
+        public ObjectRpcCallbackPool()
         {
 
         }
 
-        public RpcCallbackPool2(int capacity) : base(capacity)
+        public ObjectRpcCallbackPool(int capacity) : base(capacity)
         {
         }
 

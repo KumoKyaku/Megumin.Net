@@ -1,13 +1,9 @@
-﻿using Megumin.Remote;
-using Megumin.Remote;
-using Net.Remote;
-using System;
-using System.Buffers;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using RequestWorkQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Remote.RequestWork>;
 using DealWorkQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Remote.DealWork>;
+using RequestWorkQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Remote.RequestWork>;
 
 namespace Megumin.Remote
 {

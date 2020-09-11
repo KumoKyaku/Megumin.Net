@@ -18,7 +18,7 @@ namespace Megumin.Remote
     /// <remarks>一些与RPC支持相关的函数写在这里。</remarks>
     public abstract class RpcRemote2 : RemoteBase, IDealMessageable, ISendCanAwaitable
     {
-        public RpcCallbackPool2 RpcCallbackPool { get; } = new RpcCallbackPool2(31);
+        public ObjectRpcCallbackPool RpcCallbackPool { get; } = new ObjectRpcCallbackPool(31);
 
         /// <summary>
         /// 分流普通消息和RPC回复消息
@@ -109,7 +109,6 @@ namespace Megumin.Remote
         /// <param name="resp"></param>
         /// <param name="ex"></param>
         /// <param name="options"></param>
-        /// <param name="stackTrace"></param>
         /// <returns></returns>
         protected virtual (RpcResult result, Exception exception)
             ValidResult<RpcResult>(object request,
