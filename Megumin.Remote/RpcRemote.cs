@@ -82,6 +82,7 @@ namespace Megumin.Remote
         /// <param name="message"></param>
         /// <remarks>独立一个函数，不然<see cref="MessageThreadTransducer.Push(int, short, int, object, IDealMessageable)"/>继承者无法调用</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [System.Diagnostics.DebuggerHidden]
         protected void Push2MessageThreadTransducer(int rpcID, short cmd, int messageID, object message)
         {
             MessageThreadTransducer.Push(rpcID, cmd, messageID, message, this);
