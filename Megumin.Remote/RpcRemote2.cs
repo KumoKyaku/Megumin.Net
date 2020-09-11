@@ -9,7 +9,10 @@ namespace Megumin.Remote
 {
     /// <summary>
     /// 支持Rpc功能的
-    /// <para></para>
+    /// <para/>优化了发送逻辑，使用一个异步模式取代了一个底层泛型。
+    /// <para/>Rpcpool类型可以确定，提高了效率。
+    /// <para/>层次划分更加明确。
+    /// <para/>
     /// 没有设计成扩展函数或者静态函数是方便子类重写。
     /// </summary>
     /// <remarks>一些与RPC支持相关的函数写在这里。</remarks>
@@ -62,7 +65,7 @@ namespace Megumin.Remote
             var trans = UseThreadSchedule(rpcID, cmd, messageID, message);
             if (trans)
             {
-                MessageThreadTransducer.Push2(rpcID, cmd, messageID, message, this);
+                Push2MessageThreadTransducer(rpcID, cmd, messageID, message);
             }
             else
             {
@@ -70,14 +73,23 @@ namespace Megumin.Remote
             }
         }
 
+        /// <summary>
+        /// 推到线程转化器中
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="cmd"></param>
+        /// <param name="messageID"></param>
+        /// <param name="message"></param>
+        /// <remarks>独立一个函数，不然<see cref="MessageThreadTransducer.Push2(int, short, int, object, IObjectMessageReceiver2)"/>继承者无法调用</remarks>
+        protected void Push2MessageThreadTransducer(int rpcID, short cmd, int messageID, object message)
+        {
+            MessageThreadTransducer.Push2(rpcID, cmd, messageID, message, this);
+        }
+
         void IObjectMessageReceiver2.Deal(int rpcID, short cmd, int messageID, object message)
         {
             DiversionProcess(rpcID, cmd, messageID, message);
         }
-
-        ///优化了发送逻辑，使用一个异步模式取代了一个底层泛型。
-        ///Rpcpool类型可以确定，提高了效率。
-        ///层次划分更加明确。
 
         public virtual async ValueTask<(RpcResult result, Exception exception)>
             Send<RpcResult>(object message, object options = null)

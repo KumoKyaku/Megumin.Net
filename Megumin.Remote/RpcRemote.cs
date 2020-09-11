@@ -57,7 +57,7 @@ namespace Megumin.Remote
             var trans = UseThreadSchedule(rpcID, cmd, messageID, message);
             if (trans)
             {
-                reply = await MessageThreadTransducer.Push(rpcID, cmd, messageID, message, this);
+                reply = await Push2MessageThreadTransducer(rpcID, cmd, messageID, message);
             }
             else
             {
@@ -78,6 +78,19 @@ namespace Megumin.Remote
             {
                 Reply(rpcID * -1, reply);
             }
+        }
+
+        /// <summary>
+        /// 推到线程转化器中
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="cmd"></param>
+        /// <param name="messageID"></param>
+        /// <param name="message"></param>
+        /// <remarks>独立一个函数，不然<see cref="MessageThreadTransducer.Push(int, short, int, object, IObjectMessageReceiver)"/>继承者无法调用</remarks>
+        protected IMiniAwaitable<object> Push2MessageThreadTransducer(int rpcID, short cmd, int messageID, object message)
+        {
+            return MessageThreadTransducer.Push(rpcID, cmd, messageID, message, this);
         }
 
         ValueTask<object> IObjectMessageReceiver.Deal(int rpcID, short cmd, int messageID, object message)

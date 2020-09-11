@@ -17,9 +17,11 @@ namespace Megumin.Remote
     public interface IObjectMessageReceiver
     {
         /// <summary>
-        /// 处理消息实例
+        /// 处理消息实例,并返回一个可等待结果
         /// </summary>
         /// <param name="rpcID"></param>
+        /// <param name="cmd"></param>
+        /// <param name="messageID"></param>
         /// <param name="message"></param>
         /// <returns></returns>
         ValueTask<object> Deal(int rpcID, short cmd, int messageID, object message);
@@ -34,6 +36,8 @@ namespace Megumin.Remote
         /// 处理消息实例
         /// </summary>
         /// <param name="rpcID"></param>
+        /// <param name="cmd"></param>
+        /// <param name="messageID"></param>
         /// <param name="message"></param>
         void Deal(int rpcID, short cmd, int messageID, object message);
     }
@@ -102,7 +106,7 @@ namespace Megumin.Remote
             this.r = r;
         }
 
-        public async void Invoke()
+        public void Invoke()
         {
             if (this.task == null)
             {
