@@ -109,7 +109,7 @@ namespace TestServer
             switch (message)
             {
                 case TestPacket1 packet1:
-                    if (totalCount % 100 == 0)
+                    if (totalCount % 1 == 0)
                     {
                         Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}------总消息数{totalCount}");
                     }
