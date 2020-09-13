@@ -57,11 +57,12 @@ namespace TestServer
 
     class Program
     {
+        const bool UsePost2ThreadScheduler = false;
         static void Main(string[] args)
         {
             MessageLUT.Regist(new TestPacket1());
             MessageLUT.Regist(new TestPacket2());
-            Console.WriteLine("服务器/Server");
+            Console.WriteLine($"服务器/Server----UsePost2ThreadScheduler:{UsePost2ThreadScheduler}");
             ListenAsync();
 
             Console.ReadLine();
@@ -69,15 +70,18 @@ namespace TestServer
 
         private static async void ListenAsync()
         {
-            ThreadPool.QueueUserWorkItem((A) =>
+            if (UsePost2ThreadScheduler)
             {
-                CoolDownTime coolDown = new CoolDownTime() { MinDelta = TimeSpan.FromSeconds(30) };
-                while (true)
+                ThreadPool.QueueUserWorkItem((A) =>
                 {
-                    MessageThreadTransducer.Update(0);
-                }
+                    CoolDownTime coolDown = new CoolDownTime() { MinDelta = TimeSpan.FromSeconds(30) };
+                    while (true)
+                    {
+                        MessageThreadTransducer.Update(0);
+                    }
 
-            });
+                });
+            }
 
             TcpRemoteListener remote = new TcpRemoteListener(54321);
             Listen(remote);
@@ -95,7 +99,11 @@ namespace TestServer
 
         public static TestSpeedServerRemote Create()
         {
-            return new TestSpeedServerRemote() { Post2ThreadScheduler = true };
+            return new TestSpeedServerRemote() 
+            { 
+                Post2ThreadScheduler = UsePost2ThreadScheduler, 
+                UID = connectCount 
+            };
         }
     }
 
@@ -103,15 +111,17 @@ namespace TestServer
     public sealed class TestSpeedServerRemote:TcpRemote
     {
         static int totalCount;
+        int myRecvCount = 0;
         protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
             totalCount++;
+            myRecvCount++;
             switch (message)
             {
                 case TestPacket1 packet1:
                     if (totalCount % 1 == 0)
                     {
-                        Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}------总消息数{totalCount}");
+                        Console.WriteLine($"Remote:{UID} 接收消息{nameof(TestPacket1)}--{packet1.Value}--MyRecvCount{myRecvCount}----总消息数{totalCount}");
                     }
                     return null;
                 case TestPacket2 packet2:
