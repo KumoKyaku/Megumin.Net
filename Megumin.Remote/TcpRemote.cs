@@ -341,6 +341,7 @@ namespace Megumin.Remote
         /// <para/>useSynchronizationContext 如果为true的话，
         /// <para/>那么pipe read write 异步后续只会在调用线程执行。
         /// <para/>构造 连接 StartWork调用链通常导致pipe异步后续在unity中会被锁定在主线程。
+        /// <para/>https://source.dot.net/#System.IO.Pipelines/System/IO/Pipelines/PipeAwaitable.cs,115
         /// </remarks>
         public Pipe pipe { get; } = new Pipe(new PipeOptions(useSynchronizationContext: false));
 
