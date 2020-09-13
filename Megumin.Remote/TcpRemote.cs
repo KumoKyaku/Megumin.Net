@@ -19,7 +19,7 @@ namespace Megumin.Remote
     /// </summary>
     /// <remarks>消息报头结构：
     /// Lenght(总长度，包含自身报头) [int] [4] + RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
-    public partial class TcpRemote : RpcRemoteOld, IRemote, IRemoteUID<int>
+    public partial class TcpRemote : RpcRemote, IRemote, IRemoteUID<int>
     {
         public int ID { get; } = InterlockedID<IRemote>.NewID();
         public virtual int UID { get; set; }
@@ -301,55 +301,6 @@ namespace Megumin.Remote
 
             StartWork();
         }
-
-        //todo 使用 IValueTaskSource 优化
-        public virtual async ValueTask<(RpcResult result, Exception exception)>
-            Send<RpcResult>(object message, object options = null)
-        {
-            return await InnerSend<RpcResult>(message, options);
-        }
-
-        protected virtual IMiniAwaitable<(RpcResult result, Exception exception)>
-            InnerSend<RpcResult>(object message, object options = null)
-        {
-            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(options);
-
-            try
-            {
-                Send(rpcID, message);
-                return source;
-            }
-            catch (Exception e)
-            {
-                RpcCallbackPool.TrySetException(rpcID * -1, e);
-                return source;
-            }
-        }
-
-        //todo 使用 IValueTaskSource 优化
-        public virtual async ValueTask<RpcResult> SendSafeAwait<RpcResult>
-            (object message, Action<Exception> OnException = null, object options = null)
-        {
-            return await InnerSendSafeAwait<RpcResult>(message, OnException, options);
-        }
-        
-        protected virtual IMiniAwaitable<RpcResult> InnerSendSafeAwait<RpcResult>
-            (object message, Action<Exception> OnException = null, object options = null)
-        {
-            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(OnException, options);
-
-            try
-            {
-                Send(rpcID, message);
-                return source;
-            }
-            catch (Exception e)
-            {
-                source.CancelWithNotExceptionAndContinuation();
-                OnException?.Invoke(e);
-                return source;
-            }
-        }
     }
 
     public partial class TcpRemote : IReceiveMessage
@@ -469,16 +420,6 @@ namespace Megumin.Remote
                 }
                 IsDealReceiving = false;
             }
-        }
-
-        /// <summary>
-        /// 回复给远端
-        /// </summary>
-        /// <param name="rpcID"></param>
-        /// <param name="replyMessage"></param>
-        protected override void Reply(int rpcID, object replyMessage)
-        {
-            Send(rpcID, replyMessage);
         }
 
         public float LastReceiveTimeFloat { get; } = float.MaxValue;

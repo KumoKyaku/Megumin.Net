@@ -21,8 +21,8 @@ namespace TestClient
             Console.ReadLine();
         }
 
-        static int MessageCount = 1;
-        static int RemoteCount = 1;
+        static int MessageCount = 10;
+        static int RemoteCount = 3;
         private static async void ConAsync()
         {
             //ThreadPool.QueueUserWorkItem((A) =>
