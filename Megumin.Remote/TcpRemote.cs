@@ -438,24 +438,23 @@ namespace Megumin.Remote
 
                 //剩余未处理消息buffer
                 var unDealBuffer = result.Buffer;
-
+                long unReadLenght = unDealBuffer.Length;
+                int offset = 0;
                 //处理粘包
-                while (unDealBuffer.Length > 4)
+                while (unReadLenght > 4)
                 {
-                    //包体总长度
-                    var length = unDealBuffer.ReadInt();
-                    if (unDealBuffer.Length >= length)
+                    //下一个包体总长度
+                    var nextSegmentLength = unDealBuffer.ReadInt();
+
+                    if (unReadLenght >= nextSegmentLength)
                     {
                         //取得消息体
-                        var body = unDealBuffer.Slice(4, length - 4);
+                        var body = unDealBuffer.Slice(offset + 4, nextSegmentLength - 4);
 
                         ProcessBody(body, null);
 
-                        //标记已使用数据，要先使用在标记，不然数据可能就被释放了
-                        var pos = unDealBuffer.GetPosition(length);
-                        pipeReader.AdvanceTo(pos);
-
-                        unDealBuffer = unDealBuffer.Slice(length);//切除已使用部分
+                        unReadLenght -= nextSegmentLength;
+                        offset += nextSegmentLength;
                     }
                     else
                     {
@@ -463,6 +462,10 @@ namespace Megumin.Remote
                         break;
                     }
                 }
+
+                //标记已使用数据，要先使用在标记，不然数据可能就被释放了
+                var pos = result.Buffer.GetPosition(offset);
+                pipeReader.AdvanceTo(pos);
 
                 if (result.IsCompleted || result.IsCanceled)
                 {

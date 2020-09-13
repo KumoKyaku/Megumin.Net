@@ -22,7 +22,7 @@ namespace TestClient
         }
 
         static int MessageCount = 10;
-        static int RemoteCount = 3;
+        static int RemoteCount = 1;
         private static async void ConAsync()
         {
             //ThreadPool.QueueUserWorkItem((A) =>
@@ -75,7 +75,7 @@ namespace TestClient
                 throw;
             }
 
-            await TestRpc(clientIndex, remote);
+            //await TestRpc(clientIndex, remote);
 
             Stopwatch look1 = new Stopwatch();
             var msg = new TestPacket1 { Value = 0 };
