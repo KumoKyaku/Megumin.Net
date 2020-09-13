@@ -176,6 +176,7 @@ namespace Megumin.Remote
         /// <param name="messageID"></param>
         /// <param name="message"></param>
         /// <returns></returns>
+        /// <remarks>在Unity中也可以重写这个函数，判断调用线程是不是unity主线程，如果是则不需要转化线程</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual bool UseThreadSchedule(int rpcID, short cmd, int messageID, object message)
         {

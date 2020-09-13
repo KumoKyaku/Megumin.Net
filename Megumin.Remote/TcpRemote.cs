@@ -31,6 +31,11 @@ namespace Megumin.Remote
         /// 当前工作状态0：发送接收都正常； 1:从未尝试开始； 2：手动终止； 3：远端断开连接；
         /// </summary>
         public int WorkState { get; protected set; } = 1;
+        /// <summary>
+        /// 是不是正在断开
+        /// </summary>
+        public bool IsDisconnecting { get; set; } = false;
+
 
         /// <summary>
         /// Mono/IL2CPP 请使用中使用<see cref="TcpRemote(AddressFamily)"/>
@@ -76,7 +81,7 @@ namespace Megumin.Remote
         {
             WorkState = 0;
             FillRecvPipe(pipe.Writer);
-            ReadRecePipe(pipe.Reader);
+            StartReadRecvPipe(pipe.Reader);
             ReadSendPipe(SendPipe);
         }
     }
@@ -207,6 +212,12 @@ namespace Megumin.Remote
         /// </summary>
         readonly TaskCompletionSource<SocketError> OnSocketError = new TaskCompletionSource<SocketError>();
 
+        void 远程主动断开(SocketError error)
+        {
+            CanRecv = false;
+            pipe.Writer.Complete();
+        }
+
         protected override void OnDisconnect(
             SocketError error = SocketError.SocketError,
             ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
@@ -224,52 +235,6 @@ namespace Megumin.Remote
 
     public partial class TcpRemote : ISendable, ISendCanAwaitable
     {
-        public bool IsSending { get; protected set; }
-
-        /// <summary>
-        /// 开始读取发送管道，使用Socket发送消息
-        /// </summary>
-        public async void ReadSendPipe(TcpSendPipe sendPipe)
-        {
-            while (true)
-            {
-                lock (sendPipe)
-                {
-                    if (IsSending)
-                    {
-                        return;
-                    }
-                    IsSending = true;
-                }
-
-                var target = await sendPipe.ReadNext();
-
-#if NETSTANDARD2_1
-            var length = target.SendMemory.Length;
-            var result = await Client.SendAsync(target.SendMemory, SocketFlags.None);
-#else
-                var length = target.SendSegment.Count;
-                var result = await Client.SendAsync(target.SendSegment, SocketFlags.None);
-#endif
-
-                if (result == length)
-                {
-                    //dequeue?
-                    //成功？
-                    target.SendSuccess();
-                }
-                //todo 发送失败。
-
-                IsSending = false;
-            }
-        }
-
-        /// <summary>
-        /// 发送管道
-        /// </summary>
-        /// <remarks>发送管道没有涵盖所有案例，尽量不要给外界访问</remarks>
-        protected TcpSendPipe SendPipe { get; } = new TcpSendPipe();
-
         protected override void Send(int rpcID, object message, object options = null)
         {
             //todo 检查当前是否允许发送，可能已经处于断开阶段，不在允许新消息进入发送缓存区
@@ -301,22 +266,103 @@ namespace Megumin.Remote
 
             StartWork();
         }
+
+        /// <summary>
+        /// 发送管道
+        /// </summary>
+        /// <remarks>发送管道没有涵盖所有案例，尽量不要给外界访问</remarks>
+        protected TcpSendPipe SendPipe { get; } = new TcpSendPipe();
+
+        public bool IsSending { get; protected set; }
+
+        /// <summary>
+        /// 开始读取发送管道，使用Socket发送消息
+        /// </summary>
+        public async void ReadSendPipe(TcpSendPipe sendPipe)
+        {
+            while (true)
+            {
+                lock (sendPipe)
+                {
+                    if (IsSending)
+                    {
+                        return;
+                    }
+                    IsSending = true;
+                }
+
+                try
+                {
+
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+
+
+                var target = await sendPipe.ReadNext();
+
+#if NETSTANDARD2_1
+                var length = target.SendMemory.Length;
+                var result = await Client.SendAsync(target.SendMemory, SocketFlags.None);
+#else
+                var length = target.SendSegment.Count;
+                var result = await Client.SendAsync(target.SendSegment, SocketFlags.None);
+#endif
+
+                if (result == length)
+                {
+                    //发送成功
+                    target.SendSuccess();
+                }
+                else
+                {
+                    //发送不成功，result 是错误码
+                    //https://docs.microsoft.com/zh-cn/dotnet/api/system.net.sockets.sockettaskextensions.sendasync?view=netstandard-2.0
+                
+                    //todo 如果错误码和要发送的字节恰好相等怎么办？
+                }
+
+                IsSending = false;
+            }
+        }
+
+
     }
 
     public partial class TcpRemote : IReceiveMessage
     {
-        public Pipe pipe { get; } = new Pipe();
+        /// <summary>
+        /// 不使用线程同步上下文，全部推送到线程池调用。useSynchronizationContext 用来保证await前后线程一致。
+        /// </summary>
+        /// <remarks>
+        /// <para/>useSynchronizationContext 如果为true的话，
+        /// <para/>那么pipe read write 异步后续只会在调用线程执行。
+        /// <para/>构造 连接 StartWork调用链通常导致pipe异步后续在unity中会被锁定在主线程。
+        /// </remarks>
+        public Pipe pipe { get; } = new Pipe(new PipeOptions(useSynchronizationContext: false));
 
         /// <summary>
         /// 当前socket是不是在接收。
         /// </summary>
         public bool IsReceiving { get; protected set; }
+        /// <summary>
+        /// 当前Socket能不能在接收了
+        /// </summary>
+        public bool CanRecv { get; set; } = true;
         protected virtual async void FillRecvPipe(PipeWriter pipeWriter)
         {
             while (true)
             {
                 lock (pipeWriter)
                 {
+                    if (!CanRecv)
+                    {
+                        return;
+                    }
+
                     if (IsReceiving)
                     {
                         return;
@@ -353,17 +399,17 @@ namespace Megumin.Remote
                         //收到0字节 表示远程主动断开连接
                         this.ToString();//debug
                     }
+
+                    pipeWriter.Advance(count);
+                    _ = pipeWriter.FlushAsync();
+                    IsReceiving = false;
                 }
                 catch (SocketException e)
                 {
-                    pipeWriter.Complete();
-                    WorkState = 3;
+                    远程主动断开((SocketError)e.ErrorCode);
+                    IsReceiving = false;
                     return;
                 }
-
-                pipeWriter.Advance(count);
-                _ = pipeWriter.FlushAsync();
-                IsReceiving = false;
             }
         }
 
@@ -372,14 +418,14 @@ namespace Megumin.Remote
         /// </summary>
         public bool IsDealReceiving { get; protected set; }
         /// <summary>
-        /// 
+        /// 开始读取接收到的数据
         /// </summary>
         /// <param name="pipeReader"></param>
-        protected async void ReadRecePipe(PipeReader pipeReader)
+        protected async void StartReadRecvPipe(PipeReader pipeReader)
         {
             while (true)
             {
-                lock (pipeReader)
+                lock (pipeReader)//如果不使用IsDealReceiving 标记直接在lock中处理，第二个调用者会卡住。
                 {
                     if (IsDealReceiving)
                     {
@@ -392,36 +438,41 @@ namespace Megumin.Remote
                 //剩余未处理消息buffer
                 var unDealBuffer = result.Buffer;
 
+                //处理粘包
                 while (unDealBuffer.Length > 4)
                 {
                     //包体总长度
                     var length = unDealBuffer.ReadInt();
                     if (unDealBuffer.Length >= length)
                     {
-                        ///取得消息体
+                        //取得消息体
                         var body = unDealBuffer.Slice(4, length - 4);
 
                         ProcessBody(body, null);
-                        //标记已使用数据
-                        var pos = result.Buffer.GetPosition(length);
+
+                        //标记已使用数据，要先使用在标记，不然数据可能就被释放了
+                        var pos = unDealBuffer.GetPosition(length);
                         pipeReader.AdvanceTo(pos);
 
                         unDealBuffer = unDealBuffer.Slice(length);//切除已使用部分
                     }
                     else
                     {
+                        //半包，继续读取
                         break;
                     }
                 }
 
                 if (result.IsCompleted || result.IsCanceled)
                 {
-                    throw new Exception("这里处理终止");
+                    return;
                 }
                 IsDealReceiving = false;
             }
         }
 
+
+        /// <remarks>留给Unity用的。在unity中赋值</remarks>
         public float LastReceiveTimeFloat { get; } = float.MaxValue;
     }
 }

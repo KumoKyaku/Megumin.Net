@@ -100,13 +100,26 @@ public class TestRemote : TcpRemote
     public MainWindow UI { get; internal set; }
     protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
     {
+        UI.Dispatcher.Invoke(() =>
+        {
+            switch (message)
+            {
+                case TestPacket1 packet1:
+                    UI.result1.Content = $"收到{nameof(TestPacket1)}";
+                    break;
+                case TestPacket2 packet2:
+                    UI.result1.Content = $"收到{nameof(TestPacket2)}";
+                    break;
+                default:
+                    break;
+            }
+        });
+
         switch (message)
         {
             case TestPacket1 packet1:
-                UI.result1.Content = $"收到{nameof(TestPacket1)}";
                 return new TestPacket2 { Value = packet1.Value };
             case TestPacket2 packet2:
-                UI.result1.Content = $"收到{nameof(TestPacket2)}";
                 return null;
             default:
                 break;

@@ -179,9 +179,8 @@ namespace Net.Remote
         //[Obsolete("DateTime 开销太大，使用时间戳代替")]
         //DateTime LastReceiveTime { get; }
         /// <summary>
-        /// 最后一次收到消息的时间戳
+        /// 最后一次收到消息的时间戳,因为Unity中时间戳是float
         /// </summary>
-        /// <remarks>因为Unity中时间戳是float</remarks>
         float LastReceiveTimeFloat { get; }
         /// <summary>
         /// 设置接受回调是个失败的设计，实际使用中无论如何都要从要给实现中继承，重写部分函数。
