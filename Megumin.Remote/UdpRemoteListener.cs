@@ -110,6 +110,10 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="endPoint"></param>
         /// <returns></returns>
+        /// <remarks>
+        /// 因为UDP需求是客户端换IP后，要能找到对应实例，所以要有另外的Key，还有防止碰撞攻击。
+        /// todo,使用int 做key，使用多个guid做密钥。
+        /// </remarks>
         ValueTask<object> GetRemote(IPEndPoint endPoint)
         {
             if (connected.TryGetValue(endPoint,out var remote))
