@@ -9,7 +9,108 @@ using System.Threading.Tasks;
 
 namespace Megumin.Remote
 {
-    
+    /// <summary>
+    /// Q：是否报头带上长度验证完整性？
+    /// A：不需要，如果数据报重组失败Udp会直接丢弃。
+    /// </summary>
+    public class UdpRemote:RpcRemote
+    {
+        private UdpRemoteListener udpRemoteListener;
+        protected IPEndPoint lastRecvIP;
+
+        protected UdpClient UdpClient => udpRemoteListener;
+
+        public UdpRemote()
+        {
+
+        }
+
+        internal protected UdpRemote(UdpRemoteListener udpRemoteListener)
+        {
+            this.udpRemoteListener = udpRemoteListener;
+        }
+
+
+        internal protected virtual void Deal(UdpReceiveResult res)
+        {
+            lastRecvIP = res.RemoteEndPoint;
+            ProcessBody(new ReadOnlySequence<byte>(res.Buffer));
+        }
+
+        protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+            
+        }
+
+        protected override void PostDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+            
+        }
+
+        
+        protected TestWriter testWriter = new TestWriter(65535);
+        protected override async void Send(int rpcID, object message, object options = null)
+        {
+            if (TrySerialize(testWriter, rpcID,message,options))
+            {
+                var (buffer,lenght) = testWriter.Pop();
+                if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
+                {
+                    await UdpClient.SendAsync(segment.Array, lenght, lastRecvIP);
+                }
+                buffer.Dispose();
+            }
+            else
+            {
+                var (buffer, lenght) = testWriter.Pop();
+                buffer.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// todo 自动扩容
+        /// </summary>
+        protected class TestWriter: IBufferWriter<byte>
+        {
+            private int defaultCount;
+            private IMemoryOwner<byte> buffer;
+            int offset = 0;
+
+            public TestWriter(int bufferLenght)
+            {
+                this.defaultCount = bufferLenght;
+                buffer = MemoryPool<byte>.Shared.Rent(defaultCount);
+            }
+
+            /// <summary>
+            /// 弹出一个序列化完毕的缓冲。
+            /// </summary>
+            /// <returns></returns>
+            public (IMemoryOwner<byte>,int) Pop()
+            {
+                var old = buffer;
+                var lenght = offset;
+                buffer = MemoryPool<byte>.Shared.Rent(defaultCount);
+                offset = 0;
+                return (old,lenght);
+            }
+
+            public void Advance(int count)
+            {
+                offset += count;
+            }
+
+            public Memory<byte> GetMemory(int sizeHint = 0)
+            {
+                return buffer.Memory.Slice(offset, sizeHint);
+            }
+
+            public Span<byte> GetSpan(int sizeHint = 0)
+            {
+                return buffer.Memory.Span.Slice(offset, sizeHint);
+            }
+        }
+    }
 }
 
 

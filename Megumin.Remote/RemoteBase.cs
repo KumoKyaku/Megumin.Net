@@ -29,6 +29,9 @@ namespace Megumin.Remote
     /// <para></para>
     /// <see cref="TryDeserialize(int, in ReadOnlySequence{byte}, out object, object)"/>
     /// 没有设计成扩展函数或者静态函数是方便子类重写。
+    /// <para/> 
+    /// Q：异步方法会不会延长声明周期，导致对象永不销毁？
+    /// A：存疑，感觉应该不会，需要测试。异步调用会注册到IOCP线程池中。如果异步接收没收到0字节或者异常，那么对象会一直活着。
     /// </remarks>
     public abstract class RemoteBase : ISendable
     {

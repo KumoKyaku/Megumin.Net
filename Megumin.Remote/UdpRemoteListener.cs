@@ -1,11 +1,109 @@
-﻿//using Megumin.Message;
-//using Net.Remote;
-//using System;
-//using System.Collections.Concurrent;
-//using System.Collections.Generic;
-//using System.Net;
-//using System.Net.Sockets;
-//using System.Threading.Tasks;
+﻿using Net.Remote;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
+
+
+///如果服务端只用一个udp接收所有客户端数据
+///极限情况下物理机万兆网卡，怎么想一个socket udp接收缓冲区也不够
+///https://stackoverflow.com/questions/57431090/does-c-sharp-udp-sockets-receivebuffersize-applies-to-size-of-datagrams-or-size
+///这一版现状先把socket recvsize调大试试，看看丢包情况
+///
+///https://blog.csdn.net/zhyh3737/article/details/7219275
+///
+namespace Megumin.Remote
+{
+    /// <summary>
+    /// 2018年时IPV4 IPV6 udp中不能混用，不知道现在情况
+    /// </summary>
+    public class UdpRemoteListener : UdpClient
+    {
+        public IPEndPoint ConnectIPEndPoint { get; set; }
+        public EndPoint RemappedEndPoint { get; }
+
+        public UdpRemoteListener(int port, AddressFamily addressFamily = AddressFamily.InterNetworkV6)
+            : base(port, addressFamily)
+        {
+            this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
+            Client.ReceiveBufferSize = 1020 * 1024 * 5; //先设个5mb看看
+        }
+
+        public bool IsListening { get; private set; }
+
+        ///<remarks>
+        ///Q：如果同时调用多次ReceiveAsync有没有实际意义？能不能达到加速接收的目的？
+        ///</remarks>
+        async void AcceptAsync()
+        {
+            while (IsListening)
+            {
+                var res = await ReceiveAsync(); 
+                UdpReceives.Enqueue(res);
+            }
+        }
+
+        /// <remarks>
+        /// Q:要不要用同步队列，预计有多个线程入队，只有一个线程出队，会不会有线程安全问题？
+        /// </remarks>
+        Queue<UdpReceiveResult> UdpReceives = new Queue<UdpReceiveResult>();
+
+        /// <summary>
+        /// 接收和处理分开
+        /// </summary>
+        async void Deal()
+        {
+            while (IsListening)
+            {
+                if (UdpReceives.Count > 0)
+                {
+                    var res = UdpReceives.Dequeue();
+                    if (!connected.TryGetValue(res.RemoteEndPoint, out var remote))
+                    {
+                        remote = new UdpRemote(this);
+                        connected[res.RemoteEndPoint] = remote;
+                    }
+
+                    remote.Deal(res);
+                }
+                else
+                {
+                    await Task.Yield();
+                }
+            }
+            
+        }
+
+        /// <summary>
+        /// 正在连接的
+        /// </summary>
+        readonly Dictionary<IPEndPoint, UdpRemote> connected= new Dictionary<IPEndPoint, UdpRemote>();
+
+        public void ListenAsync()
+        {
+            IsListening = true;
+            Task.Factory.StartNew(AcceptAsync, TaskCreationOptions.LongRunning);
+            Task.Factory.StartNew(Deal, TaskCreationOptions.LongRunning);
+        }
+
+        public void Stop()
+        {
+            IsListening = false;
+        }
+
+        /// <summary>
+        /// 移除逻辑
+        /// </summary>
+        /// <param name="remote"></param>
+        internal void Lost(UdpRemote remote)
+        {
+
+        }
+    }
+}
 
 //namespace Megumin.Remote
 //{
@@ -17,10 +115,10 @@
 //        public IPEndPoint ConnectIPEndPoint { get; set; }
 //        public EndPoint RemappedEndPoint { get; }
 
-//        public UdpRemoteListener(int port,AddressFamily addressFamily = AddressFamily.InterNetworkV6)
+//        public UdpRemoteListener(int port, AddressFamily addressFamily = AddressFamily.InterNetworkV6)
 //            : base(port, addressFamily)
 //        {
-//            this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None,port);
+//            this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
 //        }
 
 //        public bool IsListening { get; private set; }
@@ -53,7 +151,7 @@
 //        /// <param name="res"></param>
 //        private async void ReMappingAsync(UdpReceiveResult res)
 //        {
-//            if (!connecting.TryGetValue(res.RemoteEndPoint,out var remote))
+//            if (!connecting.TryGetValue(res.RemoteEndPoint, out var remote))
 //            {
 //                remote = new UdpRemote(this.Client.AddressFamily);
 //                connecting[res.RemoteEndPoint] = remote;
@@ -124,7 +222,7 @@
 //        /// </summary>
 //        /// <param name="pipline"></param>
 //        /// <returns></returns>
-//        public async Task<UdpRemote> ListenAsync(ReceiveCallback receiveHandle,IMessagePipeline pipline)
+//        public async Task<UdpRemote> ListenAsync(ReceiveCallback receiveHandle, IMessagePipeline pipline)
 //        {
 //            IsListening = true;
 //            System.Threading.ThreadPool.QueueUserWorkItem(state =>
