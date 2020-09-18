@@ -49,7 +49,7 @@ namespace Megumin.Remote
         /// <remarks>
         /// Q:要不要用同步队列，预计有多个线程入队，只有一个线程出队，会不会有线程安全问题？
         /// </remarks>
-        Queue<UdpReceiveResult> UdpReceives = new Queue<UdpReceiveResult>();
+        protected Queue<UdpReceiveResult> UdpReceives = new Queue<UdpReceiveResult>();
 
         /// <summary>
         /// 接收和处理分开

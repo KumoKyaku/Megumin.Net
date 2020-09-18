@@ -53,7 +53,16 @@ namespace Megumin.Remote
     /// </summary>
     public class KcpRemote:UdpRemote
     {
+        public int ID { get; set; }
         IKcpIO kcp = null;
+
+        void RKCP(UdpReceiveResult res)
+        {
+            ID = InterlockedID<KcpRemote>.NewID();
+
+        }
+
+
 
         protected internal override void Deal(UdpReceiveResult res)
         {
