@@ -20,6 +20,8 @@ namespace Megumin.Remote
 
         protected UdpClient UdpClient => udpRemoteListener;
 
+        public Guid GUID { get; internal set; }
+
         public UdpRemote()
         {
 
@@ -109,6 +111,22 @@ namespace Megumin.Remote
             {
                 return buffer.Memory.Span.Slice(offset, sizeHint);
             }
+        }
+
+
+        //主动测================================================
+
+        /// <summary>
+        /// 处理远端请求的验证
+        /// </summary>
+        /// <param name="receiveResult"></param>
+        void Valid(UdpReceiveResult receiveResult)
+        {
+            byte[] temp = new byte[20];
+            Guid guid = new Guid(temp);
+
+            byte[] validResp = new byte[20];
+            guid.ToByteArray().AsSpan().CopyTo(validResp);
         }
     }
 }

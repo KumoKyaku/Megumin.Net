@@ -102,6 +102,61 @@ namespace Megumin.Remote
         {
 
         }
+
+        readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
+        /// <summary>
+        /// 根据IPEndPoint 取得对应Remote。
+        /// 如果没有，先请求验证旧Remote,没有旧的，就生产一个新的。
+        /// </summary>
+        /// <param name="endPoint"></param>
+        /// <returns></returns>
+        ValueTask<object> GetRemote(IPEndPoint endPoint)
+        {
+            if (connected.TryGetValue(endPoint,out var remote))
+            {
+                return new ValueTask<object>(remote);
+            }
+            else
+            {
+                //没有已知IPEndPoint，发送验证包
+                //验证包是一个Guid
+                Guid guid = new Guid();
+                byte[] valid = new byte[10];
+                Send(valid, 10, endPoint);
+
+                //等待回复验证  todo
+                //回复包是两个Guid，第一个是验证包原样返回，第二个包是旧Guid，如果没有旧的，返回验证Guid。
+                Guid validReply = default;
+                Guid oldGuid = default;
+
+                if (validReply == guid)
+                {
+                    UdpRemote udp = null;
+                    //验证回复有效
+                    if (validReply == oldGuid)
+                    {
+                        //没有旧Guid
+                        //生产新Remote
+                        udp = new UdpRemote();
+                    }
+                    else
+                    {
+                        udp = lut[oldGuid];
+                        lut.Remove(oldGuid);
+                    }
+
+                    udp.GUID = validReply;
+                    lut.Add(validReply, udp);
+
+                    return new ValueTask<object>(udp);
+                }
+                else
+                {
+                    //验证回复无效
+                    return new ValueTask<object>(null);
+                }
+            }
+        }
     }
 }
 
