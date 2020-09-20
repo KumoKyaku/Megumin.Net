@@ -104,6 +104,10 @@ namespace Megumin.Remote
         }
 
         readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
+
+
+
+
         /// <summary>
         /// 根据IPEndPoint 取得对应Remote。
         /// 如果没有，先请求验证旧Remote,没有旧的，就生产一个新的。
@@ -128,10 +132,13 @@ namespace Megumin.Remote
                 byte[] valid = new byte[10];
                 Send(valid, 10, endPoint);
 
+                //4字节识别头 + int ID + GUID 16字节
+
                 //等待回复验证  todo
                 //回复包是两个Guid，第一个是验证包原样返回，第二个包是旧Guid，如果没有旧的，返回验证Guid。
                 Guid validReply = default;
                 Guid oldGuid = default;
+                int version = 0;//添加一个ID version,防止时序出错。
 
                 if (validReply == guid)
                 {
@@ -161,6 +168,14 @@ namespace Megumin.Remote
                 }
             }
         }
+    }
+
+    public class UdpHandle
+    {
+        public int ID { get; set; }
+        public Guid password { get; set; }
+        public int OldID { get; set; }
+        public Guid oldPW { get; set; }
     }
 }
 

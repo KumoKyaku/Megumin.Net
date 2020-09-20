@@ -135,6 +135,31 @@ internal static class SpanByteExtension_37AAF334E75041368C6B47A256F0F93F
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long ReadLong(this Memory<byte> span)
         => BinaryPrimitives.ReadInt64LittleEndian(span.Span);
+
+
+    /// <summary>
+    /// todo 优化alloc
+    /// </summary>
+    /// <param name="span"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Guid ReadGuid(this ReadOnlySpan<byte> span)
+    {
+        if (span.Length < 16)
+        {
+            return default;
+        }
+
+        byte[] temp = new byte[16];
+        span.Slice(0, 16).CopyTo(temp);
+        return new Guid(temp);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Guid ReadGuid(this Span<byte> span)
+    {
+        return ReadGuid((ReadOnlySpan<byte>)span);
+    }
 }
 
 

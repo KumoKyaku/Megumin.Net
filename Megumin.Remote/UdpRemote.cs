@@ -32,10 +32,47 @@ namespace Megumin.Remote
             this.udpRemoteListener = udpRemoteListener;
         }
 
+        public UdpHandle UdpHandle = new UdpHandle();
 
         internal protected virtual void Deal(UdpReceiveResult res)
         {
             lastRecvIP = res.RemoteEndPoint;
+
+            if (res.Buffer.Length == 28)
+            {
+                //识别头 正常的消息前4位是RpcID,有效值是除int.Max的所有值
+                //要能快速识别验证消息
+                //识别尾？有没有必要
+
+                Span<byte> validRequest = res.Buffer.AsSpan();
+                int identifier = validRequest.ReadInt();
+                if (identifier == int.MaxValue)
+                {
+                    //是验证请求
+
+                    int ID = validRequest.Slice(4, 4).ReadInt();
+                    Guid pw = validRequest.Slice(8, 16).ReadGuid();
+
+                    byte[] validResp = new byte[4 + 20 + 20 + 4]; //添加一个ID version,防止先包后到出错。
+                    validRequest.CopyTo(validResp);
+                    if (UdpHandle.ID == ID)
+                    {
+
+                    }
+                    else
+                    {
+                        //映射到新ID 无需映射
+                    }
+
+                    //回复新的和旧的
+                    UdpClient.Send(validResp, validResp.Length, res.RemoteEndPoint);
+                }
+                else
+                {
+                    //不是验证请求 当作正常消息处理
+                }
+            }
+
             ProcessBody(new ReadOnlySequence<byte>(res.Buffer));
         }
 
