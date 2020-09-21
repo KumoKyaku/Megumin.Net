@@ -166,6 +166,14 @@ namespace Megumin.Remote
             guid.ToByteArray().AsSpan().CopyTo(validResp);
         }
     }
+
+    public class UDPServerSide
+    {
+        internal void Deal(IPEndPoint endPoint, byte[] buffer)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
 
 

@@ -160,6 +160,14 @@ internal static class SpanByteExtension_37AAF334E75041368C6B47A256F0F93F
     {
         return ReadGuid((ReadOnlySpan<byte>)span);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int WriteTo(this in Guid guid, Span<byte> target)
+    {
+        var temp = guid.ToByteArray();
+        temp.AsSpan().CopyTo(target);
+        return 16;
+    }
 }
 
 

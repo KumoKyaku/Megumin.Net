@@ -41,7 +41,7 @@ namespace Megumin.Remote
         {
             while (IsListening)
             {
-                var res = await ReceiveAsync(); 
+                var res = await ReceiveAsync();
                 UdpReceives.Enqueue(res);
             }
         }
@@ -74,13 +74,13 @@ namespace Megumin.Remote
                     await Task.Yield();
                 }
             }
-            
+
         }
 
         /// <summary>
         /// 正在连接的
         /// </summary>
-        readonly Dictionary<IPEndPoint, UdpRemote> connected= new Dictionary<IPEndPoint, UdpRemote>();
+        readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
 
         public void ListenAsync()
         {
@@ -120,7 +120,7 @@ namespace Megumin.Remote
         /// </remarks>
         ValueTask<object> GetRemote(IPEndPoint endPoint)
         {
-            if (connected.TryGetValue(endPoint,out var remote))
+            if (connected.TryGetValue(endPoint, out var remote))
             {
                 return new ValueTask<object>(remote);
             }
@@ -168,7 +168,161 @@ namespace Megumin.Remote
                 }
             }
         }
+
+        readonly Dictionary<int, UdpConnector> cont = new Dictionary<int, UdpConnector>();
+        public class UdpConnector
+        {
+            public UdpConnector(UdpRemoteListener listener, IPEndPoint endPoint)
+            {
+                this.listener = listener;
+                RemoteEndPoint = new IPEndPoint(endPoint.Address, endPoint.Port);
+                ID = InterlockedID<UdpConnector>.NewID(1000); //从1001开始，没什么特殊目的
+                password = Guid.NewGuid();
+                listener.cont.Add(ID, this);
+            }
+
+            UdpRemoteListener listener;
+            public readonly IPEndPoint RemoteEndPoint;
+            public int ID { get; }
+            public Guid password { get; }
+
+            public UDPServerSide udp;
+            /// <summary>
+            /// 验证失败次数
+            /// </summary>
+            public int VerifyDefeatedCount = 0;
+            /// <summary>
+            /// 是不是已经失去连接
+            /// </summary>
+            public bool IsLost = false;
+            /// <summary>
+            /// 是不是绑定到新连接
+            /// </summary>
+            public bool IsBind2NewConnect = false;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="buffer"></param>
+            /// <returns>是不是验证消息返回</returns>
+            public bool VerifyResp(byte[] buffer)
+            {
+                bool isVerifyResp = false;
+                if (buffer.Length == 48)
+                {
+                    Span<byte> resp = buffer;
+                    int firstMarker = resp.ReadInt();
+                    if (firstMarker == int.MaxValue)
+                    {
+                        int endMarker = resp.Slice(resp.Length - 4).ReadInt();
+                        if (endMarker != int.MaxValue)
+                        {
+                            //符合验证返回消息格式
+                            isVerifyResp = true;
+                            int reqID = resp.Slice(4).ReadInt();
+                            Guid reqPW = resp.Slice(8).ReadGuid();
+                            if (reqID == ID && reqPW == password)
+                            {
+                                //返回消息有效，验证成功。
+                                int oldID = resp.Slice(40).ReadInt();
+                                Guid oldPW = resp.Slice(44).ReadGuid();
+
+                                var needCreateNewUdp = false;
+                                if (listener.cont.TryGetValue(oldID,out var oldconn))
+                                {
+                                    if (oldconn.password == oldPW)
+                                    {
+                                        //密码验证通过，将旧UDP迁移到当前连接。旧IP保留一会，定时清理。
+                                        udp = oldconn.udp;
+                                        oldconn.IsBind2NewConnect = true;
+                                        IsValid = true;
+                                    }
+                                    else
+                                    {
+                                        //旧密码验证不通过,可能是碰撞攻击
+                                        needCreateNewUdp = true;
+                                    }
+                                }
+                                else
+                                {
+                                    //没有旧连接
+                                    needCreateNewUdp = true;
+                                }
+
+                                if (needCreateNewUdp)
+                                {
+                                    CreateNewUdp();
+                                }
+                            }
+                            else
+                            {
+                                //返回消息无效，验证失败。
+                                VerifyDefeatedCount++;
+                            }
+                        }
+                        else
+                        {
+                            //不是验证返回消息格式
+                        }
+                    }
+                    else
+                    {
+                        //不是验证返回消息格式
+                    }
+                }
+
+                return isVerifyResp;
+            }
+
+            private void CreateNewUdp()
+            {
+                udp = new UDPServerSide();
+                IsValid = true;
+            }
+
+            bool IsValid = false;
+            private TaskCompletionSource<UdpReceiveResult> authSource;
+
+            public async void Deal(IPEndPoint endPoint,byte[] buffer)
+            {
+                if (!IsValid)
+                {
+                    if (VerifyResp(buffer))
+                    {
+                        //
+                        return;
+                    }
+                    else
+                    {
+                        await Auth(endPoint);
+                    }
+                }
+
+                if (IsValid)
+                {
+                    udp.Deal(endPoint, buffer);
+                }
+            }
+
+            /// <summary>
+            /// 44字节请求验证消息。
+            /// </summary>
+            public const int RquestValidMessageLength = 44;
+            ValueTask Auth(IPEndPoint endPoint)
+            {
+                byte[] valid = new byte[RquestValidMessageLength]; 
+                Span<byte> request = valid;
+                int.MaxValue.WriteTo(request); //4 识别符
+                ID.WriteTo(request.Slice(4));  //4ID
+                password.WriteTo(request.Slice(8)); // 16 guid 密钥
+                //留空16个字节备用。
+                int.MaxValue.WriteTo(request.Slice(40));//4 识别尾
+                listener.Send(valid, RquestValidMessageLength, endPoint);
+            }
+        }
     }
+
+    
 
     public class UdpHandle
     {
