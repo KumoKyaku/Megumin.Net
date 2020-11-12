@@ -118,7 +118,7 @@ namespace Megumin.Remote
                 {
                     await Client.ConnectAsync(endPoint);
                     IsConnecting = false;
-                    WaitSocketError();//注册断开流程
+                    WaitSocketError();//注册断开流程 todo bug 重试连接导致多次调用，断开时会多次触发
                     StartWork();
                     return;
                 }
