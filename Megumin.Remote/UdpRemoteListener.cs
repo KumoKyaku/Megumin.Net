@@ -318,6 +318,7 @@ namespace Megumin.Remote
                 //留空16个字节备用。
                 int.MaxValue.WriteTo(request.Slice(40));//4 识别尾
                 listener.Send(valid, RquestValidMessageLength, endPoint);
+                return default;
             }
         }
     }
