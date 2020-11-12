@@ -137,6 +137,11 @@ namespace Megumin.Remote
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static IMiniAwaitable<object> Push(int rpcID, short cmd, int messageID, object message, IObjectMessageReceiver r)
         {
+            if (r == null)
+            {
+                throw new ArgumentNullException();
+            }
+
             //这里是性能敏感区域，使用结构体优化，不使用action闭包
             MiniTask<object> task = MiniTask<object>.Rent();
             RequestWork work = new RequestWork(task, rpcID, cmd, messageID, message, r);
@@ -147,6 +152,11 @@ namespace Megumin.Remote
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Push(int rpcID, short cmd, int messageID, object message, IDealMessageable r)
         {
+            if (r == null)
+            {
+                throw new ArgumentNullException();
+            }
+
             //这里是性能敏感区域，使用结构体优化，不使用action闭包
             DealWork work = new DealWork(rpcID, cmd, messageID, message, r);
             dealWorkQueue.Enqueue(work);
