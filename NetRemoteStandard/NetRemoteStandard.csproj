@@ -24,7 +24,7 @@
 
   <!--目标框架配置-->
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.6;netstandard2.0;netstandard2.1;net5.0</TargetFrameworks>
+    <TargetFrameworks>netstandard1.6;netstandard2.0;net5.0</TargetFrameworks>
   </PropertyGroup>
 
   <!--依赖配置-->
@@ -33,11 +33,7 @@
   
   <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0'">
   </ItemGroup>
-  
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1'">
-    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
-  </ItemGroup>
-  
+
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
     <PackageReference Include="System.Memory" Version="4.5.0" />
