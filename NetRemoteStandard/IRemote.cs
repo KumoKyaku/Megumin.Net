@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Net.Remote
@@ -55,6 +56,9 @@ namespace Net.Remote
         /// <param name="retryCount">重试次数，失败会返回最后一次的异常</param>
         /// <returns></returns>
         Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0);
+        //todo 超时API设计
+        //Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, int timeoutMillonseconds = 30000);
+        //Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken token = default);
         /// <summary>
         /// 主动断开连接
         /// </summary>
