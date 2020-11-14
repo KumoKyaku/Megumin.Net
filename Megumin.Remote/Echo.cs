@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Megumin.Remote.Echo
+namespace Megumin.Remote.Simple
 {
     /// <summary>
     /// Tcp回声远端
