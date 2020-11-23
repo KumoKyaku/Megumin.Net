@@ -73,25 +73,33 @@ namespace Megumin.Remote
         /// <remarks>只处理 RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
         protected virtual bool TrySerialize(IBufferWriter<byte> writer, int rpcID, object message, object options = null)
         {
-            try
+            if (MessageLUT.TryGetFormater(message.GetType(), out var formater))
             {
                 //写入rpcID CMD
                 var span = writer.GetSpan(10);
                 span.Write(rpcID);
                 span.Slice(4).Write((short)0); //CMD 为预留，填0
+                span.Slice(6).Write(formater.MessageID);
                 writer.Advance(10);
-
-                int messageID = MessageLUT.Serialize(writer, message, options);
-                //补写消息ID到指定位置。 前面已经Advance了，这里不在Advance。
-                span.Slice(6).Write(messageID);
+ 
+                try
+                {
+                    formater.Serialize(writer, message, options);
+                }
+                catch (Exception e)
+                {
+                    Logger?.Log($"序列化过程出现异常。Message:{message}。\n {e}");
+                    return false;
+                }
 
                 return true;
             }
-            catch (Exception e)
+            else
             {
-                Logger?.Log($"序列化过程出现异常。Message:{message}。\n {e}");
+                Logger?.Log($"没有找到Formater。Message:{message}。");
                 return false;
             }
+            
         }
 
         /// <summary>

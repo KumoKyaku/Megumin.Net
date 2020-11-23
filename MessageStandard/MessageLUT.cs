@@ -274,6 +274,16 @@ namespace Megumin.Remote
             ID = -1;
             return false;
         }
+
+        public static bool TryGetFormater(Type type, out IMeguminFormater formater)
+        {
+            return TypeDic.TryGetValue(type, out formater);
+        }
+
+        public static bool TryGetFormater(int messageID, out IMeguminFormater formater)
+        {
+            return IDDic.TryGetValue(messageID,out formater);
+        }
     }
 
     /// <summary>
