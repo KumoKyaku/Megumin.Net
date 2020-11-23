@@ -188,10 +188,10 @@ namespace Net.Remote
     /// <summary>
     /// 应用网络层API封装
     /// <para>不需要实现<see cref="IDisposable"/>,实现起来繁琐，工程中没有太太价值。</para>
+    /// <para>不应该继承IConnectable，不关心连接过程， 在语义上是Session级别的接口</para>
     /// </summary>
     /// <inheritdoc/>
-    public interface IRemote : IRemoteEndPoint, ISendable, IReceiveMessage,
-        IConnectable, IRemoteID
+    public interface IRemote : IRemoteEndPoint, ISendable, IReceiveMessage, IRemoteID
         , ISendCanAwaitable
     {
         /// <summary>

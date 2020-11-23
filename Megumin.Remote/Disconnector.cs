@@ -17,25 +17,8 @@ namespace Megumin.Remote
         public class Disconnector: IDisconnectable
         {
             readonly object innerlock = new object();
-            public bool IsDising = false;
+            public bool IsDisconnecting = false;
             public TcpRemote tcpRemote;
-
-            /// <summary>
-            /// 发送或接收出现错误
-            /// </summary>
-            /// <param name="error"></param>
-            public void OnEx(SocketError error)
-            {
-                if (IsDising)
-                {
-                    //正在断开就忽略
-                    return;
-                }
-
-                IsDising = true;
-
-                tcpRemote.Client.Shutdown(SocketShutdown.Send);
-            }
 
             /// <summary>
             /// 
@@ -46,14 +29,13 @@ namespace Megumin.Remote
             {
                 //todo 进入断开流程，不允许外部继续Send
 
-
                 if (waitSendQueue)
                 {
                     //todo 等待当前发送缓冲区发送结束。
                 }
 
                 //进入清理阶段
-                tcpRemote.StopWork();
+                //tcpRemote.StopWork();
 
                 if (triggerOnDisConnect)
                 {
@@ -68,20 +50,19 @@ namespace Megumin.Remote
             /// <summary>
             /// 收到0字节 表示远程主动断开连接
             /// </summary>
-            internal async void OnRecv0()
+            internal void OnRecv0()
             {
                 lock (innerlock)
                 {
-                    if (IsDising)
+                    if (IsDisconnecting)
                     {
                         //正在断开就忽略
                         return;
                     }
 
-                    IsDising = true;
+                    IsDisconnecting = true;
                 }
 
-                //收到0字节 表示远程主动断开连接
                 tcpRemote.MWorkState = RWorkState.Stoping;
                 //停止发送。
                 tcpRemote.Client.Shutdown(SocketShutdown.Send);
@@ -90,19 +71,109 @@ namespace Megumin.Remote
                 //等待已接受缓存处理完毕
                 //await tcpRemote.EndDealRecv();
 
-                tcpRemote.MWorkState = RWorkState.Stoped;
+                //关闭接收，这个过程中可能调用本身出现异常。
+                //也可能导致异步接收部分抛出，由于disconnectSignal只能使用一次，所有这个阶段异常都会被忽略。
+                try
+                {
+                    tcpRemote.Client.Shutdown(SocketShutdown.Both);
+                    tcpRemote.Client.Disconnect(false);
+                }
+                finally
+                {
+                    tcpRemote.Client.Close();
+                }
+
                 //触发回调
-                tcpRemote.OnDisconnect(SocketError.SocketError, ActiveOrPassive.Active);
-                tcpRemote.PostDisconnect(SocketError.SocketError, ActiveOrPassive.Active);
+                tcpRemote.OnDisconnect(SocketError.Shutdown, ActiveOrPassive.Passive);
+                tcpRemote.MWorkState = RWorkState.Stoped;
+                tcpRemote.PostDisconnect(SocketError.Shutdown, ActiveOrPassive.Passive);
             }
 
-            internal void OnSendError(SocketException e)
+            /// <summary>
+            /// 接收出现错误
+            /// </summary>
+            /// <param name="errorCode"></param>
+            internal void OnRecvError(SocketError error)
             {
-                throw new NotImplementedException();
+                lock (innerlock)
+                {
+                    if (IsDisconnecting)
+                    {
+                        //正在断开就忽略
+                        return;
+                    }
+
+                    IsDisconnecting = true;
+                }
+
+                tcpRemote.MWorkState = RWorkState.Stoping;
+                //停止发送。
+                tcpRemote.Client.Shutdown(SocketShutdown.Send);
+
+                tcpRemote.pipe.Writer.Complete();
+                //等待已接受缓存处理完毕
+                //await tcpRemote.EndDealRecv();
+
+                //关闭接收，这个过程中可能调用本身出现异常。
+                //也可能导致异步接收部分抛出，由于disconnectSignal只能使用一次，所有这个阶段异常都会被忽略。
+                try
+                {
+                    tcpRemote.Client.Shutdown(SocketShutdown.Both);
+                    tcpRemote.Client.Disconnect(false);
+                }
+                finally
+                {
+                    tcpRemote.Client.Close();
+                }
+
+                //触发回调
+                tcpRemote.OnDisconnect(error, ActiveOrPassive.Passive);
+                tcpRemote.MWorkState = RWorkState.Stoped;
+                tcpRemote.PostDisconnect(error, ActiveOrPassive.Passive);
             }
-            internal void OnSendError(SocketError e)
+
+            /// <summary>
+            /// 发送出现错误
+            /// </summary>
+            /// <param name="error"></param>
+            internal void OnSendError(SocketError error)
             {
-                throw new NotImplementedException();
+                lock (innerlock)
+                {
+                    if (IsDisconnecting)
+                    {
+                        //正在断开就忽略
+                        return;
+                    }
+
+                    IsDisconnecting = true;
+                }
+
+
+                tcpRemote.MWorkState = RWorkState.Stoping;
+                //停止发送。
+                tcpRemote.Client.Shutdown(SocketShutdown.Send);
+
+                //关闭接收，这个过程中可能调用本身出现异常。
+                //也可能导致异步接收部分抛出，由于disconnectSignal只能使用一次，所有这个阶段异常都会被忽略。
+                try
+                {
+                    tcpRemote.Client.Shutdown(SocketShutdown.Both);
+                    tcpRemote.Client.Disconnect(false);
+                }
+                finally
+                {
+                    tcpRemote.Client.Close();
+                }
+
+                tcpRemote.pipe.Writer.Complete();
+                //等待已接受缓存处理完毕
+                //await tcpRemote.EndDealRecv();
+
+                //触发回调
+                tcpRemote.OnDisconnect(error, ActiveOrPassive.Passive);
+                tcpRemote.MWorkState = RWorkState.Stoped;
+                tcpRemote.PostDisconnect(error, ActiveOrPassive.Passive);
             }
         }
 

@@ -31,12 +31,12 @@ namespace Megumin.Remote
         public enum RWorkState
         {
             /// <summary>
-            /// 已经停止
+            /// 已经停止，不允许Push到发送队列。
             /// </summary>
             Stoped = -3,
 
             /// <summary>
-            /// 正在停止
+            /// 正在停止,允许Push到发送队列，但已经不能实际发送
             /// </summary>
             Stoping = -2,
             /// <summary>
@@ -49,13 +49,7 @@ namespace Megumin.Remote
             Working = 0,
         }
 
-        internal protected RWorkState MWorkState { get; set; } = RWorkState.NotStart;
-
-        /// <summary>
-        /// 是不是正在断开
-        /// </summary>
-        public bool IsDisconnecting { get; set; } = false;
-
+        public RWorkState MWorkState { get;internal protected set; } = RWorkState.NotStart;
 
         /// <summary>
         /// Mono/IL2CPP 请使用中使用<see cref="TcpRemote(AddressFamily)"/>
@@ -99,7 +93,7 @@ namespace Megumin.Remote
         /// </summary>
         internal protected virtual void StartWork()
         {
-            if (MWorkState == RWorkState.Working || MWorkState == RWorkState.NotStart)
+            if (MWorkState == RWorkState.NotStart)
             {
                 MWorkState = RWorkState.Working;
                 FillRecvPipe(pipe.Writer);
@@ -141,7 +135,7 @@ namespace Megumin.Remote
                 {
                     await Client.ConnectAsync(endPoint);
                     IsConnecting = false;
-                    WaitSocketError();//注册断开流程 todo bug 重试连接导致多次调用，断开时会多次触发
+                    disconnector.tcpRemote = this;
                     StartWork();
                     return;
                 }
@@ -182,7 +176,7 @@ namespace Megumin.Remote
             }
 
             //进入清理阶段
-            StopWork();
+            //StopWork();
 
             if (triggerOnDisConnect)
             {
@@ -192,54 +186,6 @@ namespace Megumin.Remote
             }
 
             IsVaild = false;
-        }
-
-        /// <summary>
-        /// 开始被动断开流程
-        /// </summary>
-        async void WaitSocketError()
-        {
-            var errorCode = await OnSocketError.Task;
-            //socket已经发生了错误。
-
-            //进入清理阶段
-            StopWork();
-
-            //触发回调
-            OnDisconnect(errorCode);
-            PostDisconnect(errorCode);
-            IsVaild = false;
-        }
-
-        /// <summary>
-        /// 停止接收工作
-        /// </summary>
-        void StopWork()
-        {
-            //关闭接收，这个过程中可能调用本身出现异常。
-            //也可能导致异步接收部分抛出，由于disconnectSignal只能使用一次，所有这个阶段异常都会被忽略。
-            try
-            {
-                Client.Shutdown(SocketShutdown.Both);
-                Client.Disconnect(false);
-            }
-            finally
-            {
-                Client.Close();
-                Client.Dispose();
-            }
-        }
-
-        /// <summary>
-        /// 用一个handle来保证一个socket只触发一次断开连接。
-        /// 触发断开，清理发送接收，调用OnDisconnect 和 PostDisconnect
-        /// </summary>
-        readonly TaskCompletionSource<SocketError> OnSocketError = new TaskCompletionSource<SocketError>();
-
-        void 远程主动断开(SocketError error)
-        {
-            CanRecv = false;
-            pipe.Writer.Complete();
         }
 
         protected override void OnDisconnect(
@@ -262,7 +208,7 @@ namespace Megumin.Remote
         protected override void Send(int rpcID, object message, object options = null)
         {
             //todo 检查当前是否允许发送，可能已经处于断开阶段，不在允许新消息进入发送缓存区
-            var allowSend = true;
+            var allowSend = MWorkState != RWorkState.Stoped;
             if (!allowSend)
             {
                 if (rpcID > 0)
@@ -358,7 +304,7 @@ namespace Megumin.Remote
                 }
                 catch (SocketException e)
                 {
-                    disconnector?.OnSendError(e);
+                    disconnector?.OnSendError((SocketError)e.ErrorCode);
                     IsSending = false;
                     return;
                 }
@@ -383,21 +329,17 @@ namespace Megumin.Remote
         /// 当前socket是不是在接收。
         /// </summary>
         public bool IsReceiving { get; protected set; }
+        
         /// <summary>
-        /// 当前Socket能不能在接收了
+        /// 从Socket接收
         /// </summary>
-        public bool CanRecv { get; set; } = true;
+        /// <param name="pipeWriter"></param>
         protected virtual async void FillRecvPipe(PipeWriter pipeWriter)
         {
             while (true)
             {
                 lock (pipeWriter)
                 {
-                    if (!CanRecv)
-                    {
-                        return;
-                    }
-
                     if (IsReceiving)
                     {
                         return;
@@ -448,7 +390,7 @@ namespace Megumin.Remote
                 }
                 catch (SocketException e)
                 {
-                    远程主动断开((SocketError)e.ErrorCode);
+                    disconnector?.OnRecvError((SocketError)e.ErrorCode);
                     IsReceiving = false;
                     return;
                 }

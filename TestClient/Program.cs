@@ -132,7 +132,7 @@ namespace TestClient
 
         private static async void Connect(int index)
         {
-            IRemote remote = new TcpRemote();
+            TcpRemote remote = new TcpRemote();
             try
             {
                 await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
