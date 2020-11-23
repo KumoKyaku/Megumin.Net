@@ -28,15 +28,15 @@ namespace Megumin.Remote
         public Socket Client { get; protected set; }
         public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
 
-        public enum RWorkState
+        public enum WorkState
         {
             /// <summary>
-            /// 已经停止，不允许Push到发送队列。
+            /// 所有工作停止，不允许Push到发送队列。
             /// </summary>
             Stoped = -3,
 
             /// <summary>
-            /// 正在停止,允许Push到发送队列，但已经不能实际发送
+            /// 正在停止,不允许Push到发送队列，但底层仍可能正在发送。
             /// </summary>
             Stoping = -2,
             /// <summary>
@@ -49,7 +49,10 @@ namespace Megumin.Remote
             Working = 0,
         }
 
-        public RWorkState MWorkState { get;internal protected set; } = RWorkState.NotStart;
+        /// <summary>
+        /// 当前状态
+        /// </summary>
+        public WorkState RemoteState { get;internal protected set; } = WorkState.NotStart;
 
         /// <summary>
         /// Mono/IL2CPP 请使用中使用<see cref="TcpRemote(AddressFamily)"/>
@@ -93,9 +96,9 @@ namespace Megumin.Remote
         /// </summary>
         internal protected virtual void StartWork()
         {
-            if (MWorkState == RWorkState.NotStart)
+            if (RemoteState == WorkState.NotStart)
             {
-                MWorkState = RWorkState.Working;
+                RemoteState = WorkState.Working;
                 FillRecvPipe(pipe.Writer);
                 StartReadRecvPipe(pipe.Reader);
                 ReadSendPipe(SendPipe);
@@ -163,43 +166,10 @@ namespace Megumin.Remote
             }
             return ConnectAsync(Client, endPoint, retryCount);
         }
-
-        
+   
         public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
         {
-            //todo 进入断开流程，不允许外部继续Send
-
-
-            if (waitSendQueue)
-            {
-                //todo 等待当前发送缓冲区发送结束。
-            }
-
-            //进入清理阶段
-            //StopWork();
-
-            if (triggerOnDisConnect)
-            {
-                //触发回调
-                OnDisconnect(SocketError.SocketError, ActiveOrPassive.Active);
-                PostDisconnect(SocketError.SocketError, ActiveOrPassive.Active);
-            }
-
-            IsVaild = false;
-        }
-
-        protected override void OnDisconnect(
-            SocketError error = SocketError.SocketError,
-            ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        {
-
-        }
-
-        protected override void PostDisconnect(
-            SocketError error = SocketError.SocketError,
-            ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        {
-
+            disconnector?.Disconnect(triggerOnDisConnect, waitSendQueue);
         }
     }
 
@@ -208,7 +178,7 @@ namespace Megumin.Remote
         protected override void Send(int rpcID, object message, object options = null)
         {
             //todo 检查当前是否允许发送，可能已经处于断开阶段，不在允许新消息进入发送缓存区
-            var allowSend = MWorkState != RWorkState.Stoped;
+            var allowSend = RemoteState == WorkState.Working || RemoteState == WorkState.NotStart;
             if (!allowSend)
             {
                 if (rpcID > 0)
@@ -259,7 +229,7 @@ namespace Megumin.Remote
                         return;
                     }
 
-                    if (MWorkState != RWorkState.Working)
+                    if (RemoteState != WorkState.Working)
                     {
                         return;
                     }
@@ -271,7 +241,7 @@ namespace Megumin.Remote
                 {
                     var target = await sendPipe.ReadNext();
 
-                    if (MWorkState != RWorkState.Working)
+                    if (RemoteState != WorkState.Working)
                     {
                         //拿到待发送数据时，Socket已经不能发送了
                         target.NeedToResend();
@@ -345,7 +315,7 @@ namespace Megumin.Remote
                         return;
                     }
 
-                    if (MWorkState != RWorkState.Working)
+                    if (RemoteState != WorkState.Working)
                     {
                         return;
                     }

@@ -63,7 +63,9 @@ namespace Megumin.Remote
                     IsDisconnecting = true;
                 }
 
-                tcpRemote.MWorkState = RWorkState.Stoping;
+                tcpRemote.OnDisconnect(SocketError.Shutdown, ActiveOrPassive.Passive);
+                tcpRemote.RemoteState = WorkState.Stoping;
+
                 //停止发送。
                 tcpRemote.Client.Shutdown(SocketShutdown.Send);
 
@@ -84,8 +86,7 @@ namespace Megumin.Remote
                 }
 
                 //触发回调
-                tcpRemote.OnDisconnect(SocketError.Shutdown, ActiveOrPassive.Passive);
-                tcpRemote.MWorkState = RWorkState.Stoped;
+                tcpRemote.RemoteState = WorkState.Stoped;
                 tcpRemote.PostDisconnect(SocketError.Shutdown, ActiveOrPassive.Passive);
             }
 
@@ -106,7 +107,9 @@ namespace Megumin.Remote
                     IsDisconnecting = true;
                 }
 
-                tcpRemote.MWorkState = RWorkState.Stoping;
+                tcpRemote.OnDisconnect(error, ActiveOrPassive.Passive);
+                tcpRemote.RemoteState = WorkState.Stoping;
+
                 //停止发送。
                 tcpRemote.Client.Shutdown(SocketShutdown.Send);
 
@@ -127,8 +130,7 @@ namespace Megumin.Remote
                 }
 
                 //触发回调
-                tcpRemote.OnDisconnect(error, ActiveOrPassive.Passive);
-                tcpRemote.MWorkState = RWorkState.Stoped;
+                tcpRemote.RemoteState = WorkState.Stoped;
                 tcpRemote.PostDisconnect(error, ActiveOrPassive.Passive);
             }
 
@@ -149,8 +151,9 @@ namespace Megumin.Remote
                     IsDisconnecting = true;
                 }
 
+                tcpRemote.OnDisconnect(error, ActiveOrPassive.Passive);
+                tcpRemote.RemoteState = WorkState.Stoping;
 
-                tcpRemote.MWorkState = RWorkState.Stoping;
                 //停止发送。
                 tcpRemote.Client.Shutdown(SocketShutdown.Send);
 
@@ -171,8 +174,7 @@ namespace Megumin.Remote
                 //await tcpRemote.EndDealRecv();
 
                 //触发回调
-                tcpRemote.OnDisconnect(error, ActiveOrPassive.Passive);
-                tcpRemote.MWorkState = RWorkState.Stoped;
+                tcpRemote.RemoteState = WorkState.Stoped;
                 tcpRemote.PostDisconnect(error, ActiveOrPassive.Passive);
             }
         }

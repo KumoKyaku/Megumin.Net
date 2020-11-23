@@ -42,23 +42,31 @@ namespace Megumin.Remote
 
         /// <summary>
         /// 当网络连接已经断开
+        /// <para>todo 这个函数没有处理线程转换</para>
         /// </summary>
         /// <param name="error"></param>
         /// <param name="activeOrPassive">主动断开还是被动断开</param>
         /// <remarks>主要用于通知外部停止继续发送，在这个函数被动调用前，允许Send，在这个函数调用后，不在允许Send</remarks>
-        protected abstract void OnDisconnect(
+        protected virtual void OnDisconnect(
             SocketError error = SocketError.SocketError,
-            ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive);
+            ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+
+        }
 
         /// <summary>
         /// 断开连接之后
+        /// <para>todo 这个函数没有处理线程转换</para>
         /// </summary>
         /// /// <param name="error"></param>
         /// <param name="activeOrPassive">主动断开还是被动断开</param>
         /// <remarks>可以用于触发重连，并将现有发送缓冲区转移到心得连接中</remarks>
-        protected abstract void PostDisconnect(
+        protected virtual void PostDisconnect(
             SocketError error = SocketError.SocketError,
-            ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive);
+            ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        { 
+
+        }
 
         /// <summary>
         /// 序列化消息
