@@ -21,7 +21,7 @@ namespace Megumin.Remote
     /// Lenght(总长度，包含自身报头) [int] [4] + RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
     public partial class TcpRemote : RpcRemote, IRemote, IRemoteUID<int>
     {
-        public int ID { get; } = InterlockedID<IRemote>.NewID();
+        public int ID { get; } = InterlockedID<IRemoteID>.NewID();
         public virtual int UID { get; set; }
         public bool IsVaild { get; protected set; } = true;
         public IPEndPoint ConnectIPEndPoint { get; set; }
