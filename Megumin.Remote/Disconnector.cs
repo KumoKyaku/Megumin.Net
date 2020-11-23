@@ -9,16 +9,6 @@ namespace Megumin.Remote
 {
     public partial class TcpRemote
     {
-        /// <summary>
-        /// 当前Socket可不可以发送
-        /// </summary>
-        bool canSend = true;
-        /// <summary>
-        /// 能不能继续放入发送队列
-        /// </summary>
-        bool canEnqueuSQ = true;
-        bool remoteShutDownSend = false;
-
         public Disconnector disconnector = new Disconnector();
 
         /// <summary>
@@ -44,8 +34,6 @@ namespace Megumin.Remote
 
                 IsDising = true;
 
-                tcpRemote.canEnqueuSQ = false;
-                tcpRemote.canSend = false;
                 tcpRemote.Client.Shutdown(SocketShutdown.Send);
             }
 

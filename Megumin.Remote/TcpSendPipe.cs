@@ -115,7 +115,7 @@ namespace Megumin.Remote
                 }
                 else
                 {
-                    //扩容
+                    //扩容 每次增加4096比较合适，可根据生产环境修改。
                     var newCount = ((buffer.Length + sizeHint) / 4096 + 1) * 4096;
                     var newbuffer = ArrayPool<byte>.Shared.Rent(newCount);
                     buffer.AsSpan().CopyTo(newbuffer);
@@ -131,7 +131,7 @@ namespace Megumin.Remote
 
             public void PackSuccess()
             {
-                buffer.AsSpan().Write(index);
+                buffer.AsSpan().Write(index);//在起始位置写入长度
                 sendPipe.Push2Queue(this);
             }
 
