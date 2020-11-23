@@ -477,6 +477,6 @@ namespace Megumin.Remote
 
 
         /// <remarks>留给Unity用的。在unity中赋值</remarks>
-        public float LastReceiveTimeFloat { get; } = float.MaxValue;
+        public float LastReceiveTimeFloat { get; protected set; } = float.MaxValue;
     }
 }
