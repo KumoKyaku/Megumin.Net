@@ -481,38 +481,52 @@ namespace Megumin.Remote
                 var unDealBuffer = result.Buffer;
                 long unReadLenght = unDealBuffer.Length;
                 int offset = 0;
-                //处理粘包
-                while (unReadLenght > 4)
+
+                try
                 {
-                    //下一个包体总长度
-                    var nextSegmentLength = unDealBuffer.ReadInt();
-
-                    if (unReadLenght >= nextSegmentLength)
+                    //处理粘包
+                    while (unReadLenght > 4)
                     {
-                        //取得消息体
-                        var body = unDealBuffer.Slice(offset + 4, nextSegmentLength - 4);
+                        //下一个包体总长度
+                        var nextSegmentLength = unDealBuffer.ReadInt();
 
-                        ProcessBody(body, null);
-
-                        unReadLenght -= nextSegmentLength;
-                        offset += nextSegmentLength;
+                        if (unReadLenght >= nextSegmentLength)
+                        {
+                            //取得消息体
+                            var body = unDealBuffer.Slice(offset + 4, nextSegmentLength - 4);
+                            
+                            //先计数后处理，如果某个数据段出现错误可以略过该段
+                            unReadLenght -= nextSegmentLength;
+                            offset += nextSegmentLength;
+                            ProcessBody(body);
+                        }
+                        else
+                        {
+                            //半包，继续读取
+                            if (nextSegmentLength > 1024 * 256)
+                            {
+                                //todo，长度非常大可能是一个错误.
+                            }
+                            break;
+                        }
                     }
-                    else
-                    {
-                        //半包，继续读取
-                        break;
-                    }
+                }
+                catch (Exception e)
+                {
+                    Logger?.Log(e.ToString());
                 }
 
                 //标记已使用数据，要先使用在标记，不然数据可能就被释放了
                 var pos = result.Buffer.GetPosition(offset);
                 pipeReader.AdvanceTo(pos);
 
+                IsDealReceiving = false;
+
                 if (result.IsCompleted || result.IsCanceled)
                 {
+                    pipeReader.AdvanceTo(result.Buffer.End);
                     return;
                 }
-                IsDealReceiving = false;
             }
         }
 

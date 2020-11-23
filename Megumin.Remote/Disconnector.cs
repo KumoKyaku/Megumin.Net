@@ -21,11 +21,6 @@ namespace Megumin.Remote
 
         public Disconnector disconnector = new Disconnector();
 
-        Task EndDealRecv()
-        {
-
-        }
-
         /// <summary>
         /// 断开器
         /// </summary>
@@ -105,7 +100,7 @@ namespace Megumin.Remote
 
                 tcpRemote.pipe.Writer.Complete();
                 //等待已接受缓存处理完毕
-                await tcpRemote.EndDealRecv();
+                //await tcpRemote.EndDealRecv();
 
                 tcpRemote.MWorkState = RWorkState.Stoped;
                 //触发回调
