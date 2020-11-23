@@ -79,7 +79,7 @@ namespace TestWPF
 
         private void Button_Click_4(object sender, RoutedEventArgs e)
         {
-            client.Client.Shutdown(SocketShutdown.Receive);
+            client.Client.Shutdown(SocketShutdown.Send);
         }
     }
 }

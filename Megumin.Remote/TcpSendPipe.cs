@@ -144,7 +144,7 @@ namespace Megumin.Remote
 
             public void NeedToResend()
             {
-                throw new NotImplementedException();
+                sendPipe.Push2Queue(this);
             }
 
             public ArraySegment<byte> SendSegment => new ArraySegment<byte>(buffer, 0, index);

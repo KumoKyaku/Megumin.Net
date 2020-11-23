@@ -27,10 +27,30 @@ namespace Megumin.Remote
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public Socket Client { get; protected set; }
         public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
-        /// <summary>
-        /// 当前工作状态0：发送接收都正常； 1:从未尝试开始； 2：手动终止； 3：远端断开连接；
-        /// </summary>
-        public int WorkState { get; protected set; } = 1;
+
+        public enum RWorkState
+        {
+            /// <summary>
+            /// 已经停止
+            /// </summary>
+            Stoped = -3,
+
+            /// <summary>
+            /// 正在停止
+            /// </summary>
+            Stoping = -2,
+            /// <summary>
+            /// 从未尝试开始
+            /// </summary>
+            NotStart = -1,
+            /// <summary>
+            /// 发送接收都正常
+            /// </summary>
+            Working = 0,
+        }
+
+        internal protected RWorkState MWorkState { get; set; } = RWorkState.NotStart;
+
         /// <summary>
         /// 是不是正在断开
         /// </summary>
@@ -79,10 +99,13 @@ namespace Megumin.Remote
         /// </summary>
         internal protected virtual void StartWork()
         {
-            WorkState = 0;
-            FillRecvPipe(pipe.Writer);
-            StartReadRecvPipe(pipe.Reader);
-            ReadSendPipe(SendPipe);
+            if (MWorkState == RWorkState.Working || MWorkState == RWorkState.NotStart)
+            {
+                MWorkState = RWorkState.Working;
+                FillRecvPipe(pipe.Writer);
+                StartReadRecvPipe(pipe.Reader);
+                ReadSendPipe(SendPipe);
+            }
         }
     }
 
@@ -147,6 +170,7 @@ namespace Megumin.Remote
             return ConnectAsync(Client, endPoint, retryCount);
         }
 
+        
         public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
         {
             //todo 进入断开流程，不允许外部继续Send
@@ -288,48 +312,58 @@ namespace Megumin.Remote
                     {
                         return;
                     }
+
+                    if (MWorkState != RWorkState.Working)
+                    {
+                        return;
+                    }
+
                     IsSending = true;
                 }
 
                 try
                 {
+                    var target = await sendPipe.ReadNext();
 
-                }
-                catch (Exception)
-                {
-
-                    throw;
-                }
-
-
-                var target = await sendPipe.ReadNext();
+                    if (MWorkState != RWorkState.Working)
+                    {
+                        //拿到待发送数据时，Socket已经不能发送了
+                        target.NeedToResend();
+                        return;
+                    }
 
 #if NETSTANDARD2_1
                 var length = target.SendMemory.Length;
                 var result = await Client.SendAsync(target.SendMemory, SocketFlags.None);
 #else
-                var length = target.SendSegment.Count;
-                var result = await Client.SendAsync(target.SendSegment, SocketFlags.None);
+                    var length = target.SendSegment.Count;
+                    var result = await Client.SendAsync(target.SendSegment, SocketFlags.None);
 #endif
 
-                if (result == length)
-                {
-                    //发送成功
-                    target.SendSuccess();
-                }
-                else
-                {
-                    //发送不成功，result 是错误码
-                    //https://docs.microsoft.com/zh-cn/dotnet/api/system.net.sockets.sockettaskextensions.sendasync?view=netstandard-2.0
-                
-                    //todo 如果错误码和要发送的字节恰好相等怎么办？
-                }
+                    if (result == length)
+                    {
+                        //发送成功
+                        target.SendSuccess();
+                    }
+                    else
+                    {
+                        target.NeedToResend();
+                        //发送不成功，result 是错误码
+                        //https://docs.microsoft.com/zh-cn/dotnet/api/system.net.sockets.sockettaskextensions.sendasync?view=netstandard-2.0
+                        disconnector?.OnSendError((SocketError)result);
+                        //todo 如果错误码和要发送的字节恰好相等怎么办？
+                    }
 
-                IsSending = false;
+                    IsSending = false;
+                }
+                catch (SocketException e)
+                {
+                    disconnector?.OnSendError(e);
+                    IsSending = false;
+                    return;
+                }
             }
         }
-
-
     }
 
     public partial class TcpRemote : IReceiveMessage
@@ -368,6 +402,11 @@ namespace Megumin.Remote
                     {
                         return;
                     }
+
+                    if (MWorkState != RWorkState.Working)
+                    {
+                        return;
+                    }
                     IsReceiving = true;
                 }
 
@@ -397,12 +436,14 @@ namespace Megumin.Remote
 
                     if (count == 0)
                     {
-                        //收到0字节 表示远程主动断开连接
-                        this.ToString();//debug
+                        disconnector?.OnRecv0();
                     }
-
-                    pipeWriter.Advance(count);
-                    _ = pipeWriter.FlushAsync();
+                    else
+                    {
+                        pipeWriter.Advance(count);
+                        _ = pipeWriter.FlushAsync();
+                    }
+                    
                     IsReceiving = false;
                 }
                 catch (SocketException e)

@@ -36,7 +36,7 @@ namespace Net.Remote
     /// <summary>
     /// 可连接的
     /// </summary>
-    public interface IConnectable : IRemoteEndPoint
+    public interface IConnectable : IRemoteEndPoint, IDisconnectable
     {
         /// <summary>
         /// 尝试连接。可以重写具体实现并将Auth过程合并在一起。
@@ -48,6 +48,10 @@ namespace Net.Remote
         //todo 超时API设计
         //Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, int timeoutMillonseconds = 30000);
         //Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken token = default);
+    }
+
+    public interface IDisconnectable
+    {
         /// <summary>
         /// 主动断开连接
         /// </summary>
