@@ -67,7 +67,7 @@ namespace Megumin.Remote
             /// <summary>
             /// 接收出现错误
             /// </summary>
-            /// <param name="errorCode"></param>
+            /// <param name="error"></param>
             internal void OnRecvError(SocketError error)
             {
                 lock (innerlock)
