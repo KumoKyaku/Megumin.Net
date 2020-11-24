@@ -161,6 +161,20 @@ namespace AsyncTest
         }
     }
 
+    public class Test6
+    {
+        public async void Test()
+        {
+            var a = await TestValueTask();
+            Console.WriteLine(a);
+        }
+
+        private ValueTask<int> TestValueTask()
+        {
+            return default;
+        }
+    }
+
 
     public class SocketTest
     {
