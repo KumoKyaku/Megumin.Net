@@ -23,7 +23,7 @@ namespace Megumin.Remote
     {
         public int ID { get; } = InterlockedID<IRemoteID>.NewID();
         public virtual int UID { get; set; }
-        public bool IsVaild { get; protected set; } = true;
+        public bool IsVaild => RemoteState == WorkState.Working;
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public Socket Client { get; protected set; }
         public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
@@ -33,12 +33,16 @@ namespace Megumin.Remote
             /// <summary>
             /// 所有工作停止，不允许Push到发送队列。
             /// </summary>
-            Stoped = -3,
+            Stoped = -4,
 
+            /// <summary>
+            /// 正在停止,不允许Push到发送队列，底层停止发送。
+            /// </summary>
+            StopingAll = -3,
             /// <summary>
             /// 正在停止,不允许Push到发送队列，但底层仍可能正在发送。
             /// </summary>
-            Stoping = -2,
+            StopingWaitQueueSending = -2,
             /// <summary>
             /// 从未尝试开始
             /// </summary>
@@ -48,9 +52,9 @@ namespace Megumin.Remote
             /// </summary>
             Working = 0,
         }
-
+        
         /// <summary>
-        /// 当前状态
+        /// 当前状态,使用此标记控制 底层发送 底层接收 接收数据处理三个循环正确退出。
         /// </summary>
         public WorkState RemoteState { get;internal protected set; } = WorkState.NotStart;
 
@@ -88,7 +92,6 @@ namespace Megumin.Remote
             {
                 //服务器接受设置Socket
             }
-            IsVaild = true;
         }
 
         /// <summary>
@@ -229,7 +232,8 @@ namespace Megumin.Remote
                         return;
                     }
 
-                    if (RemoteState != WorkState.Working)
+                    if (RemoteState != WorkState.Working 
+                        && RemoteState != WorkState.StopingWaitQueueSending)
                     {
                         return;
                     }
@@ -241,7 +245,8 @@ namespace Megumin.Remote
                 {
                     var target = await sendPipe.ReadNext();
 
-                    if (RemoteState != WorkState.Working)
+                    if (RemoteState != WorkState.Working
+                        && RemoteState != WorkState.StopingWaitQueueSending)
                     {
                         //拿到待发送数据时，Socket已经不能发送了
                         target.NeedToResend();
