@@ -29,7 +29,7 @@
 
   <!--依赖配置-->
   <ItemGroup>
-    <PackageReference Include="protobuf-net" Version="3.0.52" />
+    <PackageReference Include="protobuf-net" Version="3.0.62" />
     <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
   </ItemGroup>
 

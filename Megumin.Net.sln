@@ -41,7 +41,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestServer", "TestServer\Te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestClient", "TestClient\TestClient.csproj", "{88D3CD94-78B8-4ABC-B34A-BDF40922CC22}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestWPF", "TestWPF\TestWPF.csproj", "{83C11E60-8F80-4EDD-8858-B9C483530D49}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestWPF", "TestWPF\TestWPF.csproj", "{83C11E60-8F80-4EDD-8858-B9C483530D49}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
