@@ -81,8 +81,6 @@ namespace Net.Remote
         //void SendAsync(IMemoryOwner<byte> byteMessage);
     }
 
-
-
     /// <summary>
     /// 可以发送一个消息并期待一个指定类型的返回值
     /// </summary>
@@ -130,7 +128,7 @@ namespace Net.Remote
     //}
 
     ///// <summary>
-    ///// 可以断线重连的
+    ///// 可以断线重连的,业务层不关心连接
     ///// </summary>
     //public interface IReConnectable
     //{
@@ -188,7 +186,8 @@ namespace Net.Remote
     /// <summary>
     /// 应用网络层API封装
     /// <para>不需要实现<see cref="IDisposable"/>,实现起来繁琐，工程中没有太太价值。</para>
-    /// <para>不应该继承IConnectable，不关心连接过程， 在语义上是Session级别的接口</para>
+    /// <para>不应该继承IConnectable，不关心连接过程， 在语义上是Session级别的接口。
+    /// 对于接收端，收到时就是已连接的，所以IConnectable是次要的。</para>
     /// </summary>
     /// <inheritdoc/>
     public interface IRemote : IRemoteEndPoint, ISendable, IReceiveMessage, IRemoteID

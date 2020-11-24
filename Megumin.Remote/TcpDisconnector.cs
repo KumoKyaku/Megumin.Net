@@ -13,8 +13,9 @@ namespace Megumin.Remote
 
         /// <summary>
         /// 断开器
+        /// file:///E:\Git\Megumin.Net\Doc\如何正确处理网络断开.md
         /// </summary>
-        public class Disconnector: IDisconnectable
+        internal protected class Disconnector: IDisconnectable
         {
             readonly object innerlock = new object();
             public bool IsDisconnecting = false;
