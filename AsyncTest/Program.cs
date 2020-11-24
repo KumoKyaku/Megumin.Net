@@ -148,6 +148,19 @@ namespace AsyncTest
         }
     }
 
+    public class Test5
+    {
+        public async void Test()
+        {
+            await TestValueTask();
+        }
+
+        private ValueTask TestValueTask()
+        {
+            return default;
+        }
+    }
+
 
     public class SocketTest
     {
