@@ -18,6 +18,7 @@
         <Label x:Name="result1" HorizontalAlignment="Left" Margin="66,235,0,0" VerticalAlignment="Top" Width="110" Height="66"/>
         <Label Content="连接端" HorizontalAlignment="Left" Margin="45,13,0,0" VerticalAlignment="Top" Width="173" Height="25"/>
         <Label Content="监听端" HorizontalAlignment="Left" Margin="276,13,0,0" VerticalAlignment="Top" Width="173" Height="25"/>
+        <Button Content="主动断开" HorizontalAlignment="Left" Margin="302,166,0,0" VerticalAlignment="Top" Width="87" Click="ServerDisconnect"/>
 
     </Grid>
 </Window>

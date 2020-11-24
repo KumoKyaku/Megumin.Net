@@ -9,7 +9,7 @@ namespace Megumin.Remote
 {
     public partial class TcpRemote
     {
-        public Disconnector disconnector = new Disconnector();
+        internal protected Disconnector disconnector = new Disconnector();
 
         /// <summary>
         /// 断开器

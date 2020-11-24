@@ -88,6 +88,7 @@ namespace Megumin.Remote
             }
 
             this.Client = socket;
+            disconnector.tcpRemote = this;
             if (Client.Connected)
             {
                 //服务器接受设置Socket
@@ -258,7 +259,7 @@ namespace Megumin.Remote
                 var result = await Client.SendAsync(target.SendMemory, SocketFlags.None);
 #else
                     var length = target.SendSegment.Count;
-                    var result = await Client.SendAsync(target.SendSegment, SocketFlags.None);
+                    var result = await Client.SendAsync(target.SendSegment, SocketFlags.None).ConfigureAwait(false);
 #endif
 
                     if (result == length)
@@ -348,7 +349,7 @@ namespace Megumin.Remote
                         //无法获取数组片段。
                         throw new NotSupportedException($"buffer 无法转化为数组。");
                     }
-                    count = await Client.ReceiveAsync(segment, SocketFlags.None);
+                    count = await Client.ReceiveAsync(segment, SocketFlags.None).ConfigureAwait(false);
 #endif
 
                     if (count == 0)
@@ -441,7 +442,7 @@ namespace Megumin.Remote
 
                 if (result.IsCompleted || result.IsCanceled)
                 {
-                    pipeReader.AdvanceTo(result.Buffer.End);
+                    //pipeReader.AdvanceTo(result.Buffer.End);
                     return;
                 }
             }
