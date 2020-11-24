@@ -5,10 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TestWPF"
         mc:Ignorable="d"
-        Title="MainWindow" Height="567" Width="634">
+        Title="MainWindow" Height="590" Width="685">
     <Grid Margin="0,0,10,3">
         <Rectangle HorizontalAlignment="Left" Height="462" Margin="45,43,0,0" Stroke="Black" VerticalAlignment="Top" Width="283"/>
-        <Rectangle HorizontalAlignment="Left" Height="462" Margin="388,0,0,0" Stroke="Black" VerticalAlignment="Center" Width="194"/>
+        <Rectangle HorizontalAlignment="Left" Height="462" Margin="388,43,0,0" Stroke="Black" VerticalAlignment="Top" Width="204"/>
         <Button Content="开始监听" HorizontalAlignment="Left" Margin="410,65,0,0" VerticalAlignment="Top" Width="91" Click="Button_Click" Height="19" Foreground="#FFE00000" Background="#FFB4B4B4"/>
         <Label x:Name="Serverlog" HorizontalAlignment="Left" Margin="410,195,0,0" VerticalAlignment="Top" Width="164" Height="298" Content="" Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"/>
         <Button Content="创建一个连接" HorizontalAlignment="Left" Margin="66,58,0,0" VerticalAlignment="Top" Width="110" Click="CreateClient"/>

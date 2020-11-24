@@ -108,6 +108,7 @@ namespace TestWPF
 public class TestRemote : TcpRemote
 {
     public Label log { get; set; }
+    int disCount = 0;
     protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
     {
         log.Dispatcher.Invoke(() =>
@@ -135,9 +136,10 @@ public class TestRemote : TcpRemote
 
     protected override void PostDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
     {
+        disCount++;
         log.Dispatcher.Invoke(() =>
         {
-            log.Content += $"\n 网络已断开 \n {error} -- {activeOrPassive}";
+            log.Content += $"\n 网络已断开。调用次数{disCount} \n {error} -- {activeOrPassive}";
         });
     }
 }
