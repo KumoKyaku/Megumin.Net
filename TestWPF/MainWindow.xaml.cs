@@ -86,6 +86,11 @@ namespace TestWPF
         {
             server.Disconnect();
         }
+
+        private void ClientDisconnect(object sender, RoutedEventArgs e)
+        {
+            client.Disconnect(true);
+        }
     }
 }
 
@@ -123,6 +128,9 @@ public class TestRemote : TcpRemote
 
     protected override void PostDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
     {
-        UI.result1.Content = $"网络已断开 \n {error} -- {activeOrPassive}";
+        UI.Dispatcher.Invoke(() =>
+        {
+            UI.result1.Content = $"网络已断开 \n {error} -- {activeOrPassive}";
+        });
     }
 }

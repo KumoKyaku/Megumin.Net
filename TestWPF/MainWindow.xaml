@@ -5,20 +5,21 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TestWPF"
         mc:Ignorable="d"
-        Title="MainWindow" Height="345" Width="518">
+        Title="MainWindow" Height="434" Width="656">
     <Grid Margin="0,0,10,3">
-        <Rectangle HorizontalAlignment="Left" Height="267" Margin="45,43,0,0" Stroke="Black" VerticalAlignment="Top" Width="173"/>
-        <Rectangle HorizontalAlignment="Left" Height="263" Margin="276,44,0,0" Stroke="Black" VerticalAlignment="Top" Width="194"/>
-        <Button Content="开始监听" HorizontalAlignment="Left" Margin="298,59,0,0" VerticalAlignment="Top" Width="91" Click="Button_Click" Height="19"/>
-        <Label x:Name="监听状态" HorizontalAlignment="Left" Margin="298,92,0,0" VerticalAlignment="Top" Width="116" Height="25" Content="空闲"/>
+        <Rectangle HorizontalAlignment="Left" Height="267" Margin="45,43,0,0" Stroke="Black" VerticalAlignment="Top" Width="283"/>
+        <Rectangle HorizontalAlignment="Left" Height="263" Margin="388,50,0,0" Stroke="Black" VerticalAlignment="Top" Width="194"/>
+        <Button Content="开始监听" HorizontalAlignment="Left" Margin="410,65,0,0" VerticalAlignment="Top" Width="91" Click="Button_Click" Height="19"/>
+        <Label x:Name="监听状态" HorizontalAlignment="Left" Margin="410,194,0,0" VerticalAlignment="Top" Width="164" Height="107" Content="空闲"/>
         <Button Content="创建一个连接" HorizontalAlignment="Left" Margin="66,58,0,0" VerticalAlignment="Top" Width="110" Click="Button_Click_1"/>
-        <Button Content="ShutDownSend" HorizontalAlignment="Left" Margin="66,162,0,0" VerticalAlignment="Top" Width="110" Click="Button_Click_4"/>
-        <Button Content="发送一个消息" HorizontalAlignment="Left" Margin="301,134,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.346,0.389" Width="88" Click="Button_Click_2" Height="19"/>
+        <Button Content="ShutDownSend" HorizontalAlignment="Left" Margin="66,135,0,0" VerticalAlignment="Top" Width="110" Click="Button_Click_4"/>
+        <Button Content="发送一个消息" HorizontalAlignment="Left" Margin="410,100,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.346,0.389" Width="88" Click="Button_Click_2" Height="19"/>
         <Button Content="TestRPC" HorizontalAlignment="Left" Margin="66,90,0,0" VerticalAlignment="Top" Width="110" Click="Button_Click_3"/>
-        <Label x:Name="result1" HorizontalAlignment="Left" Margin="66,235,0,0" VerticalAlignment="Top" Width="110" Height="66"/>
+        <Label x:Name="result1" HorizontalAlignment="Left" Margin="66,194,0,0" VerticalAlignment="Top" Width="234" Height="107"/>
         <Label Content="连接端" HorizontalAlignment="Left" Margin="45,13,0,0" VerticalAlignment="Top" Width="173" Height="25"/>
-        <Label Content="监听端" HorizontalAlignment="Left" Margin="276,13,0,0" VerticalAlignment="Top" Width="173" Height="25"/>
-        <Button Content="主动断开" HorizontalAlignment="Left" Margin="302,166,0,0" VerticalAlignment="Top" Width="87" Click="ServerDisconnect"/>
+        <Label Content="监听端" HorizontalAlignment="Left" Margin="388,19,0,0" VerticalAlignment="Top" Width="173" Height="25"/>
+        <Button Content="主动断开" HorizontalAlignment="Left" Margin="410,135,0,0" VerticalAlignment="Top" Width="87" Click="ServerDisconnect"/>
+        <Button Content="主动断开" HorizontalAlignment="Left" Margin="66,167,0,0" VerticalAlignment="Top" Width="110" Click="ClientDisconnect"/>
 
     </Grid>
 </Window>
