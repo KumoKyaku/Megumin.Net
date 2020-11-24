@@ -197,7 +197,7 @@ namespace Megumin.Remote
                 if (triggerOnDisConnect)
                 {
                     //触发回调
-                    tcpRemote.PostDisconnect(SocketError.SocketError, ActiveOrPassive.Active);
+                    tcpRemote.PostDisconnect(SocketError.Disconnecting, ActiveOrPassive.Active);
                 }
             }
 
