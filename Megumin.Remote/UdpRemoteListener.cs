@@ -41,7 +41,7 @@ namespace Megumin.Remote
         {
             while (IsListening)
             {
-                var res = await ReceiveAsync();
+                var res = await ReceiveAsync().ConfigureAwait(false);
                 UdpReceives.Enqueue(res);
             }
         }

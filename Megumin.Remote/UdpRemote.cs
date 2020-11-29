@@ -75,18 +75,7 @@ namespace Megumin.Remote
 
             ProcessBody(new ReadOnlySequence<byte>(res.Buffer));
         }
-
-        protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        {
-            
-        }
-
-        protected override void PostDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        {
-            
-        }
-
-        
+   
         protected TestWriter testWriter = new TestWriter(65535);
         protected override async void Send(int rpcID, object message, object options = null)
         {
