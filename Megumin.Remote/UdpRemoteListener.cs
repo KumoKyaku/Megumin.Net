@@ -17,78 +17,6 @@ using System.Threading.Tasks;
 ///
 namespace Megumin.Remote
 {
-    public class UdpRemoteMessageDefine
-    {
-        public const byte UdpAuthRequest = 10;
-        public const byte UdpAuthResponse = 20;
-        public const byte Test = 30;
-        public const byte Common = 40;
-    }
-
-    /// <summary>
-    /// Udp认证请求
-    /// </summary>
-    public struct UdpAuthRequest
-    {
-        public const int Length = 21;
-        public Guid Guid;
-        public int Password;
-
-        public void Serialize(Span<byte> span)
-        {
-            span[0] = UdpRemoteMessageDefine.UdpAuthRequest;
-            Guid.WriteTo(span.Slice(1));
-            Password.WriteTo(span.Slice(17));
-        }
-
-        public static UdpAuthRequest Deserialize(Span<byte> span)
-        {
-            if (span[0] != UdpRemoteMessageDefine.UdpAuthRequest)
-            {
-                throw new FormatException();
-            }
-            UdpAuthRequest auth = new UdpAuthRequest();
-            auth.Guid = span.Slice(1).ReadGuid();
-            auth.Password = span.Slice(17).ReadInt();
-            return auth;
-        }
-    }
-
-    /// <summary>
-    /// Udp认证应答
-    /// </summary>
-    public struct UdpAuthResponse
-    {
-        public const int Length = 26;
-        public bool IsNew;
-        public Guid Guid;
-        public int Password;
-        public int KcpChannel;
-
-        public void Serialize(Span<byte> span)
-        {
-            span[0] = UdpRemoteMessageDefine.UdpAuthResponse;
-            span[1] = (byte)(IsNew ? 1 : 0);
-            Guid.WriteTo(span.Slice(2));
-            Password.WriteTo(span.Slice(18));
-            KcpChannel.WriteTo(span.Slice(22));
-        }
-
-        public static UdpAuthResponse Deserialize(Span<byte> span)
-        {
-            if (span[0] != UdpRemoteMessageDefine.UdpAuthResponse)
-            {
-                throw new FormatException();
-            }
-            UdpAuthResponse answer = new UdpAuthResponse();
-            answer.IsNew = span[1] != 0;
-            answer.Guid = span.Slice(2).ReadGuid();
-            answer.Password = span.Slice(18).ReadInt();
-            answer.KcpChannel = span.Slice(22).ReadInt();
-            return answer;
-        }
-    }
-
     /// <summary>
     /// 2018年时IPV4 IPV6 udp中不能混用，不知道现在情况
     /// </summary>
@@ -170,7 +98,7 @@ namespace Megumin.Remote
                     break;
                 case UdpRemoteMessageDefine.Test:
                 case UdpRemoteMessageDefine.Common:
-                    var remote = await FindRemote(endPoint);
+                    var remote = await FindRemote(endPoint).ConfigureAwait(false);
                     if (remote != null)
                     {
                         remote.ServerSideRecv(endPoint, recvbuffer,1, recvbuffer.Length -1);
