@@ -25,59 +25,65 @@ namespace Megumin.Remote
         public const byte Common = 40;
     }
 
-    public struct QuestAuth
+    /// <summary>
+    /// Udp认证请求
+    /// </summary>
+    public struct UdpAuthRequest
     {
         public const int Length = 21;
         public Guid Guid;
-        public int PassWord;
+        public int Password;
 
-        public void Sieralize(Span<byte> span)
+        public void Serialize(Span<byte> span)
         {
             span[0] = UdpRemoteMessageDefine.QuestAuth;
             Guid.WriteTo(span.Slice(1));
-            PassWord.WriteTo(span.Slice(17));
+            Password.WriteTo(span.Slice(17));
         }
 
-        public static QuestAuth Deseire(Span<byte> span)
+        public static UdpAuthRequest Deserialize(Span<byte> span)
         {
             if (span[0] != UdpRemoteMessageDefine.QuestAuth)
             {
                 throw new FormatException();
             }
-            QuestAuth auth = new QuestAuth();
+            UdpAuthRequest auth = new UdpAuthRequest();
             auth.Guid = span.Slice(1).ReadGuid();
-            auth.PassWord = span.Slice(17).ReadInt();
+            auth.Password = span.Slice(17).ReadInt();
             return auth;
         }
     }
 
-    public struct Answer
+    /// <summary>
+    /// Udp认证应答
+    /// </summary>
+    public struct UdpAuthResponse
     {
         public const int Length = 26;
         public bool IsNew;
         public Guid Guid;
-        public int PassWord;
+        public int Password;
         public int KcpChannel;
 
-        public void Sieralize(Span<byte> span)
+        public void Serialize(Span<byte> span)
         {
             span[0] = UdpRemoteMessageDefine.Answer;
             span[1] = (byte)(IsNew ? 1 : 0);
             Guid.WriteTo(span.Slice(2));
-            PassWord.WriteTo(span.Slice(18));
+            Password.WriteTo(span.Slice(18));
             KcpChannel.WriteTo(span.Slice(22));
         }
 
-        public static Answer Deseire(Span<byte> span)
+        public static UdpAuthResponse Deserialize(Span<byte> span)
         {
             if (span[0] != UdpRemoteMessageDefine.Answer)
             {
                 throw new FormatException();
             }
-            Answer answer = new Answer();
+            UdpAuthResponse answer = new UdpAuthResponse();
             answer.IsNew = span[1] != 0;
             answer.Guid = span.Slice(2).ReadGuid();
-            answer.PassWord = span.Slice(18).ReadInt();
+            answer.Password = span.Slice(18).ReadInt();
             answer.KcpChannel = span.Slice(22).ReadInt();
             return answer;
         }
@@ -89,12 +95,11 @@ namespace Megumin.Remote
     public class UdpRemoteListener : UdpClient
     {
         public IPEndPoint ConnectIPEndPoint { get; set; }
-        public EndPoint RemappedEndPoint { get; }
 
         readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
         readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
-        readonly Dictionary<IPEndPoint, TaskCompletionSource<Answer>> authing
-            = new Dictionary<IPEndPoint, TaskCompletionSource<Answer>>();
+        readonly Dictionary<IPEndPoint, TaskCompletionSource<UdpAuthResponse>> authing
+            = new Dictionary<IPEndPoint, TaskCompletionSource<UdpAuthResponse>>();
 
 
         public UdpRemoteListener(int port, AddressFamily addressFamily = AddressFamily.InterNetwork)
@@ -182,7 +187,7 @@ namespace Megumin.Remote
                 var answer = await BaginNewAuth(endPoint);
                 if (lut.TryGetValue(answer.Guid,out var udpRemote))
                 {
-                    if (udpRemote.Password != answer.PassWord)
+                    if (udpRemote.Password != answer.Password)
                     {
                         //guid和密码不匹配,可能遇到有人碰撞攻击
                         return null;
@@ -209,7 +214,7 @@ namespace Megumin.Remote
                     }
                     udp.ConnectIPEndPoint = endPoint;
                     udp.GUID = answer.Guid;
-                    udp.Password = answer.PassWord;
+                    udp.Password = answer.Password;
                     lut.Add(udp.GUID, udp);
                     connected.Add(endPoint, udp);
                     OnAccept(udp);
@@ -219,21 +224,21 @@ namespace Megumin.Remote
         }
 
         Random random = new Random();
-        ValueTask<Answer> BaginNewAuth(IPEndPoint endPoint)
+        ValueTask<UdpAuthResponse> BaginNewAuth(IPEndPoint endPoint)
         {
-            QuestAuth session = new QuestAuth();
+            UdpAuthRequest session = new UdpAuthRequest();
             session.Guid = Guid.NewGuid();
-            session.PassWord = random.Next();
+            session.Password = random.Next();
             //创建认证消息
-            byte[] buffer = new byte[QuestAuth.Length];
-            session.Sieralize(buffer);
+            byte[] buffer = new byte[UdpAuthRequest.Length];
+            session.Serialize(buffer);
             Send(buffer, buffer.Length, endPoint);
             if (!authing.TryGetValue(endPoint,out var source))
             {
-                source = new TaskCompletionSource<Answer>();
+                source = new TaskCompletionSource<UdpAuthResponse>();
                 authing.Add(endPoint, source);
             }
-            return new ValueTask<Answer>(source.Task);
+            return new ValueTask<UdpAuthResponse>(source.Task);
         }
 
         
@@ -242,7 +247,7 @@ namespace Megumin.Remote
             if (authing.TryGetValue(endPoint, out var source))
             {
                 authing.Remove(endPoint);
-                var answer = Answer.Deseire(buffer);
+                var answer = UdpAuthResponse.Deserialize(buffer);
                 source.TrySetResult(answer);
             }
         }

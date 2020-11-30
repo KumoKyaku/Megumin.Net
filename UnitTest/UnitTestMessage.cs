@@ -74,24 +74,24 @@ namespace UnitTest
         [TestMethod]
         public void TestUDPAuth()
         {
-            QuestAuth auth = new QuestAuth();
+            UdpAuthRequest auth = new UdpAuthRequest();
             auth.Guid = new Guid();
-            auth.PassWord = new Random().Next();
+            auth.Password = new Random().Next();
             var buffer = new byte[50];
-            auth.Sieralize(buffer);
-            var ret = QuestAuth.Deseire(buffer);
+            auth.Serialize(buffer);
+            var ret = UdpAuthRequest.Deserialize(buffer);
             Assert.AreEqual(auth, ret);
         }
 
         [TestMethod]
         public void TestUDPAnswer()
         {
-            Answer answer = new Answer();
+            UdpAuthResponse answer = new UdpAuthResponse();
             answer.Guid = new Guid();
-            answer.PassWord = new Random().Next();
+            answer.Password = new Random().Next();
             var buffer = new byte[50];
-            answer.Sieralize(buffer);
-            var ret = Answer.Deseire(buffer);
+            answer.Serialize(buffer);
+            var ret = UdpAuthResponse.Deserialize(buffer);
             Assert.AreEqual(answer, ret);
         }
     }

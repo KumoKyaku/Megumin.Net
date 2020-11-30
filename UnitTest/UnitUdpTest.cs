@@ -29,7 +29,7 @@ namespace UnitTest
 
             UdpRemote client = new UdpRemote();
             client.ConnectIPEndPoint = new System.Net.IPEndPoint(IPAddress.Loopback, port);
-            client.ClientRecv(port - 1);
+            client.ClientSideRecv(port - 1);
             EchoTest(client);
             listener.Stop();
         }

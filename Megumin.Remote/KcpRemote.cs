@@ -71,7 +71,7 @@ namespace Megumin.Remote
             }
         }
 
-        protected TestWriter kcpout = new TestWriter(65535);
+        protected Writer kcpout = new Writer(65535);
         async void KcpOutput()
         {
             while (true)
@@ -88,15 +88,15 @@ namespace Megumin.Remote
 
         protected override void Send(int rpcID, object message, object options = null)
         {
-            if (TrySerialize(testWriter, rpcID, message, options))
+            if (TrySerialize(SendWriter, rpcID, message, options))
             {
-                var (buffer, lenght) = testWriter.Pop();
+                var (buffer, lenght) = SendWriter.Pop();
                 kcp.Send(buffer.Memory.Span.Slice(0, lenght));
                 buffer.Dispose();
             }
             else
             {
-                var (buffer, lenght) = testWriter.Pop();
+                var (buffer, lenght) = SendWriter.Pop();
                 buffer.Dispose();
             }
         }
