@@ -13,27 +13,28 @@ namespace Megumin.Remote
     /// Q：是否报头带上长度验证完整性？
     /// A：不需要，如果数据报重组失败Udp会直接丢弃。
     /// </summary>
-    public class UdpRemote:RpcRemote,IRemoteEndPoint
+    public class UdpRemote:RpcRemote,IRemoteEndPoint, IRemote
     {
         protected IPEndPoint lastRecvIP;
 
-        Socket socket;
+        public Socket socket;
 
         public Guid GUID { get; internal set; }
         public int Password { get; set; } = -1;
         public UdpRemote()
         {
-            socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
-            FillRecv();
+            socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         }
 
-        private async void FillRecv()
+        public async void ClientRecv(int port)
         {
+            socket.Bind(new IPEndPoint(IPAddress.Any, port));
             while (true)
             {
-                ArraySegment<byte> buffer = default;
+                byte[] cache = new byte[8192];
+                ArraySegment<byte> buffer = new ArraySegment<byte>(cache);
                 SocketFlags socketFlags = SocketFlags.None;
-                IPEndPoint remoteEndPoint = default;
+                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any,0);
                 var res = await socket.ReceiveFromAsync(buffer, socketFlags, remoteEndPoint);
                 InnerDeal(res.RemoteEndPoint as IPEndPoint, buffer.Array);
             }
@@ -168,5 +169,10 @@ namespace Megumin.Remote
             ConnectIPEndPoint = endPoint;
             ProcessBody(new ReadOnlySequence<byte>(buffer,offset,count));
         }
+
+        public Socket Client { get; }
+        public bool IsVaild { get; }
+        public float LastReceiveTimeFloat { get; }
+        public int ID { get; }
     }
 }

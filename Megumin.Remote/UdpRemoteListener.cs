@@ -19,11 +19,10 @@ namespace Megumin.Remote
 {
     public class UdpRemoteMessageDefine
     {
-        public const byte QuestAuth = 8;
-
-        public const byte Answer = 32;
-        public const byte Test = 64;
-        public const byte Common = 128;
+        public const byte QuestAuth = 10;
+        public const byte Answer = 20;
+        public const byte Test = 30;
+        public const byte Common = 40;
     }
 
     public struct QuestAuth
@@ -98,12 +97,14 @@ namespace Megumin.Remote
             = new Dictionary<IPEndPoint, TaskCompletionSource<Answer>>();
 
 
-        public UdpRemoteListener(int port, AddressFamily addressFamily = AddressFamily.InterNetworkV6)
+        public UdpRemoteListener(int port, AddressFamily addressFamily = AddressFamily.InterNetwork)
             : base(port, addressFamily)
         {
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
             Client.ReceiveBufferSize = 1020 * 1024 * 5; //先设个5mb看看
         }
+
+        private Func<UdpRemote> CreateFunc;
 
         public bool IsListening { get; private set; }
 
@@ -201,7 +202,11 @@ namespace Megumin.Remote
                 }
                 else
                 {
-                    UdpRemote udp = new UdpRemote();
+                    UdpRemote udp = CreateFunc?.Invoke();
+                    if (udp == null)
+                    {
+                        udp = new UdpRemote();
+                    }
                     udp.ConnectIPEndPoint = endPoint;
                     udp.GUID = answer.Guid;
                     udp.Password = answer.PassWord;
@@ -213,20 +218,21 @@ namespace Megumin.Remote
             }
         }
 
-        QuestAuth CreateNew()
-        {
-            return default;
-        }
-
+        Random random = new Random();
         ValueTask<Answer> BaginNewAuth(IPEndPoint endPoint)
         {
-            var session = CreateNew();
+            QuestAuth session = new QuestAuth();
+            session.Guid = Guid.NewGuid();
+            session.PassWord = random.Next();
             //创建认证消息
-            byte[] buffer = new byte[30];
+            byte[] buffer = new byte[QuestAuth.Length];
             session.Sieralize(buffer);
-            Send(buffer, 30, endPoint);
-            TaskCompletionSource<Answer> source = new TaskCompletionSource<Answer>();
-            authing.Add(endPoint, source);
+            Send(buffer, buffer.Length, endPoint);
+            if (!authing.TryGetValue(endPoint,out var source))
+            {
+                source = new TaskCompletionSource<Answer>();
+                authing.Add(endPoint, source);
+            }
             return new ValueTask<Answer>(source.Task);
         }
 
@@ -240,12 +246,11 @@ namespace Megumin.Remote
                 source.TrySetResult(answer);
             }
         }
-
-
-
         
-        public void ListenAsync()
+        public void ListenAsync<T>(Func<T> createFunc)
+            where T : UdpRemote
         {
+            this.CreateFunc = createFunc;
             IsListening = true;
             Task.Factory.StartNew(AcceptAsync, TaskCreationOptions.LongRunning);
             Task.Factory.StartNew(Deal, TaskCreationOptions.LongRunning);

@@ -15,4 +15,12 @@ namespace Megumin.Remote.Simple
             return new ValueTask<object>(message);
         }
     }
+
+    public class EchoUdp : UdpRemote
+    {
+        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        {
+            return new ValueTask<object>(message);
+        }
+    }
 }

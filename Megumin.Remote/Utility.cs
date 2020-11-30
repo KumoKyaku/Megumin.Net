@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Net.Remote;
+using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
@@ -232,5 +233,11 @@ namespace Megumin.Remote
 
     public class Utility
     {
+    }
+
+    public class SendOption : IRpcTimeoutOption
+    {
+        public static readonly SendOption Never = new SendOption() { MillisecondsDelay = -1 };
+        public int MillisecondsDelay { get; set; }
     }
 }
