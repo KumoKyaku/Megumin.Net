@@ -22,7 +22,7 @@ namespace Megumin.Remote
 
         public UdpRemote()
         {
-            Client = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            Client = new Socket(SocketType.Dgram, ProtocolType.Udp);
         }
 
         //连接认证部分================================================
