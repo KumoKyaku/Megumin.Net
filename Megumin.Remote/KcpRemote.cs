@@ -62,13 +62,6 @@ namespace Megumin.Remote
 
         }
 
-
-
-        protected internal override void Deal(UdpReceiveResult res)
-        {
-            kcp.Input(res.Buffer);
-        }
-
         async void KcpRecv()
         {
             while (true)
@@ -87,7 +80,7 @@ namespace Megumin.Remote
                 var (buffer, lenght) = kcpout.Pop();
                 if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
                 {
-                    await UdpClient.SendAsync(segment.Array, lenght, lastRecvIP);
+                    //await UdpClient.SendAsync(segment.Array, lenght, lastRecvIP);
                 }
                 buffer.Dispose();
             }

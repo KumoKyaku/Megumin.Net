@@ -2,6 +2,7 @@
 using Megumin.Remote.Test;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ProtoBuf;
+using System;
 using System.IO;
 using System.IO.Pipelines;
 
@@ -68,6 +69,30 @@ namespace UnitTest
             Assert.AreEqual(login2Gate.Account, res.Account);
             Assert.AreEqual(login2Gate.Password, res.Password);
         }
-        
+
+
+        [TestMethod]
+        public void TestUDPAuth()
+        {
+            QuestAuth auth = new QuestAuth();
+            auth.Guid = new Guid();
+            auth.PassWord = new Random().Next();
+            var buffer = new byte[50];
+            auth.Sieralize(buffer);
+            var ret = QuestAuth.Deseire(buffer);
+            Assert.AreEqual(auth, ret);
+        }
+
+        [TestMethod]
+        public void TestUDPAnswer()
+        {
+            Answer answer = new Answer();
+            answer.Guid = new Guid();
+            answer.PassWord = new Random().Next();
+            var buffer = new byte[50];
+            answer.Sieralize(buffer);
+            var ret = Answer.Deseire(buffer);
+            Assert.AreEqual(answer, ret);
+        }
     }
 }

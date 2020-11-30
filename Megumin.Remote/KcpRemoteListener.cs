@@ -36,7 +36,7 @@ namespace Megumin.Remote
                         var newkcpR = await CreateKcpRemote(res);
                     }
 
-                    remote.Deal(res);
+                    //remote.Deal(res);
                 }
                 else
                 {

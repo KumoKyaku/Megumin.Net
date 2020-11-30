@@ -39,7 +39,7 @@ namespace Megumin.Remote
             PassWord.WriteTo(span.Slice(17));
         }
 
-        internal static QuestAuth Deseire(Span<byte> span)
+        public static QuestAuth Deseire(Span<byte> span)
         {
             if (span[0] != UdpRemoteMessageDefine.QuestAuth)
             {
@@ -60,7 +60,7 @@ namespace Megumin.Remote
         public int PassWord;
         public int KcpChannel;
 
-        internal void Sieralize(Span<byte> span)
+        public void Sieralize(Span<byte> span)
         {
             span[0] = UdpRemoteMessageDefine.Answer;
             span[1] = (byte)(IsNew ? 1 : 0);
@@ -69,7 +69,7 @@ namespace Megumin.Remote
             KcpChannel.WriteTo(span.Slice(22));
         }
 
-        internal static Answer Deseire(Span<byte> span)
+        public static Answer Deseire(Span<byte> span)
         {
             if (span[0] != UdpRemoteMessageDefine.Answer)
             {

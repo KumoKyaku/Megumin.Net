@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Megumin.Remote\Megumin.Remote.csproj" />
     <ProjectReference Include="..\MessagePackLUT\MessagePackLUT.csproj" />
     <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
     <ProjectReference Include="..\Protobuf-netLUT\Protobuf-netLUT.csproj" />
