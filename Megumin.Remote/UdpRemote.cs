@@ -11,26 +11,20 @@ namespace Megumin.Remote
 {
     public partial class UdpRemote:RpcRemote,IRemoteEndPoint, IRemote
     {
-        public Socket socket;
-
+        public int ID { get; } = InterlockedID<IRemoteID>.NewID();
         public Guid GUID { get; internal set; }
         public int Password { get; set; } = -1;
+        public IPEndPoint ConnectIPEndPoint { get; set; }
+        public virtual EndPoint RemappedEndPoint => ConnectIPEndPoint;
+        public Socket Client { get; protected set; }
+        public bool IsVaild { get; internal protected set; }
+        public float LastReceiveTimeFloat { get; }
+
         public UdpRemote()
         {
-            socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            Client = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         }
 
-
-
-        public IPEndPoint ConnectIPEndPoint { get; set; }
-        public EndPoint RemappedEndPoint { get; }
-
-        
-        public Socket Client { get; }
-        public bool IsVaild { get; }
-        public float LastReceiveTimeFloat { get; }
-        public int ID { get; }
-    
         //连接认证部分================================================
 
         /// <summary>
@@ -55,7 +49,7 @@ namespace Megumin.Remote
             answer.Password = Password;
             byte[] buffer = new byte[UdpAuthResponse.Length];
             answer.Serialize(buffer);
-            socket.SendTo(buffer, 0, UdpAuthResponse.Length, SocketFlags.None, endPoint);
+            Client.SendTo(buffer, 0, UdpAuthResponse.Length, SocketFlags.None, endPoint);
         }
 
 
@@ -118,7 +112,7 @@ namespace Megumin.Remote
                 if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
                 {
                     //todo 异步发送
-                    socket.SendTo(segment.Array, 0, lenght, SocketFlags.None, ConnectIPEndPoint);
+                    Client.SendTo(segment.Array, 0, lenght, SocketFlags.None, ConnectIPEndPoint);
                 }
                 buffer.Dispose();
             }
@@ -137,14 +131,16 @@ namespace Megumin.Remote
         /// <param name="port"></param>
         public async void ClientSideRecv(int port)
         {
-            socket.Bind(new IPEndPoint(IPAddress.Any, port));
+            Client.Bind(new IPEndPoint(IPAddress.Any, port));
+            IsVaild = true;
             while (true)
             {
+                //todo 优化缓冲区
                 byte[] cache = new byte[8192];
                 ArraySegment<byte> buffer = new ArraySegment<byte>(cache);
                 SocketFlags socketFlags = SocketFlags.None;
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                var res = await socket.ReceiveFromAsync(buffer, socketFlags, remoteEndPoint);
+                var res = await Client.ReceiveFromAsync(buffer, socketFlags, remoteEndPoint);
                 InnerDeal(res.RemoteEndPoint as IPEndPoint, buffer.Array);
             }
         }
@@ -154,10 +150,10 @@ namespace Megumin.Remote
             byte messageType = recvbuffer[0];
             switch (messageType)
             {
-                case UdpRemoteMessageDefine.QuestAuth:
+                case UdpRemoteMessageDefine.UdpAuthRequest:
                     DealAuthBuffer(endPoint, recvbuffer);
                     break;
-                case UdpRemoteMessageDefine.Answer:
+                case UdpRemoteMessageDefine.UdpAuthResponse:
                     //主动侧不处理验证应答。
                     break;
                 case UdpRemoteMessageDefine.Test:
@@ -173,7 +169,9 @@ namespace Megumin.Remote
         /// 主动侧需要手动开启接收，被动侧由listener接收然后分发
         /// </summary>
         /// <param name="endPoint"></param>
-        /// <param name="span"></param>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
         internal protected void ServerSideRecv(IPEndPoint endPoint, byte[] buffer, int offset, int count)
         {
             ConnectIPEndPoint = endPoint;

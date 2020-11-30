@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -28,7 +29,7 @@ namespace UnitTest
             listener.ListenAsync(Create);
 
             UdpRemote client = new UdpRemote();
-            client.ConnectIPEndPoint = new System.Net.IPEndPoint(IPAddress.Loopback, port);
+            client.ConnectIPEndPoint = new IPEndPoint(IPAddress.Loopback, port);
             client.ClientSideRecv(port - 1);
             EchoTest(client);
             listener.Stop();

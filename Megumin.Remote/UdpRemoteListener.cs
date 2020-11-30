@@ -19,8 +19,8 @@ namespace Megumin.Remote
 {
     public class UdpRemoteMessageDefine
     {
-        public const byte QuestAuth = 10;
-        public const byte Answer = 20;
+        public const byte UdpAuthRequest = 10;
+        public const byte UdpAuthResponse = 20;
         public const byte Test = 30;
         public const byte Common = 40;
     }
@@ -36,14 +36,14 @@ namespace Megumin.Remote
 
         public void Serialize(Span<byte> span)
         {
-            span[0] = UdpRemoteMessageDefine.QuestAuth;
+            span[0] = UdpRemoteMessageDefine.UdpAuthRequest;
             Guid.WriteTo(span.Slice(1));
             Password.WriteTo(span.Slice(17));
         }
 
         public static UdpAuthRequest Deserialize(Span<byte> span)
         {
-            if (span[0] != UdpRemoteMessageDefine.QuestAuth)
+            if (span[0] != UdpRemoteMessageDefine.UdpAuthRequest)
             {
                 throw new FormatException();
             }
@@ -67,7 +67,7 @@ namespace Megumin.Remote
 
         public void Serialize(Span<byte> span)
         {
-            span[0] = UdpRemoteMessageDefine.Answer;
+            span[0] = UdpRemoteMessageDefine.UdpAuthResponse;
             span[1] = (byte)(IsNew ? 1 : 0);
             Guid.WriteTo(span.Slice(2));
             Password.WriteTo(span.Slice(18));
@@ -76,7 +76,7 @@ namespace Megumin.Remote
 
         public static UdpAuthResponse Deserialize(Span<byte> span)
         {
-            if (span[0] != UdpRemoteMessageDefine.Answer)
+            if (span[0] != UdpRemoteMessageDefine.UdpAuthResponse)
             {
                 throw new FormatException();
             }
@@ -96,13 +96,23 @@ namespace Megumin.Remote
     {
         public IPEndPoint ConnectIPEndPoint { get; set; }
 
-        readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
-        readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
-        readonly Dictionary<IPEndPoint, TaskCompletionSource<UdpAuthResponse>> authing
+        protected readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
+        protected readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
+        protected readonly Dictionary<IPEndPoint, TaskCompletionSource<UdpAuthResponse>> authing
             = new Dictionary<IPEndPoint, TaskCompletionSource<UdpAuthResponse>>();
+        /// <remarks>
+        /// Q:要不要用同步队列，预计有多个线程入队，只有一个线程出队，会不会有线程安全问题？
+        /// </remarks>
+        protected Queue<UdpReceiveResult> UdpReceives = new Queue<UdpReceiveResult>();
 
+        public UdpRemoteListener(int port)
+            : base(port)
+        {
+            this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
+            Client.ReceiveBufferSize = 1020 * 1024 * 5; //先设个5mb看看
+        }
 
-        public UdpRemoteListener(int port, AddressFamily addressFamily = AddressFamily.InterNetwork)
+        public UdpRemoteListener(int port, AddressFamily addressFamily)
             : base(port, addressFamily)
         {
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
@@ -124,11 +134,6 @@ namespace Megumin.Remote
                 UdpReceives.Enqueue(res);
             }
         }
-
-        /// <remarks>
-        /// Q:要不要用同步队列，预计有多个线程入队，只有一个线程出队，会不会有线程安全问题？
-        /// </remarks>
-        protected Queue<UdpReceiveResult> UdpReceives = new Queue<UdpReceiveResult>();
 
         /// <summary>
         /// 接收和处理分开
@@ -152,15 +157,15 @@ namespace Megumin.Remote
 
         }
 
-        private async void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer)
+        protected virtual async void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer)
         {
             byte messageType = recvbuffer[0];
             switch (messageType)
             {
-                case UdpRemoteMessageDefine.QuestAuth:
+                case UdpRemoteMessageDefine.UdpAuthRequest:
                     //被动侧不处理主动侧提出的验证。
                     break;
-                case UdpRemoteMessageDefine.Answer:
+                case UdpRemoteMessageDefine.UdpAuthResponse:
                     DealAnswerBuffer(endPoint, recvbuffer);
                     break;
                 case UdpRemoteMessageDefine.Test:
@@ -207,20 +212,28 @@ namespace Megumin.Remote
                 }
                 else
                 {
-                    UdpRemote udp = CreateFunc?.Invoke();
-                    if (udp == null)
-                    {
-                        udp = new UdpRemote();
-                    }
-                    udp.ConnectIPEndPoint = endPoint;
-                    udp.GUID = answer.Guid;
-                    udp.Password = answer.Password;
-                    lut.Add(udp.GUID, udp);
-                    connected.Add(endPoint, udp);
+                    UdpRemote udp = CreateNew(endPoint, answer);
                     OnAccept(udp);
                     return udp;
                 }
             }
+        }
+
+        protected virtual UdpRemote CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
+        {
+            UdpRemote udp = CreateFunc?.Invoke();
+            if (udp == null)
+            {
+                udp = new UdpRemote();
+            }
+
+            udp.IsVaild = true;
+            udp.ConnectIPEndPoint = endPoint;
+            udp.GUID = answer.Guid;
+            udp.Password = answer.Password;
+            lut.Add(udp.GUID, udp);
+            connected.Add(endPoint, udp);
+            return udp;
         }
 
         Random random = new Random();
@@ -271,8 +284,6 @@ namespace Megumin.Remote
         {
 
         }
-
-
     }
 }
 
