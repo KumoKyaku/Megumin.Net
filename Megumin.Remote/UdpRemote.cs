@@ -152,13 +152,13 @@ namespace Megumin.Remote
                 SocketFlags socketFlags = SocketFlags.None;
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 var res = await Client.ReceiveFromAsync(buffer, socketFlags, remoteEndPoint);
-                InnerDeal(res.RemoteEndPoint as IPEndPoint, buffer.Array);
+                InnerDeal(res.RemoteEndPoint as IPEndPoint, buffer.Array, 0, res.ReceivedBytes);
             }
         }
 
-        protected virtual void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer)
+        protected virtual void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer, int start, int count)
         {
-            byte messageType = recvbuffer[0];
+            byte messageType = recvbuffer[start];
             switch (messageType)
             {
                 case UdpRemoteMessageDefine.UdpAuthRequest:
@@ -169,7 +169,7 @@ namespace Megumin.Remote
                     break;
                 case UdpRemoteMessageDefine.LLMsg:
                 case UdpRemoteMessageDefine.Common:
-                    ProcessBody(new ReadOnlySequence<byte>(recvbuffer, 1, recvbuffer.Length - 1));
+                    RecvPureBuffer(recvbuffer, start + 1, count - 1);
                     break;
                 default:
                     break;
@@ -186,8 +186,12 @@ namespace Megumin.Remote
         internal protected virtual void ServerSideRecv(IPEndPoint endPoint, byte[] buffer, int offset, int count)
         {
             ConnectIPEndPoint = endPoint;
-            ProcessBody(new ReadOnlySequence<byte>(buffer, offset, count));
+            RecvPureBuffer(buffer, offset + 1, count - 1);
         }
 
+        protected virtual void RecvPureBuffer(byte[] buffer,int start,int count)
+        {
+            ProcessBody(new ReadOnlySequence<byte>(buffer, start, count));
+        }
     }
 }

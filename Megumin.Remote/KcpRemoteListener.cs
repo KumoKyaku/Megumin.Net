@@ -39,7 +39,7 @@ namespace Megumin.Remote
                     var remote = await FindRemote(endPoint).ConfigureAwait(false);
                     if (remote != null)
                     {
-                        remote.ServerSideRecv(endPoint, recvbuffer, 1, recvbuffer.Length - 1);
+                        remote.ServerSideRecv(endPoint, recvbuffer, 0, recvbuffer.Length);
                     }
                     break;
                 default:
