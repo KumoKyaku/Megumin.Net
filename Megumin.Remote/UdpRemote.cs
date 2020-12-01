@@ -94,7 +94,7 @@ namespace Megumin.Remote
                 return buffer.Memory.Span.Slice(offset, sizeHint);
             }
 
-            internal void WriteHeader(byte header)
+            public void WriteHeader(byte header)
             {
                 var span = GetSpan(1);
                 span[0] = header;

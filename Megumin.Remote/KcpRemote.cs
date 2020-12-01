@@ -59,12 +59,10 @@ namespace Megumin.Remote
         {
             while (true)
             {
+                kcpout.WriteHeader(UdpRemoteMessageDefine.Common);
                 await kcp.Output(kcpout);
                 var (buffer, lenght) = kcpout.Pop();
-                var sendbuffer = MemoryPool<byte>.Shared.Rent(lenght + 1);
-                sendbuffer.Memory.Span[0] = UdpRemoteMessageDefine.Common;
-                buffer.Memory.Span.Slice(0, lenght).CopyTo(sendbuffer.Memory.Span.Slice(1));
-                SocketSend(sendbuffer, lenght + 1);
+                SocketSend(buffer, lenght);
             }
         }
 
