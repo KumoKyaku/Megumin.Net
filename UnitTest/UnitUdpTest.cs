@@ -16,9 +16,14 @@ namespace UnitTest
     [TestClass]
     public class UnitUdpTest
     {
-        private UdpRemote Create()
+        private UdpRemote CreateUdp()
         {
             return new EchoUdp();
+        }
+
+        private KcpRemote CreateKcp()
+        {
+            return new EchoKcp();
         }
 
         [TestMethod]
@@ -26,7 +31,7 @@ namespace UnitTest
         {
             const int port = 65432;
             UdpRemoteListener listener = new UdpRemoteListener(port);
-            listener.ListenAsync(Create);
+            listener.ListenAsync(CreateUdp);
 
             UdpRemote client = new UdpRemote();
             client.ConnectIPEndPoint = new IPEndPoint(IPAddress.Loopback, port);
@@ -35,6 +40,21 @@ namespace UnitTest
             listener.Stop();
         }
 
+
+        [TestMethod]
+        public void TestKcpRemote()
+        {
+            const int port = 55432;
+            KcpRemoteListener listener = new KcpRemoteListener(port);
+            listener.ListenAsync(CreateKcp);
+
+            KcpRemote client = new KcpRemote();
+            client.InitKcp(1001);
+            client.ConnectIPEndPoint = new IPEndPoint(IPAddress.Loopback, port);
+            client.ClientSideRecv(port - 1);
+            EchoTest(client);
+            listener.Stop();
+        }
 
         public void EchoTest(IRemote remote)
         {

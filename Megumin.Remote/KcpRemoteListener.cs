@@ -10,7 +10,12 @@ namespace Megumin.Remote
 {
     public class KcpRemoteListener : UdpRemoteListener
     {
-        public KcpRemoteListener(int port, AddressFamily addressFamily = AddressFamily.InterNetworkV6)
+        public KcpRemoteListener(int port)
+            : base(port)
+        {
+        }
+
+        public KcpRemoteListener(int port, AddressFamily addressFamily)
             : base(port, addressFamily)
         {
         }

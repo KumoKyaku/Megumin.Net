@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Megumin.Remote
 {
-    
+
     /// <summary>
     /// todo 连接kcpid
     /// </summary>
@@ -20,9 +20,9 @@ namespace Megumin.Remote
     {
         IKcpIO kcp = null;
 
-        internal void InitKcp(int kcpChannel)
+        public void InitKcp(int kcpChannel)
         {
-            if (kcp != null)
+            if (kcp == null)
             {
                 kcp = new FakeKcpIO();
                 KcpOutput();
@@ -38,7 +38,10 @@ namespace Megumin.Remote
             {
                 await kcp.Output(kcpout);
                 var (buffer, lenght) = kcpout.Pop();
-                SocketSend(buffer, lenght);
+                var sendbuffer = MemoryPool<byte>.Shared.Rent(lenght + 1);
+                sendbuffer.Memory.Span[0] = UdpRemoteMessageDefine.Common;
+                buffer.Memory.Span.Slice(0, lenght).CopyTo(sendbuffer.Memory.Span.Slice(1));
+                SocketSend(sendbuffer, lenght + 1);
             }
         }
 
@@ -71,7 +74,7 @@ namespace Megumin.Remote
         protected internal override void ServerSideRecv(IPEndPoint endPoint, byte[] buffer, int offset, int count)
         {
             ConnectIPEndPoint = endPoint;
-            kcp.Input(new ReadOnlySpan<byte>(buffer, offset, count));
+            kcp.Input(new ReadOnlySpan<byte>(buffer, offset + 1, count));
         }
 
         protected override void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer)
@@ -90,11 +93,11 @@ namespace Megumin.Remote
                     ProcessBody(new ReadOnlySequence<byte>(recvbuffer, 1, recvbuffer.Length - 1));
                     break;
                 case UdpRemoteMessageDefine.Common:
-                    kcp.Input(new ReadOnlySpan<byte>(recvbuffer, 0, recvbuffer.Length));
+                    kcp.Input(new ReadOnlySpan<byte>(recvbuffer, 1, recvbuffer.Length));
                     break;
                 default:
                     break;
             }
-        }
+        } 
     }
 }
