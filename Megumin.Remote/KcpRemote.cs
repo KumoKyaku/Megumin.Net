@@ -5,72 +5,32 @@
 
 using System;
 using System.Buffers;
+using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace Megumin.Remote
 {
-    /// <summary>
-    /// kcp协议输入输出标准接口
-    /// </summary>
-    public interface IKcpIO
-    {
-        /// <summary>
-        /// 下层收到数据后添加到kcp协议中
-        /// </summary>
-        /// <param name="span"></param>
-        void Input(ReadOnlySpan<byte> span);
-        /// <summary>
-        /// 从kcp中取出一个整合完毕的数据包
-        /// </summary>
-        /// <returns></returns>
-        ValueTask<ReadOnlySequence<byte>> Recv();
-
-        /// <summary>
-        /// 将要发送到网络的数据Send到kcp协议中
-        /// </summary>
-        /// <param name="span"></param>
-        /// <param name="option"></param>
-        void Send(ReadOnlySpan<byte> span, object option = null);
-        /// <summary>
-        /// 将要发送到网络的数据Send到kcp协议中
-        /// </summary>
-        /// <param name="span"></param>
-        /// <param name="option"></param>
-        void Send(ReadOnlySequence<byte> span, object option = null);
-        /// <summary>
-        /// 从kcp协议中取出需要发送到网络的数据。
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="option"></param>
-        /// <returns></returns>
-        ValueTask Output(IBufferWriter<byte> writer, object option = null);
-    }
-
+    
     /// <summary>
     /// todo 连接kcpid
     /// </summary>
-    public class KcpRemote:UdpRemote
+    public partial class KcpRemote : UdpRemote
     {
-        public int ID { get; set; }
         IKcpIO kcp = null;
 
-        void RKCP(UdpReceiveResult res)
+        internal void InitKcp(int kcpChannel)
         {
-            ID = InterlockedID<KcpRemote>.NewID();
-
-        }
-
-        async void KcpRecv()
-        {
-            while (true)
+            if (kcp != null)
             {
-                var segment = await kcp.Recv();
-                ProcessBody(segment);
+                kcp = new FakeKcpIO();
+                KcpOutput();
+                KCPRecv();
             }
         }
 
+        // 发送===================================================================
         protected Writer kcpout = new Writer(65535);
         async void KcpOutput()
         {
@@ -78,11 +38,7 @@ namespace Megumin.Remote
             {
                 await kcp.Output(kcpout);
                 var (buffer, lenght) = kcpout.Pop();
-                if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
-                {
-                    //await UdpClient.SendAsync(segment.Array, lenght, lastRecvIP);
-                }
-                buffer.Dispose();
+                SocketSend(buffer, lenght);
             }
         }
 
@@ -99,6 +55,28 @@ namespace Megumin.Remote
                 var (buffer, lenght) = SendWriter.Pop();
                 buffer.Dispose();
             }
+        }
+
+        ///接收===================================================================
+
+        async void KCPRecv()
+        {
+            while (true)
+            {
+                var res = await kcp.Recv();
+                ProcessBody(res);
+            }
+        }
+
+        protected internal override void ServerSideRecv(IPEndPoint endPoint, byte[] buffer, int offset, int count)
+        {
+            ConnectIPEndPoint = endPoint;
+            kcp.Input(new ReadOnlySpan<byte>(buffer, offset, count));
+        }
+
+        protected override void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer)
+        {
+            kcp.Input(new ReadOnlySpan<byte>(recvbuffer, 0, recvbuffer.Length));
         }
     }
 }

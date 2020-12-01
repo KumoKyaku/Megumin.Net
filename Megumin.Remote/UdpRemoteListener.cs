@@ -47,7 +47,7 @@ namespace Megumin.Remote
             Client.ReceiveBufferSize = 1020 * 1024 * 5; //先设个5mb看看
         }
 
-        private Func<UdpRemote> CreateFunc;
+        protected Func<UdpRemote> CreateFunc;
 
         public bool IsListening { get; private set; }
 

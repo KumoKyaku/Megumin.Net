@@ -109,12 +109,7 @@ namespace Megumin.Remote
             if (TrySerialize(SendWriter, rpcID, message, options))
             {
                 var (buffer, lenght) = SendWriter.Pop();
-                if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
-                {
-                    //todo 异步发送
-                    Client.SendTo(segment.Array, 0, lenght, SocketFlags.None, ConnectIPEndPoint);
-                }
-                buffer.Dispose();
+                SocketSend(buffer, lenght);
             }
             else
             {
@@ -123,8 +118,24 @@ namespace Megumin.Remote
             }
         }
 
+        /// <summary>
+        /// 网络层实际发送数据位置
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="lenght"></param>
+        protected void SocketSend(IMemoryOwner<byte> buffer, int lenght)
+        {
+            if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
+            {
+                //todo 异步发送
+                Client.SendTo(segment.Array, 0, lenght, SocketFlags.None, ConnectIPEndPoint);
+            }
+
+            buffer.Dispose();
+        }
+
         //接收============================================================
-        
+
         /// <summary>
         /// 主动侧需要手动开启接收，被动侧由listener接收然后分发
         /// </summary>
@@ -145,7 +156,7 @@ namespace Megumin.Remote
             }
         }
 
-        void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer)
+        protected virtual void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer)
         {
             byte messageType = recvbuffer[0];
             switch (messageType)
@@ -172,7 +183,7 @@ namespace Megumin.Remote
         /// <param name="buffer"></param>
         /// <param name="offset"></param>
         /// <param name="count"></param>
-        internal protected void ServerSideRecv(IPEndPoint endPoint, byte[] buffer, int offset, int count)
+        internal protected virtual void ServerSideRecv(IPEndPoint endPoint, byte[] buffer, int offset, int count)
         {
             ConnectIPEndPoint = endPoint;
             ProcessBody(new ReadOnlySequence<byte>(buffer, offset, count));
