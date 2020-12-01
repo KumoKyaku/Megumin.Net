@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace UnitTest
 {
     [TestClass]
-    public class UnitUdpTest
+    public class UnitTestRemote2
     {
         private UdpRemote CreateUdp()
         {
