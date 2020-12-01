@@ -124,5 +124,10 @@ namespace Megumin.Remote
         {
             kcp.Input(new ReadOnlySpan<byte>(buffer, start, count));
         }
+
+        protected override void RecvPureBuffer(ReadOnlySequence<byte> sequence)
+        {
+            kcp.Input(sequence);
+        }
     }
 }

@@ -149,12 +149,12 @@ namespace Megumin.Remote
 
             while (true)
             {
-                //todo 优化缓冲区
-                byte[] cache = new byte[8192];
+                var cache = ArrayPool<byte>.Shared.Rent(8192);
                 ArraySegment<byte> buffer = new ArraySegment<byte>(cache);
                 var res = await Client.ReceiveFromAsync(
                     buffer, SocketFlags.None, remoteEndPoint).ConfigureAwait(false);
-                InnerDeal(res.RemoteEndPoint as IPEndPoint, buffer.Array, 0, res.ReceivedBytes);
+                InnerDeal(res.RemoteEndPoint as IPEndPoint, cache, 0, res.ReceivedBytes);
+                ArrayPool<byte>.Shared.Return(cache);
             }
         }
 
@@ -194,6 +194,11 @@ namespace Megumin.Remote
         protected virtual void RecvPureBuffer(byte[] buffer,int start,int count)
         {
             ProcessBody(new ReadOnlySequence<byte>(buffer, start, count));
+        }
+
+        protected virtual void RecvPureBuffer(ReadOnlySequence<byte> sequence)
+        {
+            ProcessBody(sequence);
         }
     }
 }
