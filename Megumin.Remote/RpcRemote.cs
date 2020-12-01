@@ -40,15 +40,15 @@ namespace Megumin.Remote
             {
                 //这个消息非Rpc返回
                 //普通响应onRely
-                var reply = await OnReceive(cmd, messageID, message);
+                var reply = await OnReceive(cmd, messageID, message).ConfigureAwait(false);
                 if (reply is Task<object> task)
                 {
-                    reply = await task;
+                    reply = await task.ConfigureAwait(false);
                 }
 
                 if (reply is ValueTask<object> vtask)
                 {
-                    reply = await vtask;
+                    reply = await vtask.ConfigureAwait(false);
                 }
 
                 if (reply != null)

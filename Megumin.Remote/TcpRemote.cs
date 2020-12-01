@@ -140,7 +140,7 @@ namespace Megumin.Remote
             {
                 try
                 {
-                    await Client.ConnectAsync(endPoint);
+                    await Client.ConnectAsync(endPoint).ConfigureAwait(false);
                     IsConnecting = false;
                     disconnector.tcpRemote = this;
                     StartWork();
