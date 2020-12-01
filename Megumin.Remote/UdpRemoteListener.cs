@@ -36,12 +36,16 @@ namespace Megumin.Remote
         public UdpRemoteListener(int port)
             : base(port)
         {
-            this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
-            Client.ReceiveBufferSize = 1020 * 1024 * 5; //先设个5mb看看
+            Init(port);
         }
 
         public UdpRemoteListener(int port, AddressFamily addressFamily)
             : base(port, addressFamily)
+        {
+            Init(port);
+        }
+
+        private void Init(int port)
         {
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
             Client.ReceiveBufferSize = 1020 * 1024 * 5; //先设个5mb看看
@@ -117,7 +121,7 @@ namespace Megumin.Remote
             }
             else
             {
-                var answer = await BaginNewAuth(endPoint);
+                var answer = await BaginNewAuth(endPoint).ConfigureAwait(false);
                 if (lut.TryGetValue(answer.Guid,out var udpRemote))
                 {
                     if (udpRemote.Password != answer.Password)
@@ -198,8 +202,8 @@ namespace Megumin.Remote
         {
             this.CreateFunc = createFunc;
             IsListening = true;
-            Task.Factory.StartNew(AcceptAsync, TaskCreationOptions.LongRunning);
-            Task.Factory.StartNew(Deal, TaskCreationOptions.LongRunning);
+            Task.Run(AcceptAsync);
+            Task.Run(Deal);
         }
 
         public void Stop()

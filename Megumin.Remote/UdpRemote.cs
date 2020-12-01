@@ -128,7 +128,8 @@ namespace Megumin.Remote
             if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
             {
                 var target = new ArraySegment<byte>(segment.Array, 0, lenght);
-                await Client.SendToAsync(target, SocketFlags.None, ConnectIPEndPoint).ConfigureAwait(false);
+                await Client.SendToAsync(target, SocketFlags.None, ConnectIPEndPoint)
+                    .ConfigureAwait(false);
             }
 
             buffer.Dispose();
@@ -151,7 +152,8 @@ namespace Megumin.Remote
                 ArraySegment<byte> buffer = new ArraySegment<byte>(cache);
                 SocketFlags socketFlags = SocketFlags.None;
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                var res = await Client.ReceiveFromAsync(buffer, socketFlags, remoteEndPoint);
+                var res = await Client.ReceiveFromAsync(
+                    buffer, socketFlags, remoteEndPoint).ConfigureAwait(false);
                 InnerDeal(res.RemoteEndPoint as IPEndPoint, buffer.Array, 0, res.ReceivedBytes);
             }
         }
