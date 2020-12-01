@@ -17,6 +17,11 @@ namespace Megumin.Remote
         /// <param name="span"></param>
         void Input(ReadOnlySpan<byte> span);
         /// <summary>
+        /// 下层收到数据后添加到kcp协议中
+        /// </summary>
+        /// <param name="span"></param>
+        void Input(ReadOnlySequence<byte> span);
+        /// <summary>
         /// 从kcp中取出一个整合完毕的数据包
         /// </summary>
         /// <returns></returns>
@@ -114,9 +119,16 @@ namespace Megumin.Remote
                 recv.Write(buffer);
             }
 
+            public void Input(ReadOnlySequence<byte> span)
+            {
+                byte[] buffer = new byte[span.Length];
+                span.CopyTo(buffer);
+                recv.Write(buffer);
+            }
+
             public async ValueTask<ReadOnlySequence<byte>> Recv()
             {
-                var buffer = await recv.ReadAsync();
+                var buffer = await recv.ReadAsync().ConfigureAwait(false);
                 ReadOnlySequence<byte> ret = new ReadOnlySequence<byte>(buffer, 0, buffer.Length);
                 return ret;
             }
@@ -139,7 +151,7 @@ namespace Megumin.Remote
 
             public async ValueTask Output(IBufferWriter<byte> writer, object option = null)
             {
-                var buffer = await send.ReadAsync();
+                var buffer = await send.ReadAsync().ConfigureAwait(false);
                 Write(writer, buffer);
             }
 

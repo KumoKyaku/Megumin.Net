@@ -145,15 +145,15 @@ namespace Megumin.Remote
         {
             Client.Bind(new IPEndPoint(IPAddress.Any, port));
             IsVaild = true;
+            IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+
             while (true)
             {
                 //todo 优化缓冲区
                 byte[] cache = new byte[8192];
                 ArraySegment<byte> buffer = new ArraySegment<byte>(cache);
-                SocketFlags socketFlags = SocketFlags.None;
-                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 var res = await Client.ReceiveFromAsync(
-                    buffer, socketFlags, remoteEndPoint).ConfigureAwait(false);
+                    buffer, SocketFlags.None, remoteEndPoint).ConfigureAwait(false);
                 InnerDeal(res.RemoteEndPoint as IPEndPoint, buffer.Array, 0, res.ReceivedBytes);
             }
         }
