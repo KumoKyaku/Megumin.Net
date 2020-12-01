@@ -76,7 +76,25 @@ namespace Megumin.Remote
 
         protected override void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer)
         {
-            kcp.Input(new ReadOnlySpan<byte>(recvbuffer, 0, recvbuffer.Length));
+            byte messageType = recvbuffer[0];
+            switch (messageType)
+            {
+                case UdpRemoteMessageDefine.UdpAuthRequest:
+                    DealAuthBuffer(endPoint, recvbuffer);
+                    break;
+                case UdpRemoteMessageDefine.UdpAuthResponse:
+                    //主动侧不处理验证应答。
+                    break;
+                case UdpRemoteMessageDefine.LLMsg:
+                    ///Test消息不通过Kcp处理
+                    ProcessBody(new ReadOnlySequence<byte>(recvbuffer, 1, recvbuffer.Length - 1));
+                    break;
+                case UdpRemoteMessageDefine.Common:
+                    kcp.Input(new ReadOnlySpan<byte>(recvbuffer, 0, recvbuffer.Length));
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }

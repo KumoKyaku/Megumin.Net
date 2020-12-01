@@ -15,6 +15,33 @@ namespace Megumin.Remote
         {
         }
 
+        protected override async void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer)
+        {
+            byte messageType = recvbuffer[0];
+            switch (messageType)
+            {
+                case UdpRemoteMessageDefine.UdpAuthRequest:
+                    //被动侧不处理主动侧提出的验证。
+                    break;
+                case UdpRemoteMessageDefine.UdpAuthResponse:
+                    DealAnswerBuffer(endPoint, recvbuffer);
+                    break;
+                case UdpRemoteMessageDefine.LLMsg:
+                    //Test消息 不通过Kcp协议处理
+                    //todo
+                    break;
+                case UdpRemoteMessageDefine.Common:
+                    var remote = await FindRemote(endPoint).ConfigureAwait(false);
+                    if (remote != null)
+                    {
+                        remote.ServerSideRecv(endPoint, recvbuffer, 1, recvbuffer.Length - 1);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
         protected override UdpRemote CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
         {
             KcpRemote remote = CreateFunc?.Invoke() as KcpRemote;

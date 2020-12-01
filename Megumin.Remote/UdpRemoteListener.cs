@@ -96,7 +96,7 @@ namespace Megumin.Remote
                 case UdpRemoteMessageDefine.UdpAuthResponse:
                     DealAnswerBuffer(endPoint, recvbuffer);
                     break;
-                case UdpRemoteMessageDefine.Test:
+                case UdpRemoteMessageDefine.LLMsg:
                 case UdpRemoteMessageDefine.Common:
                     var remote = await FindRemote(endPoint).ConfigureAwait(false);
                     if (remote != null)
@@ -109,7 +109,7 @@ namespace Megumin.Remote
             }
         }
 
-        async ValueTask<UdpRemote> FindRemote(IPEndPoint endPoint)
+        protected async ValueTask<UdpRemote> FindRemote(IPEndPoint endPoint)
         {
             if (connected.TryGetValue(endPoint, out var remote))
             {

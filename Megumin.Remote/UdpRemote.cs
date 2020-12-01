@@ -123,12 +123,12 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="buffer"></param>
         /// <param name="lenght"></param>
-        protected void SocketSend(IMemoryOwner<byte> buffer, int lenght)
+        protected async void SocketSend(IMemoryOwner<byte> buffer, int lenght)
         {
             if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
             {
-                //todo 异步发送
-                Client.SendTo(segment.Array, 0, lenght, SocketFlags.None, ConnectIPEndPoint);
+                var target = new ArraySegment<byte>(segment.Array, 0, lenght);
+                await Client.SendToAsync(target, SocketFlags.None, ConnectIPEndPoint).ConfigureAwait(false);
             }
 
             buffer.Dispose();
@@ -167,7 +167,7 @@ namespace Megumin.Remote
                 case UdpRemoteMessageDefine.UdpAuthResponse:
                     //主动侧不处理验证应答。
                     break;
-                case UdpRemoteMessageDefine.Test:
+                case UdpRemoteMessageDefine.LLMsg:
                 case UdpRemoteMessageDefine.Common:
                     ProcessBody(new ReadOnlySequence<byte>(recvbuffer, 1, recvbuffer.Length - 1));
                     break;
