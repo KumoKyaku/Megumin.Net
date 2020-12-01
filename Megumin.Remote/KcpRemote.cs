@@ -107,7 +107,7 @@ namespace Megumin.Remote
                     break;
                 case UdpRemoteMessageDefine.LLMsg:
                     ///Test消息不通过Kcp处理
-                    ProcessBody(new ReadOnlySequence<byte>(recvbuffer, start, count - 1));
+                    RecvLLMsg(recvbuffer, start + 1, count - 1);
                     break;
                 case UdpRemoteMessageDefine.Common:
                     RecvPureBuffer(recvbuffer, start + 1, count - 1);
@@ -115,6 +115,11 @@ namespace Megumin.Remote
                 default:
                     break;
             }
+        }
+
+        public void RecvLLMsg(byte[] buffer, int start, int count)
+        {
+            ProcessBody(new ReadOnlySequence<byte>(buffer, start, count));
         }
 
         protected override void RecvPureBuffer(byte[] buffer, int start, int count)

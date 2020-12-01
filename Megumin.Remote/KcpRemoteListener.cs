@@ -32,14 +32,22 @@ namespace Megumin.Remote
                     DealAnswerBuffer(endPoint, recvbuffer);
                     break;
                 case UdpRemoteMessageDefine.LLMsg:
-                    //Test消息 不通过Kcp协议处理
-                    //todo
+                    {
+                        //不通过Kcp协议处理
+                        var remote = await FindRemote(endPoint).ConfigureAwait(false);
+                        if (remote is KcpRemote kcpRemote)
+                        {
+                            kcpRemote.RecvLLMsg(recvbuffer, 1, recvbuffer.Length - 1);
+                        }
+                    }
                     break;
                 case UdpRemoteMessageDefine.Common:
-                    var remote = await FindRemote(endPoint).ConfigureAwait(false);
-                    if (remote != null)
                     {
-                        remote.ServerSideRecv(endPoint, recvbuffer, 0, recvbuffer.Length);
+                        var remote = await FindRemote(endPoint).ConfigureAwait(false);
+                        if (remote != null)
+                        {
+                            remote.ServerSideRecv(endPoint, recvbuffer, 0, recvbuffer.Length);
+                        }
                     }
                     break;
                 default:
