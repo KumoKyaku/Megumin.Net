@@ -154,7 +154,7 @@ protected virtual async ValueTask<object> OnReceive(short cmd, int messageID, ob
 - ~~使用返回消息池来实现接收过程构造返回消息实例无Alloc（这需要序列化类库的支持和明确的生命周期管理）。  
 ``你可以为每个Remote指定一个MessagePipeline实例，如果没有指定，默认使用MessagePipeline.Default。``~~
 
-2.0 版本删除MessagePipeline，改为多个Remote实现中可重写的函数，在工程实践中发现，将消息管线与Remote没有意义，是过度设计。
+2.0 版本删除MessagePipeline，改为多个Remote实现中可重写的函数，在工程实践中发现，将消息管线与Remote拆离没有意义，是过度设计。如果需要同时定制3个协议Remote的管线，可以由用户自行拆分，框架不做处理。
 
 # MessageLUT是什么？
 MessageLUT（Message Serialize Deserialize callback look-up table）是MessageStandard的核心类。MessagePipeline 通过查找MessageLUT中注册的函数进行序列化。**``因此在程序最开始你需要进行函数注册``**。  
@@ -262,7 +262,7 @@ namespace Message
 - `MessageLUT.Regist<T>`函数手动添加其他类型。  
   如果不想用序列化库，也可以使用Json通过string发送。
 - `消息类型`：尽量不要是大的自定义的struct，整个序列化过程可能会导致多次装箱拆箱。在参数传递过程中还会多次复制，性能比class低很多。
-- .NET Standard 2.0 框架。我还没有弄清楚2.0和2.1意味着什么。如果未来unity支持2.1，那么很可能框架将切换为2.1，或者同时支持两个框架。
+- ~~我还没有弄清楚2.0和2.1意味着什么。如果未来unity支持2.1，那么很可能框架将切换为2.1，或者同时支持两个框架。~~ 同时支持 .NET Standard 2.0 和.net5 。
 
 
 # 2.0版本
@@ -285,7 +285,8 @@ Udp 后面只需要继承和重写就可以了。
 
 # 效率
 
-没有精确测试，Task的使用确实影响了一部分性能，但是是值得的。经过简单本机测试单进程维持了15000+ Tcp连接。
+- 0.2版本。没有精确测试，Task的使用确实影响了一部分性能，但是是值得的。经过简单本机测试单进程维持了15000+ Tcp连接。
+- 2.0版本性能可能会比之前版本低一些，还没有实际测试。
 
 # 其他信息
 
@@ -294,12 +295,14 @@ Udp 后面只需要继承和重写就可以了。
   在IL2CPP下可用，但是不能创造新方法。如果这个泛型方法在编译期间确定，那么此方法可用。否则找不到方法。
 - IL2CPP不能使用dynamic关键字。
 
-## **``在1.0.0版本前API可能会有破坏性的改变。``**
+## ~~**``在1.0.0版本前API可能会有破坏性的改变。``**~~
+2.0版几乎所有API签名都进行了重构，因此1.0和2.0几乎无法兼容。sad。 
+
+API 已经稳定，预计不会再有大的改动。  
 
 严格来说，目前只有TCP协议可以在生产环境使用。  
-UDP,KCP存在一些问题,将在今后一段时间完成，但可能是6个月也可能是一年，我有一个需要加班的全职工作，因此不确定。
+UDP,KCP已经完成,但还没有实际工程测试。
 
-2.0版几乎所有API签名都进行了重构，因此1.0和2.0几乎无法兼容。sad。
 
 **Megumin.Remote是以MMORPG为目标实现的。对于非MMORPG游戏可能不是最佳选择。** 在遥远的未来也许会针对不同游戏类型写出NetRemoteStandard的不同实现。
 
