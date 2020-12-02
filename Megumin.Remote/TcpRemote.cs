@@ -103,8 +103,8 @@ namespace Megumin.Remote
             if (RemoteState == WorkState.NotStart)
             {
                 RemoteState = WorkState.Working;
-                FillRecvPipe(pipe.Writer);
-                StartReadRecvPipe(pipe.Reader);
+                FillRecvPipe(Pipe.Writer);
+                StartReadRecvPipe(Pipe.Reader);
                 ReadSendPipe(SendPipe);
             }
         }
@@ -254,9 +254,10 @@ namespace Megumin.Remote
                         return;
                     }
 
-#if NETSTANDARD2_1
-                var length = target.SendMemory.Length;
-                var result = await Client.SendAsync(target.SendMemory, SocketFlags.None);
+#if NET5_0
+                    var length = target.SendMemory.Length;
+                    var result = await Client.SendAsync(target.SendMemory,
+                                                        SocketFlags.None).ConfigureAwait(false);
 #else
                     var length = target.SendSegment.Count;
                     var result = await Client.SendAsync(target.SendSegment, SocketFlags.None).ConfigureAwait(false);
@@ -299,7 +300,7 @@ namespace Megumin.Remote
         /// <para/>构造 连接 StartWork调用链通常导致pipe异步后续在unity中会被锁定在主线程。
         /// <para/>https://source.dot.net/#System.IO.Pipelines/System/IO/Pipelines/PipeAwaitable.cs,115
         /// </remarks>
-        public Pipe pipe { get; } = new Pipe(new PipeOptions(useSynchronizationContext: false));
+        protected Pipe Pipe { get; } = new Pipe(new PipeOptions(useSynchronizationContext: false));
 
         /// <summary>
         /// 当前socket是不是在接收。
@@ -335,8 +336,9 @@ namespace Megumin.Remote
                 try
                 {
 
-#if NETSTANDARD2_1
-                    count = await Client.ReceiveAsync(buffer, SocketFlags.None);
+#if NET5_0
+                    count = await Client.ReceiveAsync(buffer, SocketFlags.None)
+                        .ConfigureAwait(false);
 #else
 
                     if (MemoryMarshal.TryGetArray<byte>(buffer, out var segment))

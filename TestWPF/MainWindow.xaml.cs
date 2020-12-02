@@ -109,7 +109,7 @@ public class TestRemote : TcpRemote
 {
     public Label log { get; set; }
     int disCount = 0;
-    protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+    protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
     {
         log.Dispatcher.Invoke(() =>
         {
@@ -129,9 +129,9 @@ public class TestRemote : TcpRemote
         switch (message)
         {
             case TestPacket2 packet2:
-                return message;
+                return new ValueTask<object>(message);
         }
-        return null;
+        return NullResult;
     }
 
     protected override void PostDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)

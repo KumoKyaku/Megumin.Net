@@ -43,7 +43,7 @@ namespace Megumin.Remote
                 //停止发送。
                 tcpRemote.Client.Shutdown(SocketShutdown.Send);
 
-                tcpRemote.pipe.Writer.Complete();
+                tcpRemote.Pipe.Writer.Complete();
                 //等待已接受缓存处理完毕
                 //await tcpRemote.EndDealRecv();
 
@@ -87,7 +87,7 @@ namespace Megumin.Remote
                 //停止发送。
                 tcpRemote.Client.Shutdown(SocketShutdown.Send);
 
-                tcpRemote.pipe.Writer.Complete();
+                tcpRemote.Pipe.Writer.Complete();
                 //等待已接受缓存处理完毕
                 //await tcpRemote.EndDealRecv();
 
@@ -143,7 +143,7 @@ namespace Megumin.Remote
                     tcpRemote.Client.Close();
                 }
 
-                tcpRemote.pipe.Writer.Complete();
+                tcpRemote.Pipe.Writer.Complete();
                 //等待已接受缓存处理完毕
                 //await tcpRemote.EndDealRecv();
 
@@ -190,7 +190,7 @@ namespace Megumin.Remote
                     tcpRemote.Client.Close();
                 }
 
-                tcpRemote.pipe.Writer.Complete();
+                tcpRemote.Pipe.Writer.Complete();
                 //todo 等待已接受缓存处理完毕
                 //await tcpRemote.EndDealRecv();
 
