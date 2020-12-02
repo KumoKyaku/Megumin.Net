@@ -7,6 +7,7 @@ using System;
 using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.Sockets.Kcp;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
@@ -19,17 +20,28 @@ namespace Megumin.Remote
     public partial class KcpRemote : UdpRemote
     {
         IKcpIO kcp = null;
+        IKcpUpdate kcpUpdate = null;
         protected int KcpIOChannel { get; set; }
-
+        const int BufferSizer = 1024 * 4;
         public void InitKcp(int kcpChannel)
         {
             if (kcp == null)
             {
                 KcpIOChannel = kcpChannel;
-                kcp = new FakeKcpIO();
+                KcpIO kcpIO = new KcpIO((uint)KcpIOChannel);
+                kcp = kcpIO;
+                kcpUpdate = kcpIO;
                 KcpOutput();
                 KCPRecv();
             }
+        }
+
+        //循环Tick================================================================
+        
+        //TODO 用到再写
+        public void Update(in DateTime time)
+        {
+            kcpUpdate?.Update(time);
         }
 
         // 认证===================================================================
@@ -54,13 +66,13 @@ namespace Megumin.Remote
             Client.SendTo(buffer, 0, UdpAuthResponse.Length, SocketFlags.None, endPoint);
         }
         // 发送===================================================================
-        protected Writer kcpout = new Writer(65535);
+        protected Writer kcpout = new Writer(BufferSizer);
         async void KcpOutput()
         {
             while (true)
             {
                 kcpout.WriteHeader(UdpRemoteMessageDefine.Common);
-                await kcp.Output(kcpout);
+                await kcp.Output(kcpout).ConfigureAwait(false);
                 var (buffer, lenght) = kcpout.Pop();
                 SocketSend(buffer, lenght);
             }
@@ -83,12 +95,18 @@ namespace Megumin.Remote
 
         ///接收===================================================================
 
+        protected Writer kcprecv = new Writer(BufferSizer);
         async void KCPRecv()
         {
             while (true)
             {
-                var res = await kcp.Recv();
-                ProcessBody(res);
+                await kcp.Recv(kcprecv).ConfigureAwait(false);
+                var (buffer, lenght) = kcprecv.Pop();
+                if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
+                {
+                    ProcessBody(new ReadOnlySequence<byte>(segment.Array,0,lenght));
+                }
+                buffer.Dispose();
             }
         }
 
