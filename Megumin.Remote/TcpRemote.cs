@@ -361,7 +361,6 @@ namespace Megumin.Remote
                     else
                     {
                         pipeWriter.Advance(count);
-                        _ = pipeWriter.FlushAsync();
                     }
                     
                     IsReceiving = false;
@@ -371,6 +370,14 @@ namespace Megumin.Remote
                     disconnector?.OnRecvError((SocketError)e.ErrorCode);
                     IsReceiving = false;
                     return;
+                }
+
+                // Make the data available to the PipeReader
+                FlushResult result = await pipeWriter.FlushAsync().ConfigureAwait(false);
+
+                if (result.IsCompleted)
+                {
+                    break;
                 }
             }
         }
@@ -445,7 +452,7 @@ namespace Megumin.Remote
                 if (result.IsCompleted || result.IsCanceled)
                 {
                     //pipeReader.AdvanceTo(result.Buffer.End);
-                    return;
+                    break;
                 }
             }
         }
