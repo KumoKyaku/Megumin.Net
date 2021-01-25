@@ -89,6 +89,32 @@ public async void TestSend()
 }
 ```
 
+## **多类型等待与模式匹配**
+虽然不推荐一个请求对应多个回复类型，但是某些业务设计仍然有此需求。比如将所有errorcode作为一个独立类型回复，那么一个请求就有可能有对应回复和errorcode两个回复类型。  
+
+*protobuf协议中可以使用 `IMessage接口` 作为等待返回的类型。*
+
+```cs
+class ErrorCode{}
+class Resp{}
+class Req{}
+
+async void Test(IRemote remote){
+    Req req = new Req();
+    ///泛型中填写所有期待返回类型的基类，然后根据类型分别处理。
+    ///如果泛型处仅使用一种类型，那么服务器回复另一种类型时，底层会转换为 InvalidCastException 进如异常处理逻辑。
+    var ret = await remote.SendSafeAwait<object>(req);
+    if(ret is ErrorCode ec)
+    {
+
+    }
+    else if(ret is Resp resp)
+    {
+
+    }
+}
+```
+
 ---
 ## ``ValueTask<object> OnReceive(short cmd, int messageID, object message);``
 接收端回调函数
