@@ -1,6 +1,6 @@
 # 这是什么？  
   这是一个 ~~简单易用的~~ 网络库。  
-  这是一个网络模块的通用解决方案。设计目的为应用程序网路模块提供统一的HighLevel接口。 
+  这是一个网络模块的通用解决方案。设计目的为应用程序网络模块提供统一的HighLevel接口。 
 
   整个类库被拆分为多个dll。**简单来说：NetRemoteStandard.dll是标准，里面只有接口定义；Megumin.Remote.dll是一种实现。类比于dotnetStandard和dotnetCore的关系。** 
 
