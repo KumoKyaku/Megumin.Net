@@ -27,7 +27,7 @@
 - 接口分离。[[Dependency injection]](https://en.wikipedia.org/wiki/Dependency_injection) 应用程序可以仅使用NetRemoteStandard.dll编码，然后使用Megumin.Remote.dll的具体实现类注入，当需要切换协议或者序列化类库时，应用程序逻辑无需改动。
 - IOCP开销和消息调度转发延迟之间有很好的平衡。
 - 自定义MiniTask池,针对网络功能对Task重新实现，性能更高，仅初始化时alloc。
-- 支持`Span<T>`。使用[`Pipe`](https://www.cnblogs.com/xxfy1/p/9290235.html)作为高性能IO。
+- 支持`Span<T>`。使用[`System.IO.Pipelines`](https://www.cnblogs.com/xxfy1/p/9290235.html)作为高性能IO。
 - 纯C#实现，这是学习网络功能一个好的起点。
 - 2.0 版本 API设计经过真实业务需求改良。
 - **`MIT许可证`**
@@ -46,7 +46,7 @@
 `发送一个消息，并等待一个消息返回` 是类库的全部内容。 
 
 ---
-## [ISendCanAwaitable.Send](Image/callstep.png)
+## 1. [ISendCanAwaitable.Send](Image/callstep.png)
 从结果值返回异常是有意义的：1.省去了try catch ,写法更简单（注意，没有提高处理异常的性能）2.用来支持异常在分布式服务器中传递，避免try catch 控制流。
 
 ```cs
@@ -67,7 +67,7 @@ public async void TestSend()
 ```
 
 ---
-## ISendCanAwaitable.SendSafeAwait
+## 2. ISendCanAwaitable.SendSafeAwait
 方法签名：  
 
 ```cs
@@ -116,7 +116,7 @@ async void Test(IRemote remote){
 ```
 
 ---
-## ``ValueTask<object> OnReceive(short cmd, int messageID, object message);``
+## 3. ``ValueTask<object> OnReceive(short cmd, int messageID, object message);``
 接收端回调函数
 
 ```cs
