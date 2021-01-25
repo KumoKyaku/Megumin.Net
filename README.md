@@ -1,6 +1,6 @@
 # 这是什么？  
   这是一个 ~~简单易用的~~ 网络库。  
-  这是一个网络层的通用解决方案。设计目的为应用程序网络层提供统一的接口。 
+  这是一个网络模块的通用解决方案。设计目的为应用程序网路模块提供统一的HighLevel接口。 
 
   整个类库被拆分为多个dll。**简单来说：NetRemoteStandard.dll是标准，里面只有接口定义；Megumin.Remote.dll是一种实现。类比于dotnetStandard和dotnetCore的关系。** 
 
@@ -19,22 +19,22 @@
 # [``开发路线图``](https://trello.com/b/s84Jn7hW/meguminnet)
 
 # 优势
-- 使用内存池和多线程处理收发，可配置线程调度，无需担心网络层性能问题。
+- 使用内存池和多线程处理收发，可配置线程调度，无需担心网络模块性能问题。
 - 内置Rpc。
 - 可以搭配不同的序列化类库，甚至不用序列化库。
 - **AOT/IL2CPP可用。**
 - 可重写的消息管线，专业程序员可以针对具体功能进一步优化。
-- 接口分离。[[Dependency injection]](https://en.wikipedia.org/wiki/Dependency_injection) 应用程序可以使用NetRemoteStandard.dll编码，然后使用Megumin.Remote.dll的具体实现类注入，当需要切换协议或者序列化类库时，应用程序逻辑无需改动。
+- 接口分离。[[Dependency injection]](https://en.wikipedia.org/wiki/Dependency_injection) 应用程序可以仅使用NetRemoteStandard.dll编码，然后使用Megumin.Remote.dll的具体实现类注入，当需要切换协议或者序列化类库时，应用程序逻辑无需改动。
 - IOCP开销和消息调度转发延迟之间有很好的平衡。
 - 自定义MiniTask池,针对网络功能对Task重新实现，性能更高，仅初始化时alloc。
-- 支持`Span<T>`。
+- 支持`Span<T>`。使用[`Pipe`](https://www.cnblogs.com/xxfy1/p/9290235.html)作为高性能IO。
 - 纯C#实现，这是学习网络功能一个好的起点。
 - 2.0 版本 API设计经过真实业务需求改良。
 - **`MIT许可证`**
   
 # 劣势
-- 目前为止类库还很年青，没有经过足够的测试。
-- 对于非程序人员仍然需要一些学习成本。
+- 目前为止类库还很年青，没有经过足够的商业项目测试。
+- 对于非程序人员仍然需要一些学习成本。独立游戏作者用起来还是有一定难度的。
 + [类库没有解决操作系统的时间精度问题。](https://stackoverflow.com/questions/6254703/thread-sleep-for-less-than-1-millisecond)这个问题非常复杂，需要专人定制。
 
 ---
@@ -43,7 +43,7 @@
 # 核心方法3个
 
 设计原则：最常用的代码最简化，复杂的地方都封装起来。  
-发送一个消息，等待一个消息返回。  
+`发送一个消息，并等待一个消息返回` 是类库的全部内容。 
 
 ---
 ## [ISendCanAwaitable.Send](Image/callstep.png)
@@ -89,7 +89,7 @@ public async void TestSend()
 }
 ```
 
-## **多类型等待与模式匹配**
+### **多类型等待与模式匹配**
 虽然不推荐一个请求对应多个回复类型，但是某些业务设计仍然有此需求。比如将所有errorcode作为一个独立类型回复，那么一个请求就有可能有对应回复和errorcode两个回复类型。  
 
 *protobuf协议中可以使用 `IMessage接口` 作为等待返回的类型。*
@@ -139,8 +139,7 @@ protected virtual async ValueTask<object> OnReceive(short cmd, int messageID, ob
 }
 ```
 
-### 注意：  
-异步发送方法等待的返回值虽然也是接收到的消息，但是会被分发到异步函数回调中，不会触发本函数。即使异步发送方法没有使用await关键字而导致异步后续没有注册，返回消息也不会触发本函数，返回消息将被忽略。 *（事实上，很难实现找不到异步后续时将消息分发到此函数中。因为不持有返回的Task引用时，想要将消息转送到本回调函数，需要对Task增加额外的标记，生命周期难以控制，控制流会变得更难以理解。详细情况参阅源码RpcCallbackPool.CreateCheckTimeout）*  
+#### 注意：  异步发送方法等待的返回值虽然也是接收到的消息，但是会被分发到异步函数回调中，不会触发本函数。即使异步发送方法没有使用await关键字而导致异步后续没有注册，返回消息也不会触发本函数，返回消息将被忽略。 *（事实上，很难实现找不到异步后续时将消息分发到此函数中。因为不持有返回的Task引用时，想要将消息转送到本回调函数，需要对Task增加额外的标记，生命周期难以控制，控制流会变得更难以理解。详细情况参阅源码RpcCallbackPool.CreateCheckTimeout）*  
 
 ---
 ---
@@ -279,7 +278,7 @@ namespace Message
 # 一些细节
 - `RPC功能`：保证了请求和返回消息一对一匹配。发送时RPCID为正数，返回时RPCID*-1，用正负区分上下行。0和int.minValue为RPCID无效值。
 - `内存分配`：通过使用`内存池`，减少alloc。
-- [发送过程数据拷贝](#jump1)了2次，接收过程数据无拷贝(各个序列化类库不同)。
+- ~~[发送过程数据拷贝](#jump1)了2次，接收过程数据无拷贝(各个序列化类库不同)。~~ 2.0版本中做了调整。
 - `内存池`：标准库内存池，`ArrayPool<byte>.Shared`。
 - `序列化`：使用type做Key查找函数。
 - `反序列化`：使用MSGID(int)做Key查找函数。
@@ -287,7 +286,7 @@ namespace Message
   新版本暂时没有这几个实现。
 - `MessageLUT.Regist<T>`函数手动添加其他类型。  
   如果不想用序列化库，也可以使用Json通过string发送。
-- `消息类型`：尽量不要是大的自定义的struct，整个序列化过程可能会导致多次装箱拆箱。在参数传递过程中还会多次复制，性能比class低很多。
+- `消息类型`：尽量不要是大的自定义的struct，整个序列化过程**有可能**导致多次装箱拆箱。在参数传递过程中还会多次复制，性能比class低。
 - ~~我还没有弄清楚2.0和2.1意味着什么。如果未来unity支持2.1，那么很可能框架将切换为2.1，或者同时支持两个框架。~~ 同时支持 .NET Standard 2.0 和.net5 。
 
 
