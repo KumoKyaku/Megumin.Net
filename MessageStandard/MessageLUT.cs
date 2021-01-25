@@ -51,6 +51,8 @@ namespace Megumin.Remote
         /// <param name="byteSequence"></param>
         /// <param name="options"></param>
         /// <returns></returns>
+        /// <remarks>返回值不考虑泛型，泛型虽然能避免值类型消息装箱，但是调用时要使用反射去转化为
+        /// 对应类型接口，在rpc回调转型处仍然会有类型匹配失败问题，得不偿失。</remarks>
         object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null);
     }
 
