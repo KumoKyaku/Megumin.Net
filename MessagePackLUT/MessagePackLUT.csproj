@@ -29,8 +29,8 @@
 
   <!--依赖配置-->
   <ItemGroup>
-    <PackageReference Include="MessagePack" Version="2.2.60" />
-    <PackageReference Include="MessagePack.UnityShims" Version="2.2.60" />
+    <PackageReference Include="MessagePack" Version="2.2.85" />
+    <PackageReference Include="MessagePack.UnityShims" Version="2.2.85" />
     <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
   </ItemGroup>
 
