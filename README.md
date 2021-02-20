@@ -319,6 +319,11 @@ Udp 后面只需要继承和重写就可以了。
 - public virtual MethodInfo MakeGenericMethod(params Type[] typeArguments);  
   在IL2CPP下可用，但是不能创造新方法。如果这个泛型方法在编译期间确定，那么此方法可用。否则找不到方法。
 - IL2CPP不能使用dynamic关键字。
+- **异步编程两个核心关键字理解**：  
+    + await == UnsafeOnCompleted == 将下文代码包装成回调函数注册到Task中。  
+    记住 await 时才调用 UnsafeOnCompleted即可。
+    + async == AsyncTaskMethodBuilder.Create().Task,并在方法末尾SetResult。  
+    async是隐藏的生成一个Task/ValueTask。
 
 ## ~~**``在1.0.0版本前API可能会有破坏性的改变。``**~~
 2.0版几乎所有API签名都进行了重构，因此1.0和2.0几乎无法兼容。sad。 

@@ -21,6 +21,8 @@ namespace System.Threading.Tasks
         ///3 成功完成  失败完成 （没有取消功能，只有超时）
         ///以上彼此正交
         ///异步调用 UnsafeOnCompleted  SetResult 先后调用顺序
+        ///记住 await 时才调用 UnsafeOnCompleted，认为 await == UnsafeOnCompleted == 将下文代码包装成回调函数注册到Task中即可。
+        ///async == AsyncTaskMethodBuilder.Create().Task,并在方法末尾SetResult。async是隐藏的生成一个Task/ValueTask。
 
         /// <summary>
         /// 
