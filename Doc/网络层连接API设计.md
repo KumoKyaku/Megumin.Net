@@ -9,7 +9,7 @@
 Task<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0);
 ```
 
-真实使用代码示例
+伪代码用例：  
 
 ```cs
 static async Task<Server> Connect(JsonDocument info)
@@ -35,7 +35,7 @@ static async Task<Server> Connect(JsonDocument info)
 Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0);
 ```
 
-伪代码
+伪代码用例：  
 ```cs
 static async Task<Server> Connect(JsonDocument info)
 {
