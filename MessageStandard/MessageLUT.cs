@@ -57,6 +57,21 @@ namespace Megumin.Remote
     }
 
     /// <summary>
+    /// 对象自身就是序列化器，是MessageLut没注册时的fallback。
+    /// </summary>
+    [Obsolete("没有MessageLut根本就找不到类型，这个思路不成立。",true)]
+    public interface IMeguminSelfFormater: IMeguminFormater
+    {
+        /// <summary>
+        /// 先构造对象，然后自己解析。
+        /// </summary>
+        /// <param name="byteSequence"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        bool SelfDeserialize(in ReadOnlySequence<byte> byteSequence, object options = null);
+    }
+
+    /// <summary>
     /// 消息查找表
     /// </summary>
     public class MessageLUT

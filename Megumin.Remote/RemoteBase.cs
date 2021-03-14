@@ -81,7 +81,15 @@ namespace Megumin.Remote
         /// <remarks>只处理 RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
         protected virtual bool TrySerialize(IBufferWriter<byte> writer, int rpcID, object message, object options = null)
         {
-            if (MessageLUT.TryGetFormater(message.GetType(), out var formater))
+            IMeguminFormater formater;
+            ///优先使用MessageLut，因为MessageLut是主动注册的。
+            if (!MessageLUT.TryGetFormater(message.GetType(), out formater))
+            {
+                ///对象自身就时序列化器
+                formater = message as IMeguminFormater;
+            }
+
+            if (formater != null)
             {
                 //写入rpcID CMD
                 var span = writer.GetSpan(10);
@@ -104,10 +112,10 @@ namespace Megumin.Remote
             }
             else
             {
+                
                 Logger?.Log($"没有找到Formater。Message:{message}。");
                 return false;
             }
-            
         }
 
         /// <summary>
