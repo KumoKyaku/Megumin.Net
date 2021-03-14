@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Megumin.Remote
 {
-    public partial class UdpRemote:RpcRemote,IRemoteEndPoint, IRemote
+    public partial class UdpRemote : RpcRemote, IRemoteEndPoint, IRemote
     {
         public int ID { get; } = InterlockedID<IRemoteID>.NewID();
         public Guid GUID { get; internal set; }
@@ -19,7 +19,7 @@ namespace Megumin.Remote
         public Socket Client { get; protected set; }
         public bool IsVaild { get; internal protected set; }
         public float LastReceiveTimeFloat { get; }
-
+        public UdpRemoteListener Listener { get; internal set; }
         public UdpRemote()
         {
             Client = new Socket(SocketType.Dgram, ProtocolType.Udp);
@@ -103,6 +103,7 @@ namespace Megumin.Remote
         }
 
         protected virtual Writer SendWriter { get; } = new Writer(8192 * 4);
+
         protected override void Send(int rpcID, object message, object options = null)
         {
             SendWriter.WriteHeader(UdpRemoteMessageDefine.Common);
@@ -191,7 +192,7 @@ namespace Megumin.Remote
             RecvPureBuffer(buffer, offset + 1, count - 1);
         }
 
-        protected virtual void RecvPureBuffer(byte[] buffer,int start,int count)
+        protected virtual void RecvPureBuffer(byte[] buffer, int start, int count)
         {
             ProcessBody(new ReadOnlySequence<byte>(buffer, start, count));
         }
@@ -200,5 +201,40 @@ namespace Megumin.Remote
         {
             ProcessBody(sequence);
         }
+
+        //*********************************心跳处理
+        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        {
+            if (messageID == MSGID.HeartbeatsMessageID)
+            {
+                return new ValueTask<object>(message);
+            }
+            return base.OnReceive(cmd, messageID, message);
+        }
+
+        int MissHearCount = 0;
+        async void SendBeat()
+        {
+            MessageLUT.Regist(Heartbeat.Default);
+            while (true)
+            {
+                MissHearCount += 1;
+                var (_, exception) = await Send<Heartbeat>(Heartbeat.Default);
+                if (exception == null)
+                {
+                    MissHearCount -= 1;
+                }
+
+                if (MissHearCount >= 5)
+                {
+                    MissHearCount = 0;
+                    break;
+                    //触发断开。TODO
+                }
+                await Task.Delay(2000);
+            }
+        }
+
+
     }
 }

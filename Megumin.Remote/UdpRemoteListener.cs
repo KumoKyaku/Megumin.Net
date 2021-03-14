@@ -157,6 +157,7 @@ namespace Megumin.Remote
             if (udp == null)
             {
                 udp = new UdpRemote();
+                udp.Listener = this;
             }
 
             udp.IsVaild = true;

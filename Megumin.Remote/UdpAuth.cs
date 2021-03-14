@@ -10,7 +10,7 @@ namespace Megumin.Remote
         public const byte UdpAuthRequest = 10;
         public const byte UdpAuthResponse = 20;
         /// <summary>
-        /// 低级别消息，不经过Kcp等附加协议，直接处理
+        /// 低级别消息，没有rpc等高级功能，不经过Kcp等附加协议，直接处理
         /// </summary>
         public const byte LLMsg = 30;
         public const byte Common = 40;

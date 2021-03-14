@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Net.Remote;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,4 +32,13 @@ namespace Megumin.Remote.Simple
             return new ValueTask<object>(message);
         }
     }
+
+    /////如果不是用回调函数，那么就不能把echoRemote抽象成一个。
+    //public class Echo<R> : R
+    //    where R:RemoteBase
+    //{
+    //    public IRemote 
+    //}
 }
+
+
