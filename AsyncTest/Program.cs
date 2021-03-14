@@ -122,8 +122,20 @@ namespace AsyncTest
 
         public async void Test2()
         {
-            int v = await Test1Async();
-            Console.WriteLine(v);
+            try
+            {
+                int v = await Test1Async();
+                Console.WriteLine(v);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            finally
+            {
+                Console.WriteLine("finally");
+            }
         }
     }
 
