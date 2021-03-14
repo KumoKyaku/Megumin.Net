@@ -7,9 +7,15 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using static TestClient.Config;
 
 namespace TestClient
 {
+    public static class Config
+    {
+        public static int MessageCount = 40;
+        public static int RemoteCount = 5;
+    }
     class Program
     {
         static void Main(string[] args)
@@ -20,9 +26,7 @@ namespace TestClient
             ConAsync();
             Console.ReadLine();
         }
-
-        static int MessageCount = 40;
-        static int RemoteCount = 5;
+        
         private static async void ConAsync()
         {
             //ThreadPool.QueueUserWorkItem((A) =>

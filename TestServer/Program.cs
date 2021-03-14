@@ -64,7 +64,7 @@ namespace TestServer
             MessageLUT.Regist(new TestPacket2());
             Console.WriteLine($"服务器/Server----UsePost2ThreadScheduler:{UsePost2ThreadScheduler}");
             ListenAsync();
-
+            Console.WriteLine($"客户端配置 RemoteCount:{TestClient.Config.RemoteCount}   MessageCount:{TestClient.Config.MessageCount}");
             Console.ReadLine();
         }
 
