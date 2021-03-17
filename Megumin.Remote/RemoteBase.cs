@@ -64,7 +64,7 @@ namespace Megumin.Remote
         protected virtual void PostDisconnect(
             SocketError error = SocketError.SocketError,
             ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        { 
+        {
 
         }
 
@@ -97,7 +97,7 @@ namespace Megumin.Remote
                 span.Slice(4).Write((short)0); //CMD 为预留，填0
                 span.Slice(6).Write(formater.MessageID);
                 writer.Advance(10);
- 
+
                 try
                 {
                     formater.Serialize(writer, message, options);
@@ -112,7 +112,7 @@ namespace Megumin.Remote
             }
             else
             {
-                
+
                 Logger?.Log($"没有找到Formater。Message:{message}。");
                 return false;
             }

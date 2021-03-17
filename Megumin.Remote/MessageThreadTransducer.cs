@@ -38,6 +38,20 @@ namespace Megumin.Remote
         void Deal(int rpcID, short cmd, int messageID, object message);
     }
 
+    /// <summary>
+    ///  处理object消息 消费者接口
+    /// </summary>
+    /// <typeparam name="HD">报头类型</typeparam>
+    public interface IDealMessageable<HD>
+    {
+        /// <summary>
+        /// 处理消息实例
+        /// </summary>
+        /// <param name="header"></param>
+        /// <param name="message"></param>
+        void Deal(in HD header, object message);
+    }
+
     internal struct RequestWork
     {
         readonly int rpcID;
@@ -110,6 +124,7 @@ namespace Megumin.Remote
     /// </summary>
     public partial class MessageThreadTransducer
     {
+        static readonly ConcurrentQueue<Action> actions = new ConcurrentQueue<Action>();
         static readonly RequestWorkQueue requestWorkQueue = new RequestWorkQueue();
         static readonly DealWorkQueue dealWorkQueue = new DealWorkQueue();
         /// <summary>
@@ -162,7 +177,23 @@ namespace Megumin.Remote
             dealWorkQueue.Enqueue(work);
         }
 
-        static readonly ConcurrentQueue<Action> actions = new ConcurrentQueue<Action>();
+        /// <summary>
+        /// 可能导致大量性能开销
+        /// </summary>
+        /// <typeparam name="HD"></typeparam>
+        /// <param name="header"></param>
+        /// <param name="message"></param>
+        /// <param name="r"></param>
+        [Obsolete("解决不了泛型问题，必须装箱，或生成闭包", true)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Push<HD>(HD header, object message, IDealMessageable<HD> r)
+            where HD : IMessageHeader
+        {
+            Invoke(() =>
+            {
+                r?.Deal(header, message);
+            });
+        }
 
         /// <summary>
         /// 切换执行线程
