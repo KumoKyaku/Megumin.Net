@@ -187,12 +187,34 @@ namespace AsyncTest
         }
     }
 
-
-    public class SocketTest
+    public class Test7
     {
-        public void Send()
+        public ValueTask<int> Test1()
         {
+            return new ValueTask<int>(1);
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async ValueTask<int> Test2()
+        {
+            int v = await Test1();
+            return v;
+        }
+
+        public async void Test3()
+        {
+            int v = await Test2();
+            Console.WriteLine(v);
+        }
+    }
+
+
+    public class Test8
+    {
+        public async void Send()
+        {
+            await new FastAwaitable();
+            Console.WriteLine("");
         }
     }
 
@@ -201,7 +223,7 @@ namespace AsyncTest
         IAwaiterResult GetAwaiter();
     }
 
-    public interface IAwaiterResult : ICriticalNotifyCompletion
+    public interface IAwaiterResult : INotifyCompletion
     {
         bool IsCompleted { get; }
         void GetResult();
@@ -218,7 +240,7 @@ namespace AsyncTest
         T GetResult();
     }
 
-    public class FastAwaiter : IGetAwaiter
+    public class FastAwaitable : IGetAwaiter
     {
         public IAwaiterResult GetAwaiter()
         {

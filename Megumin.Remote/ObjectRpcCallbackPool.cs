@@ -12,6 +12,10 @@ namespace Megumin.Remote
     /// Rpc回调注册池
     /// 每个session大约每秒30个包，超时时间默认为30秒；
     /// </summary>
+    /// <remarks>
+    /// <para/>Q:为什么用IMiniAwaitable 而不是ValueTask?
+    /// <para/>A:开始时这个类直接和Send耦合，需要返回值一致，现在没有修改必要。性能要比ValueTask高那么一丁点。
+    /// </remarks>
     public class ObjectRpcCallbackPool : Dictionary<int, (DateTime startTime, RpcSource source)>
     {
         int rpcCursor = 0;
