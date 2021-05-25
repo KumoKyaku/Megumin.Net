@@ -5,8 +5,8 @@
   整个类库被拆分为多个dll。**简单来说：NetRemoteStandard.dll是标准，里面只有接口定义；Megumin.Remote.dll是一种实现。类比于dotnetStandard和dotnetCore的关系。** 
 
 
-# [Dll依赖关系与架构](Image/dependencies.jpg)
-![依赖关系](Image/dependencies.jpg)
+# [Dll依赖关系与架构](Image/项目结构.png)
+![依赖关系](Image/项目结构.png)
 
 ---
 ---
