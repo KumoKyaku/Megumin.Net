@@ -340,3 +340,23 @@ UDP,KCP已经完成,但还没有实际工程测试。
 - [Megumin.Explosion](https://github.com/KumoKyaku/Megumin.Explosion) Megumin系列类库的最底层基础库，Megumin的其他库都有可能需要引用它。
 - [Megumin.GameFramework](https://github.com/KumoKyaku/Megumin.GameFramework) Megumin系列的业务逻辑类库。
 + [Kcp](https://github.com/KumoKyaku/KCP) 类库所依赖的Kcp实现。
+
+
+
+# 参考
+- [介绍 KCP：新的低延迟、安全网络堆栈](https://www.improbable.io/blog/kcp-a-new-low-latency-secure-network-stack) SpatialOS 的官网有几个协议的详细评测
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
