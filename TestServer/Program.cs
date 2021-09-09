@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using static Megumin.Remote.Test.TestConfig;
 
 namespace TestServer
 {
@@ -64,7 +65,7 @@ namespace TestServer
             MessageLUT.Regist(new TestPacket2());
             Console.WriteLine($"服务器/Server----UsePost2ThreadScheduler:{UsePost2ThreadScheduler}");
             ListenAsync();
-            Console.WriteLine($"客户端配置 RemoteCount:{TestClient.Config.RemoteCount}   MessageCount:{TestClient.Config.MessageCount}");
+            Console.WriteLine($"客户端配置 RemoteCount:{RemoteCount}   MessageCount:{MessageCount}");
             Console.ReadLine();
         }
 
@@ -99,16 +100,16 @@ namespace TestServer
 
         public static TestSpeedServerRemote Create()
         {
-            return new TestSpeedServerRemote() 
-            { 
-                Post2ThreadScheduler = UsePost2ThreadScheduler, 
-                UID = connectCount 
+            return new TestSpeedServerRemote()
+            {
+                Post2ThreadScheduler = UsePost2ThreadScheduler,
+                UID = connectCount
             };
         }
     }
 
 
-    public sealed class TestSpeedServerRemote:TcpRemote
+    public sealed class TestSpeedServerRemote : TcpRemote
     {
         static int totalCount;
         int myRecvCount = 0;

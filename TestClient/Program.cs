@@ -7,15 +7,11 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using static TestClient.Config;
+using static Megumin.Remote.Test.TestConfig;
 
 namespace TestClient
 {
-    public static class Config
-    {
-        public static int MessageCount = 40;
-        public static int RemoteCount = 5;
-    }
+    
     class Program
     {
         static void Main(string[] args)

@@ -9,7 +9,7 @@ namespace Megumin.Remote.Test
     /// <summary>
     /// 序列化后长度为1024字节
     /// </summary>
-    public class TestPacket1: IMeguminFormater
+    public class TestPacket1 : IMeguminFormater
     {
         private const int Size = 1024;
 
@@ -37,7 +37,7 @@ namespace Megumin.Remote.Test
             unsafe
             {
                 Span<byte> span = stackalloc byte[4];
-                byteSequence.Slice(0,4).CopyTo(span);
+                byteSequence.Slice(0, 4).CopyTo(span);
                 result.Value = BinaryPrimitives.ReadInt32LittleEndian(span);
             }
             return result;
@@ -80,5 +80,12 @@ namespace Megumin.Remote.Test
             }
             return result;
         }
+    }
+
+
+    public static class TestConfig
+    {
+        public static int MessageCount = 10000;
+        public static int RemoteCount = 20;
     }
 }

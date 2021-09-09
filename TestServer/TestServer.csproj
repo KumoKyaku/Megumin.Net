@@ -8,7 +8,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Megumin.Remote\Megumin.Remote.csproj" />
     <ProjectReference Include="..\NetRemoteStandard\NetRemoteStandard.csproj" />
-    <ProjectReference Include="..\TestClient\TestClient.csproj" />
     <ProjectReference Include="..\TestMessages\TestMessages.csproj" />
   </ItemGroup>
 
