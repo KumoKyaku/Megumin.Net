@@ -83,9 +83,4 @@ namespace Megumin.Remote.Test
     }
 
 
-    public static class TestConfig
-    {
-        public static int MessageCount = 10000;
-        public static int RemoteCount = 20;
-    }
 }

@@ -7,11 +7,21 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using static Megumin.Remote.Test.TestConfig;
+using static TestConfig;
+
+public static class TestConfig
+{
+    public enum Mode
+    {
+        TCP,UDP,KCP
+    }
+    public static Mode PMode = TestConfig.Mode.TCP;
+    public static int MessageCount = 100;
+    public static int RemoteCount = 20;
+}
 
 namespace TestClient
 {
-    
     class Program
     {
         static void Main(string[] args)
@@ -60,15 +70,17 @@ namespace TestClient
 
         private static async void NewRemote(int clientIndex)
         {
-            TestSpeedRemote remote = new TestSpeedRemote() 
-            { 
-                Index = clientIndex ,
-                MessageCount = MessageCount
-            };
+            TestTcpRemote testR = new TestTcpRemote();
+            testR.Dealer.Index = clientIndex;
+            testR.Dealer.MessageCount = MessageCount;
 
+            IRemote remote = testR;
             try
             {
-                await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
+                if (remote is IConnectable conn)
+                {
+                    await conn.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
+                }
             }
             catch (Exception)
             {
@@ -146,13 +158,14 @@ namespace TestClient
         #endregion
     }
 
-
-    public sealed class TestSpeedRemote:TcpRemote
+    public class Dealer
     {
         public int Index { get; set; }
         public int MessageCount { get; set; }
         Stopwatch stopwatch = new Stopwatch();
-        protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+
+        public async ValueTask<object> 
+            OnReceive(short cmd, int messageID, object message)
         {
             switch (message)
             {
@@ -178,4 +191,24 @@ namespace TestClient
             return null;
         }
     }
+
+    public sealed class TestTcpRemote:TcpRemote
+    {
+        public Dealer Dealer = new Dealer();
+        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);
+    }
+
+    public sealed class TestUdpRemote : UdpRemote
+    {
+        public Dealer Dealer = new Dealer();
+        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);
+    }
+
+    public sealed class TestKcpRemote : KcpRemote
+    {
+        public Dealer Dealer = new Dealer();
+        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);
+    }
 }
+
+

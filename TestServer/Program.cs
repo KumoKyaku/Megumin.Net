@@ -7,7 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using static Megumin.Remote.Test.TestConfig;
+using static TestConfig;
 
 namespace TestServer
 {
@@ -65,7 +65,7 @@ namespace TestServer
             MessageLUT.Regist(new TestPacket2());
             Console.WriteLine($"服务器/Server----UsePost2ThreadScheduler:{UsePost2ThreadScheduler}");
             ListenAsync();
-            Console.WriteLine($"客户端配置 RemoteCount:{RemoteCount}   MessageCount:{MessageCount}");
+            Console.WriteLine($"客户端配置 RemoteCount:{RemoteCount}   MessageCount:{MessageCount}   TotalMessageCount:{RemoteCount * (long)MessageCount}");
             Console.ReadLine();
         }
 
@@ -115,7 +115,7 @@ namespace TestServer
         int myRecvCount = 0;
         protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
-            totalCount++;
+            Interlocked.Increment(ref totalCount);
             myRecvCount++;
             switch (message)
             {
