@@ -41,7 +41,7 @@ namespace UnitTest
         }
 
 
-        //[TestMethod]
+        [TestMethod]
         public void TestKcpRemote()
         {
             const int port = 55432;

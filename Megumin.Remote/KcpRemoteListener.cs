@@ -8,7 +8,7 @@ using Net.Remote;
 
 namespace Megumin.Remote
 {
-    public class KcpRemoteListener : UdpRemoteListener
+    public class KcpRemoteListener : UdpRemoteListener, IListener<KcpRemote>
     {
         public KcpRemoteListener(int port)
             : base(port)
@@ -57,19 +57,33 @@ namespace Megumin.Remote
 
         protected override UdpRemote CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
         {
-            KcpRemote remote = CreateFunc?.Invoke() as KcpRemote;
-            if (remote == null)
+            if (remoteCreators.Count == 0)
             {
-                remote = new KcpRemote();
+                return null;
             }
-            remote.InitKcp(answer.KcpChannel);
-            remote.IsVaild = true;
-            remote.ConnectIPEndPoint = endPoint;
-            remote.GUID = answer.Guid;
-            remote.Password = answer.Password;
-            lut.Add(remote.GUID, remote);
-            connected.Add(endPoint, remote);
+
+            var cre = remoteCreators.Dequeue();
+            var (continueAction, udp) = cre.Invoke();
+
+            KcpRemote remote = udp as KcpRemote;
+            if (remote != null)
+            {
+                remote.InitKcp(answer.KcpChannel);
+                remote.IsVaild = true;
+                remote.ConnectIPEndPoint = endPoint;
+                remote.GUID = answer.Guid;
+                remote.Password = answer.Password;
+                lut.Add(remote.GUID, remote);
+                connected.Add(endPoint, remote);
+            }
+
+            continueAction?.Invoke();
             return remote;
+        }
+
+        ValueTask<R> IListener<KcpRemote>.ListenAsync<R>(Func<R> createFunc)
+        {
+            return ListenAsync(createFunc);
         }
     }
 }

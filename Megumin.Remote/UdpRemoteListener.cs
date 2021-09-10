@@ -20,7 +20,7 @@ namespace Megumin.Remote
     /// <summary>
     /// 2018年时IPV4 IPV6 udp中不能混用，不知道现在情况
     /// </summary>
-    public class UdpRemoteListener : UdpClient
+    public class UdpRemoteListener : UdpClient, IListener<UdpRemote>
     {
         public IPEndPoint ConnectIPEndPoint { get; set; }
 
@@ -50,8 +50,6 @@ namespace Megumin.Remote
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
             Client.ReceiveBufferSize = 1020 * 1024 * 5; //先设个5mb看看
         }
-
-        protected Func<UdpRemote> CreateFunc;
 
         public bool IsListening { get; private set; }
 
@@ -145,7 +143,6 @@ namespace Megumin.Remote
                 else
                 {
                     UdpRemote udp = CreateNew(endPoint, answer);
-                    OnAccept(udp);
                     return udp;
                 }
             }
@@ -153,19 +150,26 @@ namespace Megumin.Remote
 
         protected virtual UdpRemote CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
         {
-            UdpRemote udp = CreateFunc?.Invoke();
-            if (udp == null)
+            if (remoteCreators.Count == 0)
             {
-                udp = new UdpRemote();
-                udp.Listener = this;
+                return null;
             }
 
-            udp.IsVaild = true;
-            udp.ConnectIPEndPoint = endPoint;
-            udp.GUID = answer.Guid;
-            udp.Password = answer.Password;
-            lut.Add(udp.GUID, udp);
-            connected.Add(endPoint, udp);
+            var creator = remoteCreators.Dequeue();
+            var (continueAction, udp) = creator.Invoke();
+
+            if (udp != null)
+            {
+                udp.Listener = this;
+                udp.IsVaild = true;
+                udp.ConnectIPEndPoint = endPoint;
+                udp.GUID = answer.Guid;
+                udp.Password = answer.Password;
+                lut.Add(udp.GUID, udp);
+                connected.Add(endPoint, udp);
+            }
+
+            continueAction?.Invoke();
             return udp;
         }
 
@@ -197,25 +201,35 @@ namespace Megumin.Remote
                 source.TrySetResult(answer);
             }
         }
-        
-        public void ListenAsync<T>(Func<T> createFunc)
-            where T : UdpRemote
-        {
-            this.CreateFunc = createFunc;
-            IsListening = true;
-            Task.Run(AcceptAsync);
-            Task.Run(Deal);
-        }
 
         public void Stop()
         {
             IsListening = false;
         }
 
+        protected Queue<Func<(Action ContinueDelegate, UdpRemote Remote)>>
+            remoteCreators = new Queue<Func<(Action ContinueDelegate, UdpRemote Remote)>>();
 
-        public virtual void OnAccept(UdpRemote remote)
+        public virtual ValueTask<R> ListenAsync<R>(Func<R> createFunc) where R : UdpRemote
         {
+            if (IsListening == false)
+            {
+                IsListening = true;
+                Task.Run(AcceptAsync);
+                Task.Run(Deal);
+            }
+            TaskCompletionSource<R> source = new TaskCompletionSource<R>();
 
+            Func<(Action, UdpRemote)> d = () =>
+            {
+                var r = createFunc.Invoke();
+                Action a = () => { source.SetResult(r); };
+                return (a, r);
+            };
+
+            remoteCreators.Enqueue(d);
+
+            return new ValueTask<R>(source.Task);
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Net.Remote;
+
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
@@ -6,7 +8,8 @@ using System.Threading.Tasks;
 
 namespace Megumin.Remote
 {
-    public class TcpRemoteListener
+
+    public class TcpRemoteListener: IListener<TcpRemote>
     {
         private TcpListener tcpListener;
         public IPEndPoint ConnectIPEndPoint { get; set; }
@@ -46,8 +49,8 @@ namespace Megumin.Remote
         /// 创建TCPRemote并开始接收
         /// </summary>
         /// <returns></returns>
-        public async ValueTask<T> ListenAsync<T>(Func<T> createFunc)
-            where T : TcpRemote
+        public async ValueTask<R> ListenAsync<R>(Func<R> createFunc)
+            where R : TcpRemote
         {
             var remoteSocket = await Accept();
             var remote = createFunc.Invoke();

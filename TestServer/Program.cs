@@ -100,6 +100,10 @@ namespace TestServer
                     }
                     break;
                 case Mode.KCP:
+                    {
+                        KcpRemoteListener remote = new KcpRemoteListener(54321);
+                        Listen(remote);
+                    }
                     break;
                 default:
                     break;
@@ -109,7 +113,7 @@ namespace TestServer
 
         static int connectCount = 1;
 
-        private static async void Listen(TcpRemoteListener remote)
+        private static async void Listen(IListener<TcpRemote> remote)
         {
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
             var re = await remote.ListenAsync(static ()=>
@@ -124,18 +128,33 @@ namespace TestServer
             Console.WriteLine($"总接收到连接{connectCount++}");
         }
 
-        private static async void Listen(UdpRemoteListener remote)
+        private static async void Listen(IListener<UdpRemote> remote)
         {
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-            //var re = await remote.ListenAsync(static () =>
-            //{
-            //    return new TestUdpServerRemote()
-            //    {
-            //        Post2ThreadScheduler = UsePost2ThreadScheduler,
-            //        UID = connectCount
-            //    };
-            //});
-            //Listen(remote);
+            var re = await remote.ListenAsync(static () =>
+            {
+                return new TestUdpServerRemote()
+                {
+                    Post2ThreadScheduler = UsePost2ThreadScheduler,
+                    UID = connectCount
+                };
+            });
+            Listen(remote);
+            Console.WriteLine($"总接收到连接{connectCount++}");
+        }
+
+        private static async void Listen(IListener<KcpRemote> remote)
+        {
+            /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
+            var re = await remote.ListenAsync(static () =>
+            {
+                return new TestKcpServerRemote()
+                {
+                    Post2ThreadScheduler = UsePost2ThreadScheduler,
+                    UID = connectCount
+                };
+            });
+            Listen(remote);
             Console.WriteLine($"总接收到连接{connectCount++}");
         }
     }
