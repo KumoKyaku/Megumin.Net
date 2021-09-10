@@ -15,9 +15,9 @@ public static class TestConfig
     {
         TCP, UDP, KCP
     }
-    public static Mode PMode = TestConfig.Mode.TCP;
-    public static int MessageCount = 100;
-    public static int RemoteCount = 20;
+    public static Mode PMode = TestConfig.Mode.UDP;
+    public static int MessageCount = 1;
+    public static int RemoteCount = 1;
 }
 
 namespace TestClient

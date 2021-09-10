@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Megumin.Remote
 {
-    public partial class UdpRemote : RpcRemote, IRemoteEndPoint, IRemote
+    public partial class UdpRemote : RpcRemote, IRemoteEndPoint, IRemote,IConnectable
     {
         public int ID { get; } = InterlockedID<IRemoteID>.NewID();
         public Guid GUID { get; internal set; }
@@ -235,6 +235,15 @@ namespace Megumin.Remote
             }
         }
 
+        public Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
+        {
+            ConnectIPEndPoint = endPoint;
+            return Task.CompletedTask;
+        }
 
+        public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
+        {
+            
+        }
     }
 }

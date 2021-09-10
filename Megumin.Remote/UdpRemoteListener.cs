@@ -143,6 +143,10 @@ namespace Megumin.Remote
                 else
                 {
                     UdpRemote udp = CreateNew(endPoint, answer);
+                    if (udp == null)
+                    {
+                        DebugLogger.Logger.LogWarning($"Listner 无法创建 remote");
+                    }
                     return udp;
                 }
             }
