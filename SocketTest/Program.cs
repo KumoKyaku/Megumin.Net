@@ -9,6 +9,13 @@ namespace SocketTest
         static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
+            Socket[] sockets = new Socket[100000];
+            for (int i = 0; i < 100000; i++)
+            {
+                var socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                sockets[i] = socket;
+            }
+
             TestLife();
 
             Console.WriteLine("start");

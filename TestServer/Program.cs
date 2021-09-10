@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using static TestConfig;
+using System.Security.Cryptography;
 
 namespace TestServer
 {
@@ -84,8 +85,26 @@ namespace TestServer
                 });
             }
 
-            TcpRemoteListener remote = new TcpRemoteListener(54321);
-            Listen(remote);
+            switch (PMode)
+            {
+                case Mode.TCP:
+                    {
+                        TcpRemoteListener remote = new TcpRemoteListener(54321);
+                        Listen(remote);
+                    }
+                    break;
+                case Mode.UDP:
+                    {
+                        UdpRemoteListener remote = new UdpRemoteListener(54321);
+                        Listen(remote);
+                    }
+                    break;
+                case Mode.KCP:
+                    break;
+                default:
+                    break;
+            }
+            
         }
 
         static int connectCount;
@@ -93,23 +112,87 @@ namespace TestServer
         private static async void Listen(TcpRemoteListener remote)
         {
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-            var re = await remote.ListenAsync(Create);
+            var re = await remote.ListenAsync(static ()=>
+            {
+                return new TestTcpServerRemote()
+                {
+                    Post2ThreadScheduler = UsePost2ThreadScheduler,
+                    UID = connectCount
+                };
+            });
             Listen(remote);
             Console.WriteLine($"总接收到连接{connectCount++}");
         }
 
-        public static TestSpeedServerRemote Create()
+        private static async void Listen(UdpRemoteListener remote)
         {
-            return new TestSpeedServerRemote()
-            {
-                Post2ThreadScheduler = UsePost2ThreadScheduler,
-                UID = connectCount
-            };
+            /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
+            //var re = await remote.ListenAsync(static () =>
+            //{
+            //    return new TestUdpServerRemote()
+            //    {
+            //        Post2ThreadScheduler = UsePost2ThreadScheduler,
+            //        UID = connectCount
+            //    };
+            //});
+            //Listen(remote);
+            Console.WriteLine($"总接收到连接{connectCount++}");
         }
     }
 
+    public sealed class TestTcpServerRemote : TcpRemote
+    {
+        static int totalCount;
+        int myRecvCount = 0;
+        protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        {
+            Interlocked.Increment(ref totalCount);
+            myRecvCount++;
+            switch (message)
+            {
+                case TestPacket1 packet1:
+                    if (totalCount % 1 == 0)
+                    {
+                        Console.WriteLine($"Remote:{UID} 接收消息{nameof(TestPacket1)}--{packet1.Value}--MyRecvCount{myRecvCount}----总消息数{totalCount}");
+                    }
+                    return null;
+                case TestPacket2 packet2:
+                    Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
+                    return packet2;
+                default:
+                    break;
+            }
+            return null;
+        }
+    }
 
-    public sealed class TestSpeedServerRemote : TcpRemote
+    public sealed class TestUdpServerRemote : UdpRemote
+    {
+        static int totalCount;
+        int myRecvCount = 0;
+        protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        {
+            Interlocked.Increment(ref totalCount);
+            myRecvCount++;
+            switch (message)
+            {
+                case TestPacket1 packet1:
+                    if (totalCount % 1 == 0)
+                    {
+                        Console.WriteLine($"Remote:{UID} 接收消息{nameof(TestPacket1)}--{packet1.Value}--MyRecvCount{myRecvCount}----总消息数{totalCount}");
+                    }
+                    return null;
+                case TestPacket2 packet2:
+                    Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
+                    return packet2;
+                default:
+                    break;
+            }
+            return null;
+        }
+    }
+
+    public sealed class TestKcpServerRemote : KcpRemote
     {
         static int totalCount;
         int myRecvCount = 0;

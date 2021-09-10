@@ -222,7 +222,7 @@ namespace Megumin.Remote
                 var (_, exception) = await Send<Heartbeat>(Heartbeat.Default);
                 if (exception == null)
                 {
-                    MissHearCount -= 1;
+                    MissHearCount = 0;
                 }
 
                 if (MissHearCount >= 5)

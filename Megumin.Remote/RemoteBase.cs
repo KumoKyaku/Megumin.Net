@@ -1,5 +1,7 @@
 ﻿using Megumin.Remote;
+
 using Net.Remote;
+
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -35,6 +37,7 @@ namespace Megumin.Remote
     /// </remarks>
     public abstract class RemoteBase : ISendable
     {
+
         /// <summary>
         /// 记录器
         /// </summary>
