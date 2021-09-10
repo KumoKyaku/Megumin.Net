@@ -13,7 +13,7 @@ public static class TestConfig
 {
     public enum Mode
     {
-        TCP,UDP,KCP
+        TCP, UDP, KCP
     }
     public static Mode PMode = TestConfig.Mode.TCP;
     public static int MessageCount = 100;
@@ -32,7 +32,7 @@ namespace TestClient
             ConAsync();
             Console.ReadLine();
         }
-        
+
         private static async void ConAsync()
         {
             //ThreadPool.QueueUserWorkItem((A) =>
@@ -70,11 +70,38 @@ namespace TestClient
 
         private static async void NewRemote(int clientIndex)
         {
-            TestTcpRemote testR = new TestTcpRemote();
-            testR.Dealer.Index = clientIndex;
-            testR.Dealer.MessageCount = MessageCount;
+            IRemote remote = null;
 
-            IRemote remote = testR;
+            switch (PMode)
+            {
+                case Mode.TCP:
+                    {
+                        TestTcpRemote testR = new TestTcpRemote();
+                        testR.Dealer.Index = clientIndex;
+                        testR.Dealer.MessageCount = MessageCount;
+                        remote = testR;
+                    }
+                    break;
+                case Mode.UDP:
+                    {
+                        TestUdpRemote testR = new TestUdpRemote();
+                        testR.Dealer.Index = clientIndex;
+                        testR.Dealer.MessageCount = MessageCount;
+                        remote = testR;
+                    }
+                    break;
+                case Mode.KCP:
+                    {
+                        TestKcpRemote testR = new TestKcpRemote();
+                        testR.Dealer.Index = clientIndex;
+                        testR.Dealer.MessageCount = MessageCount;
+                        remote = testR;
+                    }
+                    break;
+                default:
+                    break;
+            }
+
             try
             {
                 if (remote is IConnectable conn)
@@ -164,7 +191,7 @@ namespace TestClient
         public int MessageCount { get; set; }
         Stopwatch stopwatch = new Stopwatch();
 
-        public async ValueTask<object> 
+        public async ValueTask<object>
             OnReceive(short cmd, int messageID, object message)
         {
             switch (message)
@@ -192,7 +219,7 @@ namespace TestClient
         }
     }
 
-    public sealed class TestTcpRemote:TcpRemote
+    public sealed class TestTcpRemote : TcpRemote
     {
         public Dealer Dealer = new Dealer();
         protected override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);

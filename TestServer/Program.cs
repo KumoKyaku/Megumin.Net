@@ -107,7 +107,7 @@ namespace TestServer
             
         }
 
-        static int connectCount;
+        static int connectCount = 1;
 
         private static async void Listen(TcpRemoteListener remote)
         {
