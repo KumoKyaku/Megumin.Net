@@ -120,41 +120,44 @@ namespace Megumin.Remote
             else
             {
                 var answer = await BaginNewAuth(endPoint).ConfigureAwait(false);
-                if (lut.TryGetValue(answer.Guid,out var udpRemote))
+                lock (lut)
                 {
-                    if (udpRemote.Password != answer.Password)
+                    if (lut.TryGetValue(answer.Guid, out var udpRemote))
                     {
-                        //guid和密码不匹配,可能遇到有人碰撞攻击
-                        return null;
+                        if (udpRemote.Password != answer.Password)
+                        {
+                            //guid和密码不匹配,可能遇到有人碰撞攻击
+                            return null;
+                        }
+                        else
+                        {
+                            if (udpRemote.ConnectIPEndPoint != endPoint)
+                            {
+                                //重绑定远端
+                                connected.Remove(udpRemote.ConnectIPEndPoint);
+                                udpRemote.ConnectIPEndPoint = endPoint;
+                                connected.Add(endPoint, udpRemote);
+                            }
+
+                            return udpRemote;
+                        }
                     }
                     else
                     {
-                        if (udpRemote.ConnectIPEndPoint != endPoint)
+                        UdpRemote udp = CreateNew(endPoint, answer);
+                        if (udp == null)
                         {
-                            //重绑定远端
-                            connected.Remove(udpRemote.ConnectIPEndPoint);
-                            udpRemote.ConnectIPEndPoint = endPoint;
-                            connected.Add(endPoint, udpRemote);
+                            DebugLogger.LogWarning($"Listner 无法创建 remote");
                         }
-
-                        return udpRemote;
+                        return udp;
                     }
-                }
-                else
-                {
-                    UdpRemote udp = CreateNew(endPoint, answer);
-                    if (udp == null)
-                    {
-                        DebugLogger.Logger.LogWarning($"Listner 无法创建 remote");
-                    }
-                    return udp;
                 }
             }
         }
 
         protected virtual UdpRemote CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
         {
-            if (remoteCreators.Count == 0)
+            if (remoteCreators.Count <= 0)
             {
                 return null;
             }

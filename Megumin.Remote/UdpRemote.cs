@@ -142,9 +142,9 @@ namespace Megumin.Remote
         /// 主动侧需要手动开启接收，被动侧由listener接收然后分发
         /// </summary>
         /// <param name="port"></param>
-        public async void ClientSideRecv(int port)
+        public async void ClientSideRecv()
         {
-            Client.Bind(new IPEndPoint(IPAddress.Any, port));
+            //Client.Bind(new IPEndPoint(IPAddress.Any, port));
             IsVaild = true;
             IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
@@ -235,9 +235,12 @@ namespace Megumin.Remote
             }
         }
 
+        static byte[] conn = new byte[8];
         public Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
         {
             ConnectIPEndPoint = endPoint;
+            Client.SendTo(conn, endPoint);
+            ClientSideRecv();
             return Task.CompletedTask;
         }
 

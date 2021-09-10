@@ -165,14 +165,14 @@ namespace TestServer
         int myRecvCount = 0;
         protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
-            Interlocked.Increment(ref totalCount);
+            var tcot = Interlocked.Increment(ref totalCount);
             myRecvCount++;
             switch (message)
             {
                 case TestPacket1 packet1:
                     if (totalCount % 1 == 0)
                     {
-                        Console.WriteLine($"Remote:{UID} 接收消息{nameof(TestPacket1)}--{packet1.Value}--MyRecvCount{myRecvCount}----总消息数{totalCount}");
+                        Console.WriteLine($"Remote:{UID} 接收消息{nameof(TestPacket1)}--{packet1.Value}--MyRecvCount{myRecvCount}----总消息数{tcot}");
                     }
                     return null;
                 case TestPacket2 packet2:
@@ -191,14 +191,14 @@ namespace TestServer
         int myRecvCount = 0;
         protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
-            Interlocked.Increment(ref totalCount);
+            var tcot = Interlocked.Increment(ref totalCount);
             myRecvCount++;
             switch (message)
             {
                 case TestPacket1 packet1:
                     if (totalCount % 1 == 0)
                     {
-                        Console.WriteLine($"Remote:{UID} 接收消息{nameof(TestPacket1)}--{packet1.Value}--MyRecvCount{myRecvCount}----总消息数{totalCount}");
+                        Console.WriteLine($"Remote:{UID} 接收消息{nameof(TestPacket1)}--{packet1.Value}--MyRecvCount{myRecvCount}----总消息数{tcot}");
                     }
                     return null;
                 case TestPacket2 packet2:
@@ -217,14 +217,14 @@ namespace TestServer
         int myRecvCount = 0;
         protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
-            Interlocked.Increment(ref totalCount);
+            var tcot = Interlocked.Increment(ref totalCount);
             myRecvCount++;
             switch (message)
             {
                 case TestPacket1 packet1:
                     if (totalCount % 1 == 0)
                     {
-                        Console.WriteLine($"Remote:{UID} 接收消息{nameof(TestPacket1)}--{packet1.Value}--MyRecvCount{myRecvCount}----总消息数{totalCount}");
+                        Console.WriteLine($"Remote:{UID} 接收消息{nameof(TestPacket1)}--{packet1.Value}--MyRecvCount{myRecvCount}----总消息数{tcot}");
                     }
                     return null;
                 case TestPacket2 packet2:
