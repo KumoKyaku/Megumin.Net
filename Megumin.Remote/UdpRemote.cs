@@ -16,7 +16,7 @@ namespace Megumin.Remote
         public int Password { get; set; } = -1;
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public virtual EndPoint RemappedEndPoint => ConnectIPEndPoint;
-        public Socket Client { get; protected set; }
+        public Socket Client { get; internal protected set; }
         public bool IsVaild { get; internal protected set; }
         public float LastReceiveTimeFloat { get; }
         public UdpRemoteListener Listener { get; internal set; }
@@ -235,8 +235,8 @@ namespace Megumin.Remote
             }
         }
 
-        static byte[] conn = new byte[8];
-        public Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
+        static byte[] conn = new byte[1];
+        public virtual Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
         {
             ConnectIPEndPoint = endPoint;
             Client.SendTo(conn, endPoint);

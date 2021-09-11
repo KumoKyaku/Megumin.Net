@@ -57,28 +57,28 @@ namespace Megumin.Remote
 
         protected override UdpRemote CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
         {
-            if (remoteCreators.Count == 0)
+            if (remoteCreators.TryDequeue(out var cre))
             {
-                return null;
+                var (continueAction, udp) = cre.Invoke();
+
+                KcpRemote remote = udp as KcpRemote;
+                if (remote != null)
+                {
+                    remote.InitKcp(answer.KcpChannel);
+                    remote.IsVaild = true;
+                    remote.ConnectIPEndPoint = endPoint;
+                    remote.GUID = answer.Guid;
+                    remote.Password = answer.Password;
+                    udp.Client = SendSockets[connected.Count % SendSockets.Length];
+                    lut.Add(remote.GUID, remote);
+                    connected.Add(endPoint, remote);
+                }
+
+                continueAction?.Invoke();
+                return remote;
             }
 
-            var cre = remoteCreators.Dequeue();
-            var (continueAction, udp) = cre.Invoke();
-
-            KcpRemote remote = udp as KcpRemote;
-            if (remote != null)
-            {
-                remote.InitKcp(answer.KcpChannel);
-                remote.IsVaild = true;
-                remote.ConnectIPEndPoint = endPoint;
-                remote.GUID = answer.Guid;
-                remote.Password = answer.Password;
-                lut.Add(remote.GUID, remote);
-                connected.Add(endPoint, remote);
-            }
-
-            continueAction?.Invoke();
-            return remote;
+            return null;
         }
 
         ValueTask<R> IListener<KcpRemote>.ListenAsync<R>(Func<R> createFunc)

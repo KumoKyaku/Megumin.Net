@@ -1,4 +1,5 @@
 ﻿using Net.Remote;
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -33,6 +34,10 @@ namespace Megumin.Remote
         /// </remarks>
         protected Queue<UdpReceiveResult> UdpReceives = new Queue<UdpReceiveResult>();
 
+        /// <summary>
+        /// 服务端使用20个Socket向客户端发送.
+        /// </summary>
+        protected Socket[] SendSockets = new Socket[20];
         public UdpRemoteListener(int port)
             : base(port)
         {
@@ -45,8 +50,12 @@ namespace Megumin.Remote
             Init(port);
         }
 
-        private void Init(int port)
+        private void Init(int port, AddressFamily addressFamily = AddressFamily.InterNetwork)
         {
+            for (int i = 0; i < SendSockets.Length; i++)
+            {
+                SendSockets[i] = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp);
+            }
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
             Client.ReceiveBufferSize = 1020 * 1024 * 5; //先设个5mb看看
         }
@@ -157,27 +166,27 @@ namespace Megumin.Remote
 
         protected virtual UdpRemote CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
         {
-            if (remoteCreators.Count <= 0)
+            if (remoteCreators.TryDequeue(out var creator))
             {
-                return null;
+                var (continueAction, udp) = creator.Invoke();
+
+                if (udp != null)
+                {
+                    udp.Listener = this;
+                    udp.IsVaild = true;
+                    udp.ConnectIPEndPoint = endPoint;
+                    udp.GUID = answer.Guid;
+                    udp.Password = answer.Password;
+                    udp.Client = SendSockets[connected.Count % SendSockets.Length];
+                    lut.Add(udp.GUID, udp);
+                    connected.Add(endPoint, udp);
+                }
+
+                continueAction?.Invoke();
+                return udp;
             }
 
-            var creator = remoteCreators.Dequeue();
-            var (continueAction, udp) = creator.Invoke();
-
-            if (udp != null)
-            {
-                udp.Listener = this;
-                udp.IsVaild = true;
-                udp.ConnectIPEndPoint = endPoint;
-                udp.GUID = answer.Guid;
-                udp.Password = answer.Password;
-                lut.Add(udp.GUID, udp);
-                connected.Add(endPoint, udp);
-            }
-
-            continueAction?.Invoke();
-            return udp;
+            return null;
         }
 
         Random random = new Random();
@@ -190,7 +199,7 @@ namespace Megumin.Remote
             byte[] buffer = new byte[UdpAuthRequest.Length];
             session.Serialize(buffer);
             Send(buffer, buffer.Length, endPoint);
-            if (!authing.TryGetValue(endPoint,out var source))
+            if (!authing.TryGetValue(endPoint, out var source))
             {
                 source = new TaskCompletionSource<UdpAuthResponse>();
                 authing.Add(endPoint, source);
@@ -198,7 +207,7 @@ namespace Megumin.Remote
             return new ValueTask<UdpAuthResponse>(source.Task);
         }
 
-        
+
         public void DealAnswerBuffer(IPEndPoint endPoint, Span<byte> buffer)
         {
             if (authing.TryGetValue(endPoint, out var source))
@@ -214,8 +223,8 @@ namespace Megumin.Remote
             IsListening = false;
         }
 
-        protected Queue<Func<(Action ContinueDelegate, UdpRemote Remote)>>
-            remoteCreators = new Queue<Func<(Action ContinueDelegate, UdpRemote Remote)>>();
+        protected ConcurrentQueue<Func<(Action ContinueDelegate, UdpRemote Remote)>>
+            remoteCreators = new ConcurrentQueue<Func<(Action ContinueDelegate, UdpRemote Remote)>>();
 
         public virtual ValueTask<R> ListenAsync<R>(Func<R> createFunc) where R : UdpRemote
         {

@@ -1,10 +1,6 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using System.Net.Sockets.Kcp;
-//using System.Text;
-
-using System;
+﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.Sockets.Kcp;
@@ -31,17 +27,47 @@ namespace Megumin.Remote
                 KcpIO kcpIO = new KcpIO((uint)KcpIOChannel);
                 kcp = kcpIO;
                 kcpUpdate = kcpIO;
+                allkcp.Add(new WeakReference<IKcpUpdate>(kcpUpdate));
+                KCPUpdate();
                 KcpOutput();
                 KCPRecv();
             }
         }
 
         //循环Tick================================================================
-        
-        //TODO 用到再写
-        public void Update(in DateTime time)
+        static List<WeakReference<IKcpUpdate>>
+            allkcp = new List<WeakReference<IKcpUpdate>>();
+        static bool IsGlobalUpdate = false;
+        protected async void KCPUpdate()
         {
-            kcpUpdate?.Update(time);
+            lock (allkcp)
+            {
+                if (IsGlobalUpdate)
+                {
+                    return;
+                }
+                IsGlobalUpdate = true;
+            }
+
+            while (true)
+            {
+                var time = DateTime.UtcNow;
+                allkcp.RemoveAll(
+                    item =>
+                    {
+                        if (item.TryGetTarget(out var update))
+                        {
+                            update?.Update(time);
+                            return false;
+                        }
+                        else
+                        {
+                            return true;
+                        }
+                    }
+                );
+                await Task.Delay(5);
+            }
         }
 
         // 认证===================================================================
@@ -104,7 +130,7 @@ namespace Megumin.Remote
                 var (buffer, lenght) = kcprecv.Pop();
                 if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
                 {
-                    ProcessBody(new ReadOnlySequence<byte>(segment.Array,0,lenght));
+                    ProcessBody(new ReadOnlySequence<byte>(segment.Array, 0, lenght));
                 }
                 buffer.Dispose();
             }
@@ -146,6 +172,12 @@ namespace Megumin.Remote
         protected override void RecvPureBuffer(ReadOnlySequence<byte> sequence)
         {
             kcp.Input(sequence);
+        }
+
+        public override Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
+        {
+            InitKcp(1001);
+            return base.ConnectAsync(endPoint, retryCount);
         }
     }
 }
