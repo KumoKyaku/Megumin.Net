@@ -128,10 +128,13 @@ namespace Megumin.Remote
             if (timeOutMilliseconds >= 0)
             {
                 await Task.Delay(timeOutMilliseconds);
-                MessageThreadTransducer.Invoke(() =>
-                {
-                    TrySetException(rpcID, new RcpTimeoutException());
-                });
+                TrySetException(rpcID, new RcpTimeoutException());
+
+                //这里不要用MessageThreadTransducer,可能MessageThreadTransducer根本没被调用.
+                //MessageThreadTransducer.Invoke(() =>
+                //{
+                //    TrySetException(rpcID, new RcpTimeoutException());
+                //});
             }
         }
 
