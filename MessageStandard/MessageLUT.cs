@@ -59,8 +59,8 @@ namespace Megumin.Remote
     /// <summary>
     /// 对象自身就是序列化器，是MessageLut没注册时的fallback。
     /// </summary>
-    [Obsolete("没有MessageLut根本就找不到类型，这个思路不成立。",true)]
-    public interface IMeguminSelfFormater: IMeguminFormater
+    [Obsolete("没有MessageLut根本就找不到类型，这个思路不成立。", true)]
+    public interface IMeguminSelfFormater : IMeguminFormater
     {
         /// <summary>
         /// 先构造对象，然后自己解析。
@@ -78,7 +78,7 @@ namespace Megumin.Remote
     {
         static readonly Dictionary<int, IMeguminFormater> IDDic = new Dictionary<int, IMeguminFormater>();
         static readonly Dictionary<Type, IMeguminFormater> TypeDic = new Dictionary<Type, IMeguminFormater>();
-        
+
         /// <summary>
         /// 注册序列化器
         /// </summary>
@@ -95,13 +95,13 @@ namespace Megumin.Remote
             {
                 case KeyAlreadyHave.Replace:
 
-                    if (IDDic.TryGetValue(meguminFormater.MessageID,out var old))
+                    if (IDDic.TryGetValue(meguminFormater.MessageID, out var old))
                     {
                         IDDic.Remove(old.MessageID);
                         TypeDic.Remove(old.BindType);
-                    } 
+                    }
 
-                    if (TypeDic.TryGetValue(meguminFormater.BindType,out var old2))
+                    if (TypeDic.TryGetValue(meguminFormater.BindType, out var old2))
                     {
                         IDDic.Remove(old2.MessageID);
                         TypeDic.Remove(old2.BindType);
@@ -219,7 +219,7 @@ namespace Megumin.Remote
         /// <param name="messageID"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static bool TryGetType(int messageID,out Type type)
+        public static bool TryGetType(int messageID, out Type type)
         {
             if (IDDic.TryGetValue(messageID, out var res))
             {
@@ -299,7 +299,7 @@ namespace Megumin.Remote
 
         public static bool TryGetFormater(int messageID, out IMeguminFormater formater)
         {
-            return IDDic.TryGetValue(messageID,out formater);
+            return IDDic.TryGetValue(messageID, out formater);
         }
     }
 
@@ -350,9 +350,9 @@ namespace Megumin.Remote
 
     public interface ILogger
     {
-        void Log(object message);
-        void LogError(object message);
-        void LogWarning(object message);
+        void Log(object message, object state = null);
+        void LogError(object message, object state = null);
+        void LogWarning(object message, object state = null);
     }
 
     /// <summary>
@@ -361,13 +361,13 @@ namespace Megumin.Remote
     public static class DebugLogger
     {
         public static ILogger Logger { get; set; }
-        public static void Log(object message)
-            => Logger?.Log(message);
+        public static void Log(object message, object state = null)
+            => Logger?.Log(message, state);
 
-        public static void LogError(object message)
-            => Logger?.LogError(message);
+        public static void LogError(object message, object state = null)
+            => Logger?.LogError(message, state);
 
-        public static void LogWarning(object message)
-            => Logger?.LogWarning(message);
+        public static void LogWarning(object message, object state = null)
+            => Logger?.LogWarning(message, state);
     }
 }

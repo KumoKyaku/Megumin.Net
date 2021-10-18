@@ -142,6 +142,9 @@ namespace Megumin.Remote
 
             public ReadOnlyMemory<byte> SendMemory => new ReadOnlyMemory<byte>(buffer, 0, index);
 
+            /// <summary>
+            /// TODO: BUG,这里需要重新发送的消息应该防止开始位置保证消息的有序性.要保证ReadNext时返回这个消息.
+            /// </summary>
             public void NeedToResend()
             {
                 sendPipe.Push2Queue(this);
@@ -211,6 +214,16 @@ namespace Megumin.Remote
                 source = new TaskCompletionSource<ISendBlock>();
                 return new ValueTask<ISendBlock>(source.Task);
             }
+        }
+
+        public ValueTask<ISendBlock> TryPeek()
+        {
+            return default;
+        }
+
+        public bool AdvanceOne()
+        {
+            return false;
         }
     }
 }

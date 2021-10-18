@@ -7,6 +7,17 @@
 //using Megumin.Message;
 //using Net.Remote;
 
+//TODO:
+//发送和接收时两条管道,和tcp,udp,kcp协议无关,将管道和协议分离,然后重连时复用管道就可以了.
+//发送和接收是对两个管道的操作.
+//StartWork后:
+//发送消息rpc+序列化后输入发送管道,异步取出并通过Socket发送. SendI端-->SendO端
+//从Socket接收数据放入接收管道,并异步取出处理消息.          RecvI端-->RecvO端
+//只有手动关闭时,或者重连失败时关闭 I端,出现错误或者掉线,并不处理管道,等待重连时复用.
+//逐层抽象
+//连接层 rpc层 序列化层 数据管道层
+
+
 //namespace Megumin.Remote
 //{
 //    /// <summary>
@@ -89,7 +100,7 @@
 //                    Remote.Disconnect();
 //                }
 //            }
-            
+
 //        }
 
 //        async Task<bool> ReConnectAsync()
@@ -116,3 +127,6 @@
 
 //    }
 //}
+
+
+

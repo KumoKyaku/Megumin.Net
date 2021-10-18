@@ -217,6 +217,7 @@ namespace Megumin.Remote
     /// <summary>
     /// 记录器
     /// </summary>
+    [Obsolete("为每个实例赋值一个logger没有必要,能区分赋值,就能拿到调用的实例")]
     public interface IMeguminRemoteLogger
     {
         void Log(string error);

@@ -39,6 +39,29 @@ namespace Megumin.Remote.Simple
     //{
     //    public IRemote 
     //}
+
+    internal interface IRecvCallback
+    {
+        ValueTask<object> OnReceive(short cmd, int messageID, object message);
+    }
+
+    internal class EchoCallback: IRecvCallback
+    {
+        public ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        {
+            return new ValueTask<object>(message);
+        }
+    }
+
+    internal class TcpRemote<T> : TcpRemote
+        where T : IRecvCallback, new ()
+    {
+        T call = new T();
+        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        {
+            return call.OnReceive(cmd, messageID, message);
+        }
+    }
 }
 
 

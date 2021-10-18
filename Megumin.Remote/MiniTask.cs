@@ -9,7 +9,8 @@ namespace System.Threading.Tasks
 {
     /// <summary>
     /// 一个简单异步任务实现，特点是缓存任务不构造任务实例。
-    /// todo 如果任务没有完成访问Result,会返回null而不是阻塞。以后会改为和Task一致
+    /// <para>不支持保持线程上下文功能,也就是异步后续的线程为<see cref="SetResult(T)"/>线程.</para>
+    /// 如果任务没有完成访问<see cref="Result"/>,会返回null而不是阻塞。这与Task不一致.
     /// todo 使用 IValueTaskSource 优化
     /// </summary>
     /// <typeparam name="T"></typeparam>

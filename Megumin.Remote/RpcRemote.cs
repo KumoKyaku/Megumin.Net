@@ -66,6 +66,10 @@ namespace Megumin.Remote
         protected override void DeserializeSuccess(int rpcID, short cmd, int messageID, object message)
         {
             var trans = UseThreadSchedule(rpcID, cmd, messageID, message);
+
+            ///在这里处理线程转换,是否将后续处理切换到<see cref="MessageThreadTransducer"/>线程中去.
+            ///切换线程后调用 还是直接调用<see cref="DiversionProcess"/>的区别
+            
             if (trans)
             {
                 Push2MessageThreadTransducer(rpcID, cmd, messageID, message);
@@ -102,6 +106,9 @@ namespace Megumin.Remote
             //可以在这里重写异常堆栈信息。
             //StackTrace stackTrace = new System.Diagnostics.StackTrace();
             (object resp, Exception ex) = await InnerRpcSend(message, options);
+
+            //这里是TaskPool线程或者MessageThreadTransducer线程
+
             return ValidResult<RpcResult>(message, resp, ex, options);
         }
 
@@ -159,9 +166,27 @@ namespace Megumin.Remote
         {
             var (tempresp, tempex) = await InnerRpcSend(message, options);
 
-            IMiniAwaitable<RpcResult> tempsource = MiniTask<RpcResult>.Rent();
-
+            //这里是TaskPool线程或者MessageThreadTransducer线程
             var validResult = ValidResult<RpcResult>(message, tempresp, tempex, options);
+
+            //这里使用tempsource,来达到出现异常取消异步后续的目的
+
+            ////相当于一个TaskCompletionSource实例
+            //TaskCompletionSource<RpcResult> source = new TaskCompletionSource<RpcResult>();
+            //if (validResult.exception == null)
+            //{
+            //    source.SetResult(validResult.result);
+            //}
+            //else
+            //{
+            //    //取消异步后续，转为调用OnException
+            //    //source什么也不做
+            //    OnSendSafeAwaitException(message, tempresp, onException, validResult.exception);
+            //}
+
+            //return await source.Task;
+
+            IMiniAwaitable<RpcResult> tempsource = MiniTask<RpcResult>.Rent();
 
             if (validResult.exception == null)
             {
@@ -196,6 +221,11 @@ namespace Megumin.Remote
         /// <param name="message"></param>
         /// <param name="options"></param>
         /// <returns></returns>
+        /// <remarks>
+        /// 异步后续调用TaskPool线程或者MessageThreadTransducer线程,
+        /// <see cref="ObjectRpcCallbackPool.TrySetResult(int, object)"/>
+        /// <see cref="MiniTask{T}.SetResult(T)"/>
+        /// </remarks>
         protected virtual IMiniAwaitable<(object result, Exception exception)> InnerRpcSend(object message, object options = null)
         {
             var (rpcID, source) = RpcCallbackPool.Regist(options);

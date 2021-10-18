@@ -52,6 +52,7 @@ namespace Megumin.Remote
         void Deal(in HD header, object message);
     }
 
+    [Obsolete("设计缺陷,线程转换不应该带有异步逻辑,严重增加复杂性", true)]
     internal struct RequestWork
     {
         readonly int rpcID;
@@ -125,6 +126,7 @@ namespace Megumin.Remote
     public partial class MessageThreadTransducer
     {
         static readonly ConcurrentQueue<Action> actions = new ConcurrentQueue<Action>();
+        [Obsolete("设计缺陷,线程转换不应该带有异步逻辑,严重增加复杂性", true)]
         static readonly RequestWorkQueue requestWorkQueue = new RequestWorkQueue();
         static readonly DealWorkQueue dealWorkQueue = new DealWorkQueue();
         /// <summary>
@@ -133,10 +135,10 @@ namespace Megumin.Remote
         /// <param name="delta"></param>
         public static void Update(double delta)
         {
-            while (requestWorkQueue.TryDequeue(out var res))
-            {
-                res.Invoke();
-            }
+            //while (requestWorkQueue.TryDequeue(out var res))
+            //{
+            //    res.Invoke();
+            //}
 
             while (dealWorkQueue.TryDequeue(out var res))
             {
@@ -149,6 +151,18 @@ namespace Megumin.Remote
             }
         }
 
+        /// <summary>
+        /// 切换线程后的回调函数实际上就是IObjectMessageReceiver,既然可设置回调函数,就没有必要在有一个异步返回值.
+        /// <para>将需要的异步操作都封装到 IObjectMessageReceiver</para>
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="cmd"></param>
+        /// <param name="messageID"></param>
+        /// <param name="message"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        [Obsolete("设计缺陷,线程转换不应该带有异步逻辑,严重增加复杂性", true)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static IMiniAwaitable<object> Push(int rpcID, short cmd, int messageID, object message, IObjectMessageReceiver r)
         {

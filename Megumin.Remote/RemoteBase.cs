@@ -37,6 +37,13 @@ namespace Megumin.Remote
     /// </remarks>
     public abstract class RemoteBase : ISendable
     {
+        /// <summary>
+        /// 究竟要不要初始化内嵌消息.
+        /// </summary>
+        static RemoteBase()
+        {
+            MessageLUT.Regist(Heartbeat.Default);
+        }
 
         /// <summary>
         /// 记录器
