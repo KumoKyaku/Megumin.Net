@@ -33,6 +33,11 @@ namespace System.Threading.Tasks
         public static int MaxCount { get; set; } = 512;
 
         static ConcurrentQueue<MiniTask<T>> pool = new ConcurrentQueue<MiniTask<T>>();
+        
+        /// <summary>
+        /// 池化,await 一次,并complete一次后自动回池,谨慎使用,不要保存task.拿到后立刻转交或者await.
+        /// </summary>
+        /// <returns></returns>
         public static MiniTask<T> Rent()
         {
             if (pool.TryDequeue(out var task))
@@ -65,8 +70,7 @@ namespace System.Threading.Tasks
         /// <summary>
         /// 是否进入异步挂起阶段
         /// </summary>
-        private bool alreadyEnterAsync = false;
-
+        public bool AlreadyEnterAsync { get; private set; } = false;
 
         /// <inheritdoc/>
         /// <remarks><see cref="State.Canceled"/> 不能算完成状态，
@@ -78,6 +82,7 @@ namespace System.Threading.Tasks
         /// 请不要同步访问Result。即使同步完成也应该使用await 关键字。同步访问可能无法取得正确的值，或抛出异常。
         /// </summary>
         public T Result { get; protected set; }
+
         readonly object innerlock = new object();
 
         public void UnsafeOnCompleted(Action continuation)
@@ -91,7 +96,7 @@ namespace System.Threading.Tasks
                         $"/{nameof(MiniTask<T>)}任务冲突，底层错误，请联系框架作者。");
                 }
 
-                alreadyEnterAsync = true;
+                AlreadyEnterAsync = true;
                 this.continuation -= continuation;
                 this.continuation += continuation;
                 TryComplete();
@@ -137,7 +142,7 @@ namespace System.Threading.Tasks
 
         private void TryComplete()
         {
-            if (alreadyEnterAsync)
+            if (AlreadyEnterAsync)
             {
                 if (state == State.Waiting)
                 {
@@ -198,7 +203,7 @@ namespace System.Threading.Tasks
 
         void Reset()
         {
-            alreadyEnterAsync = false;
+            AlreadyEnterAsync = false;
             Result = default;
             continuation = null;
         }
