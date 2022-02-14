@@ -226,4 +226,25 @@ namespace Net.Remote
         /// </summary>
         int MillisecondsDelay { get; }
     }
+
+    /// <summary>
+    /// todo 只有主动链接测 不停的发送心跳,自动断线重连,回调用于UI
+    /// </summary>
+    interface IReconnetCallback
+    {
+        /// <summary>
+        /// 开始断线重连
+        /// </summary>
+        void OnBenginReconnect();
+        /// <summary>
+        /// 结束断线重连
+        /// </summary>
+        /// <param name="result"></param>
+        /// <param name="exception"></param>
+        void OnEndReconnect(int result,SocketException exception);
+        /// <summary>
+        /// 重试次数
+        /// </summary>
+        int ReTryTimes { get; }
+    }
 }
