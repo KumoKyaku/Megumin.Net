@@ -12,8 +12,7 @@ namespace System.Threading.Tasks
     /// <para>不支持ContinueWith，建议将任何ContinueWith转化为await。ContinueWith的复杂度很高，我写不出绝对安全的实现。</para>
     /// https://www.codeproject.com/Articles/1018071/ContinueWith-Vs-await#
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public interface IMiniAwaitable<T>
+    public interface IMiniAwaitable
     {
         ///实现需要处理多少情况
         ///1 异步调用  同步调用
@@ -31,10 +30,6 @@ namespace System.Threading.Tasks
         /// <summary>
         /// 
         /// </summary>
-        T Result { get; }
-        /// <summary>
-        /// 
-        /// </summary>
         /// <param name="continuation"></param>
         void UnsafeOnCompleted(Action continuation);
         /// <summary>
@@ -42,23 +37,80 @@ namespace System.Threading.Tasks
         /// </summary>
         /// <param name="continuation"></param>
         void OnCompleted(Action continuation);
-        /// <summary>
-        /// 通过设定结果值触发后续方法
-        /// </summary>
-        /// <param name="result"></param>
-        void SetResult(T result);
+
         /// <summary>
         /// 通过此方法结束一个await 而不触发后续方法，也不触发异常，并释放所有资源
         /// 主要针对某些时候持有Task,却不await
         /// </summary>
         void CancelWithNotExceptionAndContinuation();
+
+        /// <summary>
+        /// 验证是否完成,在GetResult时调用,应该保证如果未完成时阻塞.
+        /// </summary>
+        //[StackTraceHidden]
+        void ValidateEnd();
+    }
+
+    public struct MiniTaskAwaiter : ICriticalNotifyCompletion, INotifyCompletion
+    {
+        private IMiniAwaitable CanAwaiter;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool IsCompleted => CanAwaiter.IsCompleted;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public void GetResult()
+        {
+            //TODO,缺少安全验证,但通常不会出bug.
+            CanAwaiter.ValidateEnd();
+        }
+
+        public MiniTaskAwaiter(IMiniAwaitable canAwait)
+        {
+            this.CanAwaiter = canAwait;
+        }
+        /// <summary>
+        /// 当没有同步完成时，向CanAwaiter注册回调，CanAwaite会将回调保存起来，用于在完成时调用。
+        /// </summary>
+        /// <param name="continuation"></param>
+        public void UnsafeOnCompleted(Action continuation)
+        {
+            CanAwaiter.UnsafeOnCompleted(continuation);
+        }
+
+        public void OnCompleted(Action continuation)
+        {
+            CanAwaiter.OnCompleted(continuation);
+        }
+    }
+
+    /// <summary>
+    /// <inheritdoc/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public interface IMiniAwaitable<T> : IMiniAwaitable
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        T Result { get; }
+        /// <summary>
+        /// 通过设定结果值触发后续方法
+        /// </summary>
+        /// <param name="result"></param>
+        void SetResult(T result);
     }
 
     /// <summary>
     /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public struct MiniTaskAwaiter<T> : ICriticalNotifyCompletion
+    public struct MiniTaskAwaiter<T> : ICriticalNotifyCompletion, INotifyCompletion
     {
         private IMiniAwaitable<T> CanAwaiter;
 
@@ -73,6 +125,9 @@ namespace System.Threading.Tasks
         /// <returns></returns>
         public T GetResult()
         {
+            //TODO,缺少安全验证,但通常不会出bug.
+            CanAwaiter.ValidateEnd();
+
             return CanAwaiter.Result;
         }
 
@@ -101,6 +156,18 @@ namespace System.Threading.Tasks
 /// </summary>
 public static class ICanAwaitableEx_D248AE7ECAD0420DAF1BCEA2801012FF
 {
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="canAwaitable"></param>
+    /// <returns></returns>
+    public static MiniTaskAwaiter GetAwaiter(this IMiniAwaitable canAwaitable)
+    {
+        return new MiniTaskAwaiter(canAwaitable);
+    }
+
     /// <summary>
     /// 
     /// </summary>
@@ -112,3 +179,6 @@ public static class ICanAwaitableEx_D248AE7ECAD0420DAF1BCEA2801012FF
         return new MiniTaskAwaiter<T>(canAwaitable);
     }
 }
+
+
+

@@ -202,5 +202,16 @@ namespace System.Threading.Tasks
             Result = default;
             continuation = null;
         }
+
+        //[StackTraceHidden]
+        public void ValidateEnd()
+        {
+            //todo  
+            //if (IsCompleted == false)
+            //{
+            //    //此处应该阻塞线程,当完成时释放.暂不实现,使用者自行注意.
+            //    throw new NotImplementedException("异步获取结果错误");
+            //}
+        }
     }
 }
