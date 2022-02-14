@@ -33,7 +33,7 @@ namespace System.Threading.Tasks
         public static int MaxCount { get; set; } = 512;
 
         static ConcurrentQueue<MiniTask<T>> pool = new ConcurrentQueue<MiniTask<T>>();
-        
+
         /// <summary>
         /// 池化,await 一次,并complete一次后自动回池,谨慎使用,不要保存task.拿到后立刻转交或者await.
         /// </summary>
@@ -68,7 +68,7 @@ namespace System.Threading.Tasks
 
         private Action continuation;
         /// <summary>
-        /// 是否进入异步挂起阶段
+        /// 是否进入异步挂起阶段, <see langword="await"/>关键字是否已经被执行.
         /// </summary>
         public bool AlreadyEnterAsync { get; private set; } = false;
 
@@ -94,6 +94,9 @@ namespace System.Threading.Tasks
                     ///这里被触发一定是是类库BUG。
                     throw new ArgumentException($"{nameof(MiniTask<T>)} task conflict, underlying error, please contact the framework author." +
                         $"/{nameof(MiniTask<T>)}任务冲突，底层错误，请联系框架作者。");
+
+                    ///也可能被误用,错误的保存了Task实例,已经完成一次异步周期后归还到池中,又被await.
+                    ///暂不处理
                 }
 
                 AlreadyEnterAsync = true;

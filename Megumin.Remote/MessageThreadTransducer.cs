@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using DealWorkQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Remote.DealWork>;
@@ -129,6 +130,10 @@ namespace Megumin.Remote
         [Obsolete("设计缺陷,线程转换不应该带有异步逻辑,严重增加复杂性", true)]
         static readonly RequestWorkQueue requestWorkQueue = new RequestWorkQueue();
         static readonly DealWorkQueue dealWorkQueue = new DealWorkQueue();
+        //static readonly ThreadSwitcher DefaultSwitcher = new ThreadSwitcher();
+        static readonly ConcurrentQueue<MiniTask<int>> MiniTasksSwitcher = new ConcurrentQueue<MiniTask<int>>();
+        static readonly List<MiniTask<int>> MiniTaskNoAwait = new List<MiniTask<int>>();
+        
         /// <summary>
         /// 在控制执行顺序的线程中刷新，所有异步方法的后续部分都在这个方法中执行
         /// </summary>
@@ -148,6 +153,34 @@ namespace Megumin.Remote
             while (actions.TryDequeue(out var callback))
             {
                 callback?.Invoke();
+            }
+
+            //DefaultSwitcher.Tick();
+        
+            try
+            {
+                MiniTaskNoAwait.Clear();
+                while (MiniTasksSwitcher.TryDequeue(out var miniTask))
+                {
+                    //保证线程切换后续已经await
+                    if (miniTask.AlreadyEnterAsync)
+                    {
+                        miniTask.SetResult(0);
+                    }
+                    else
+                    {
+                        MiniTaskNoAwait.Add(miniTask);
+                    }
+                }
+            }
+            finally
+            {
+                //防止回调丢失
+                foreach (var item in MiniTaskNoAwait)
+                {
+                    MiniTasksSwitcher.Enqueue(item);
+                }
+                MiniTaskNoAwait.Clear();
             }
         }
 
@@ -178,6 +211,15 @@ namespace Megumin.Remote
             return task;
         }
 
+        /// <summary>
+        /// 专用函数,比<see cref="Switch"/>性能高,但是通用性不好
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="cmd"></param>
+        /// <param name="messageID"></param>
+        /// <param name="message"></param>
+        /// <param name="r"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Push(int rpcID, short cmd, int messageID, object message, IDealMessageable r)
         {
@@ -211,6 +253,7 @@ namespace Megumin.Remote
 
         /// <summary>
         /// 切换执行线程
+        /// <see cref="Switch"/>
         /// </summary>
         /// <param name="action"></param>
         public static void Invoke(Action action)
@@ -218,28 +261,82 @@ namespace Megumin.Remote
             actions.Enqueue(action);
         }
 
-        //--------------
+        /// <summary>
+        /// 将一个值或者一组值转换到这个线程,继续执行逻辑.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <remarks>没实现,这个方法存在意义不大</remarks>
+        [Obsolete("Use Switch instead", true)]
+        public static ConfiguredValueTaskAwaitable<T> Push<T>(T value)
+        {
+            return new ValueTask<T>(value).ConfigureAwait(false);
+        }
 
-        ///// <summary>
-        ///// 将一个值或者一组值转换到这个线程,继续执行逻辑.
-        ///// </summary>
-        ///// <typeparam name="T"></typeparam>
-        ///// <param name="value"></param>
-        ///// <returns></returns>
-        //public static ConfiguredValueTaskAwaitable<T> Push<T>(T value)
-        //{
-        //    return new ValueTask<T>(value).ConfigureAwait(false);
-        //}
+        /// <summary>
+        /// <inheritdoc cref="ThreadSwitcher.Switch"/>
+        /// </summary>
+        /// <returns></returns>
+        [Obsolete("BUG", true)]
+        public static ConfiguredValueTaskAwaitable Switch()
+        {
+            return default; // DefaultSwitcher.Switch();
+        }
 
-        ///// <summary>
-        ///// 线程切换
-        ///// </summary>
-        ///// <returns></returns>
-        //public static ConfiguredValueTaskAwaitable ChangeThread()
-        //{
-        //    TaskCompletionSource<int> source = new TaskCompletionSource<int>();
-        //    var a = source.Task.ConfigureAwait(false);
-        //    return new ValueTask(Task.CompletedTask).ConfigureAwait(false);
-        //}
+        /// <summary>
+        /// 性能比<see cref="Switch"/>高, 通用性也好,但是没有经过验证有没有bug.
+        /// </summary>
+        /// <returns></returns>
+        public static IMiniAwaitable MiniSwitch()
+        {
+            MiniTask<int> task = MiniTask<int>.Rent();
+            MiniTasksSwitcher.Enqueue(task);
+            return task;
+        }
+    }
+
+
+    /// <summary>
+    /// 通用线程切换器,查看meguminexplosion 库
+    /// </summary>
+    [Obsolete("严重bug,无法实现预定功能. 无法保证先await 后 Tick", true)]
+    public partial class ThreadSwitcher
+    {
+        public static readonly ThreadSwitcher Default = new ThreadSwitcher();
+
+        /// <summary>
+        /// 可以合并Source来提高性能,但是会遇到异步后续出现异常的情况,比较麻烦.
+        /// 所以每个Switch调用处使用不同的source,安全性更好
+        /// </summary>
+        readonly ConcurrentQueue<TaskCompletionSource<int>> WaitQueue = new ConcurrentQueue<TaskCompletionSource<int>>();
+
+        /// <summary>
+        /// 由指定线程调用,回调其他线程需要切换到这个线程的方法
+        /// <para>保证先await 后Tick, 不然 await会发现Task同步完成,无法切换线程.</para>
+        /// <para><see cref="Task.Status"/>无法指示是否被await </para>
+        /// </summary>
+        public void Tick()
+        {
+            while (WaitQueue.TryDequeue(out var res))
+            {
+                res.TrySetResult(0);
+            }
+        }
+
+        /// <summary>
+        /// 通用性高,但是用到TaskCompletionSource和异步各种中间对象和异步机制.
+        /// 性能开销大不如明确的类型和回调接口.
+        /// <para>异步后续在<see cref="Tick"/>线程调用</para>
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>BUG,无法保证先await 后Tick</remarks>
+        public ConfiguredValueTaskAwaitable Switch()
+        {
+            TaskCompletionSource<int> source = new TaskCompletionSource<int>();
+            var a = new ValueTask(source.Task).ConfigureAwait(false);
+            WaitQueue.Enqueue(source);
+            return a;
+        }
     }
 }

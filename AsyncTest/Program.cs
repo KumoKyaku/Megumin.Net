@@ -18,7 +18,16 @@ namespace AsyncTest
 
             NewMethod2();
 
+            TaskCompletionSource<int > source = new TaskCompletionSource<int>();    
+            var state = source.Task.Status;
+            Beginawait(source);
+            var state2 = source.Task.Status;    
             Console.ReadLine();
+        }
+
+        private static async void Beginawait(TaskCompletionSource<int> source)
+        {
+            await source.Task;
         }
 
         private static void NewMethod2()
