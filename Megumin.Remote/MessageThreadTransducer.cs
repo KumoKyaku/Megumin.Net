@@ -217,5 +217,29 @@ namespace Megumin.Remote
         {
             actions.Enqueue(action);
         }
+
+        //--------------
+
+        ///// <summary>
+        ///// 将一个值或者一组值转换到这个线程,继续执行逻辑.
+        ///// </summary>
+        ///// <typeparam name="T"></typeparam>
+        ///// <param name="value"></param>
+        ///// <returns></returns>
+        //public static ConfiguredValueTaskAwaitable<T> Push<T>(T value)
+        //{
+        //    return new ValueTask<T>(value).ConfigureAwait(false);
+        //}
+
+        ///// <summary>
+        ///// 线程切换
+        ///// </summary>
+        ///// <returns></returns>
+        //public static ConfiguredValueTaskAwaitable ChangeThread()
+        //{
+        //    TaskCompletionSource<int> source = new TaskCompletionSource<int>();
+        //    var a = source.Task.ConfigureAwait(false);
+        //    return new ValueTask(Task.CompletedTask).ConfigureAwait(false);
+        //}
     }
 }
