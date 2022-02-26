@@ -126,6 +126,7 @@ namespace AsyncTest
         public Task<int> Test1Async()
         {
             source = new TaskCompletionSource<int>();
+            source.ToString();
             return source.Task;
         }
 
@@ -225,6 +226,20 @@ namespace AsyncTest
             await new FastAwaitable();
             Console.WriteLine("");
         }
+    }
+
+    public class Test9
+    {
+        public MiniTask<int> Test()
+        {
+            return MiniTask<int>.Rent();
+        }
+
+        //public async IMiniAwaitable<int> Test2()
+        //{
+        //    await Task.Delay(1000);
+        //    return 0;
+        //}
     }
 
     public interface IGetAwaiter

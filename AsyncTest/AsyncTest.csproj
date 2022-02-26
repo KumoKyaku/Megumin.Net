@@ -4,4 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>.net5</TargetFramework>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Megumin.Remote\Megumin.Remote.csproj" />
+  </ItemGroup>
 </Project>

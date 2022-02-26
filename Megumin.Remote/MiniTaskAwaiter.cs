@@ -93,6 +93,7 @@ namespace System.Threading.Tasks
     /// <inheritdoc/>
     /// </summary>
     /// <typeparam name="T"></typeparam>
+    //[AsyncMethodBuilder(typeof(MiniTaskBuilder<>))]
     public interface IMiniAwaitable<T> : IMiniAwaitable
     {
         /// <summary>
@@ -149,6 +150,22 @@ namespace System.Threading.Tasks
             CanAwaiter.OnCompleted(continuation);
         }
     }
+
+    /// <summary>
+    /// TODO
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public struct MiniTaskBuilder<T>
+    {
+        public static MiniTaskBuilder<T> Create() => default;
+        public void Start<TStateMachine>(ref TStateMachine stateMachine) where TStateMachine : IAsyncStateMachine { }
+        public void SetStateMachine(IAsyncStateMachine stateMachine) { }
+        public void SetResult(T result) { }
+        public void SetException(Exception exception) { }
+        public IMiniAwaitable<T> Task => default;
+        public void AwaitOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine) where TAwaiter : INotifyCompletion where TStateMachine : IAsyncStateMachine { }
+        public void AwaitUnsafeOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine) where TAwaiter : ICriticalNotifyCompletion where TStateMachine : IAsyncStateMachine { }
+    }
 }
 
 /// <summary>
@@ -179,6 +196,3 @@ public static class ICanAwaitableEx_D248AE7ECAD0420DAF1BCEA2801012FF
         return new MiniTaskAwaiter<T>(canAwaitable);
     }
 }
-
-
-
