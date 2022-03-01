@@ -36,6 +36,14 @@ namespace Megumin.Remote
 
         /// <summary>
         /// 服务端使用20个Socket向客户端发送.
+        /// <para/> TODO NAT情况复杂，可能无法发送 https://www.cnblogs.com/mq0036/p/4644776.html
+        /// <para/> (1)完全Cone NAT 无论目标地址和端口怎样，每次都把该私有源IP地址/端口映射到同一个全局源地址/端口；外网的任何主机都可以发送报文到该映射的全局地址而访问到该内部主机。路由器的静态地址映射就是属于这种。
+        ///(2)限制Cone NAT 地址/端口映射的情况同完全Cone NAT的，但外网的主机要访问内网主机，该内网主机必须先发送过报文给该外网主机的地址。
+        ///(3)端口限制Cone NAT 地址/端口映射情况同完全Cone NAT的，但外网主机要访问内网主机，该内网主机必须先发送过报文给该外网主机的地址和端口。大多数路由器的NAPT就是属于这种情况。本文后面论及的Cone NAT也是指这种情况。
+        ///(4)Symmetric NAT 对不同的目标地址/端口，源私有地址映射到源全局地址不变，但是映射的全局端口会改变。外网主机必须先收到过内网主机的报文，才能访问到该内网主机。一些路由器和防火墙产品的NAT就是属于这种情况。
+        /// <para/> 1,2是没问题的，3通常需要客户端先发送一个消息到发送端口，不然SendSockets由于和listen端口不一致，会被NAT丢弃消息。4则完全没有办法。
+        /// 需要一个测试方法测试连接是否支持SendSockets发送
+        /// 最开始可以先用listen端口发送，异步测试是否支持，等到能支持时转到SendSockets发送。，不支持必须使用 listen端口发送。
         /// </summary>
         protected Socket[] SendSockets = new Socket[20];
         public UdpRemoteListener(int port)
@@ -177,6 +185,7 @@ namespace Megumin.Remote
                     udp.ConnectIPEndPoint = endPoint;
                     udp.GUID = answer.Guid;
                     udp.Password = answer.Password;
+                    //todo add listenUdpclient.
                     udp.Client = SendSockets[connected.Count % SendSockets.Length];
                     lut.Add(udp.GUID, udp);
                     connected.Add(endPoint, udp);
