@@ -266,13 +266,13 @@ namespace Megumin.Remote
         /// <summary>
         /// 处理一个完整的消息包，已分离报头
         /// </summary>
-        protected virtual void ProcessBody(in ReadOnlySequence<byte> byteSequence,
+        protected virtual void ProcessBody(in ReadOnlySequence<byte> bodyBytes,
                                            object options,
                                            int RpcID,
                                            short CMD,
                                            int MessageID)
         {
-            if (TryDeserialize(MessageID, byteSequence, out var message, options))
+            if (TryDeserialize(MessageID, bodyBytes, out var message, options))
             {
                 DeserializeSuccess(RpcID, CMD, MessageID, message);
             }
