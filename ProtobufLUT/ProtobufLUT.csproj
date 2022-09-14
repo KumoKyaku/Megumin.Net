@@ -29,7 +29,7 @@
 
   <!--依赖配置-->
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.17.3" />
+    <PackageReference Include="Google.Protobuf" Version="3.21.6" />
     <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
   </ItemGroup>
 
