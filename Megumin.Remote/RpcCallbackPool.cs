@@ -1,9 +1,9 @@
-﻿//using Megumin.Remote;
-//using Net.Remote;
-//using System;
-//using System.Collections.Generic;
-//using System.Runtime.CompilerServices;
-//using System.Threading.Tasks;
+﻿using Megumin.Remote;
+using Net.Remote;
+using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 //namespace Megumin.Remote
 //{
@@ -29,7 +29,7 @@
 //        /// <param name="options">参数表</param>
 //        /// <typeparam name="RpcResult"></typeparam>
 //        /// <returns></returns>
-//        (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source) 
+//        (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source)
 //            Regist<RpcResult>(object options = null);
 //        /// <summary>
 //        /// 注册一个rpc过程，并返回一个rpcID，后续可通过rpcID完成回调
@@ -38,7 +38,7 @@
 //        /// <param name="OnException"></param>
 //        /// <param name="options">参数表</param>
 //        /// <returns></returns>
-//        (int rpcID, IMiniAwaitable<RpcResult> source) 
+//        (int rpcID, IMiniAwaitable<RpcResult> source)
 //            Regist<RpcResult>(Action<Exception> OnException, object options = null);
 //        /// <summary>
 //        /// 取得rpc回调函数
@@ -123,7 +123,7 @@
 //            }
 //        }
 
-//        public (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source) 
+//        public (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source)
 //            Regist<RpcResult>(object options = null)
 //        {
 //            int rpcID = GetRpcID();
@@ -190,7 +190,7 @@
 //            }
 //        }
 
-//        public (int rpcID, IMiniAwaitable<RpcResult> source) 
+//        public (int rpcID, IMiniAwaitable<RpcResult> source)
 //            Regist<RpcResult>(Action<Exception> OnException, object options = null)
 //        {
 //            int rpcID = GetRpcID();
@@ -255,7 +255,7 @@
 
 //            if (timeout >= 0)
 //            {
-//                CreateCheckTimeout(rpcID,typeof(RpcResult).FullName, timeout);
+//                CreateCheckTimeout(rpcID, typeof(RpcResult).FullName, timeout);
 //            }
 //        }
 
@@ -266,7 +266,7 @@
 //        /// <param name="resultTypeName"></param>
 //        /// <param name="timeOutMilliseconds"></param>
 //        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-//        void CreateCheckTimeout(int rpcID,string resultTypeName, int timeOutMilliseconds)
+//        void CreateCheckTimeout(int rpcID, string resultTypeName, int timeOutMilliseconds)
 //        {
 //            ///备注：即使异步发送被同步调用，此处也不会发生错误。
 //            ///同步调用，当返回消息返回时，会从回调池移除，
@@ -283,7 +283,7 @@
 //                    {
 //                        MessageThreadTransducer.Invoke(() =>
 //                        {
-//                            rpc.rpcCallback?.Invoke(null, 
+//                            rpc.rpcCallback?.Invoke(null,
 //                                new TimeoutException($"The RPC [{rpcID}] callback timed out and did not get a remote response./RPC [{rpcID}] 回调超时，请求结果[{resultTypeName}],没有得到远端响应。"));
 //                        });
 //                    }
@@ -316,7 +316,7 @@
 //            return TryComplate(rpcID, null, exception);
 //        }
 
-//        bool TryComplate(int rpcID, object msg,Exception exception)
+//        bool TryComplate(int rpcID, object msg, Exception exception)
 //        {
 //            ///rpc响应
 //            if (TryDequeue(rpcID, out var rpc))
@@ -327,4 +327,186 @@
 //            return false;
 //        }
 //    }
+
+
 //}
+
+
+namespace Megumin.Remote
+{
+    /// <summary>
+    /// Rpc回调注册池
+    /// 每个session大约每秒30个包，超时时间默认为30秒；
+    /// </summary>
+    public abstract class RpcCallbackPool<K, M, A>
+    {
+        protected Dictionary<K, (DateTime startTime, Action<(M result, Exception exception)> source)> Pool { get; }
+            = new Dictionary<K, (DateTime startTime, Action<(M result, Exception exception)> source)>();
+
+        /// <summary>
+        /// 默认30000ms
+        /// </summary>
+        public int DefaultTimeout { get; set; } = 30000;
+
+        protected abstract K GetRpcID();
+
+        /// <summary>
+        /// rpcID冲突检查
+        /// </summary>
+        /// <param name="key"></param>
+        protected void CheckKeyConflict(K key)
+        {
+            if (TryDequeue(key, out var callback))
+            {
+                //Todo,线程转换应该分离出去
+                MessageThreadTransducer.Invoke(() =>
+                {
+                    //如果出现RpcID冲突，认为前一个已经超时。
+                    callback.source?.Invoke((default, new TimeoutException("RpcID overlaps and timeouts the previous callback/RpcID 重叠，对前一个回调进行超时处理")));
+                });
+            }
+        }
+
+        public abstract A Regist(object options = null);
+
+        public K Regist(Action<(M result, Exception exception)> callback, object options = null)
+        {
+            var rpcID = GetRpcID();
+            CheckKeyConflict(rpcID);
+            lock (dequeueLock)
+            {
+                this.Pool[rpcID] = (DateTime.Now, callback);
+            }
+            CreateCheckTimeout(rpcID, options);
+            return rpcID;
+        }
+
+        /// <summary>
+        /// 创建超时检查
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="options"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void CreateCheckTimeout(K rpcID, object options)
+        {
+            int timeout = DefaultTimeout;
+            if (options is IRpcTimeoutOption option)
+            {
+                timeout = option.MillisecondsDelay;
+            }
+
+            if (timeout >= 0)
+            {
+                CreateCheckTimeout(rpcID, timeout);
+            }
+        }
+
+        /// <summary>
+        /// 创建超时检查
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="timeOutMilliseconds"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        async void CreateCheckTimeout(K rpcID, int timeOutMilliseconds)
+        {
+            ///备注：即使异步发送被同步调用，此处也不会发生错误。
+            ///同步调用，当返回消息返回时，会从回调池移除，
+            ///那么计时器结束时将不会找到Task。如果调用出没有保持Task引用，
+            ///那么Task会成为孤岛，被GC回收。
+
+            ///超时检查
+            if (timeOutMilliseconds >= 0)
+            {
+                await Task.Delay(timeOutMilliseconds);
+                TrySetException(rpcID, new RcpTimeoutException());
+
+                //这里不要用MessageThreadTransducer,可能MessageThreadTransducer根本没被调用.
+                //MessageThreadTransducer.Invoke(() =>
+                //{
+                //    TrySetException(rpcID, new RcpTimeoutException());
+                //});
+            }
+        }
+
+        readonly object dequeueLock = new object();
+        public bool TryDequeue(K rpcID, out (DateTime startTime, Action<(M result, Exception exception)> source) rpc)
+        {
+            lock (dequeueLock)
+            {
+                if (Pool.TryGetValue(rpcID, out rpc))
+                {
+                    Pool.Remove(rpcID);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool TrySetResult(K rpcID, M msg)
+        {
+            return TryComplate(rpcID, msg, null);
+        }
+
+        public bool TrySetException(K rpcID, Exception exception)
+        {
+            return TryComplate(rpcID, default, exception);
+        }
+
+        bool TryComplate(K rpcID, M msg, Exception exception)
+        {
+            ///rpc响应
+            if (TryDequeue(rpcID, out var rpc))
+            {
+                rpc.source.Invoke((msg, exception));
+                return true;
+            }
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// <inheritdoc/>
+    /// </summary>
+    /// <remarks>
+    /// <para/>Q:为什么用IMiniAwaitable 而不是ValueTask?
+    /// <para/>A:开始时这个类直接和Send耦合，需要返回值一致，现在没有修改必要。性能要比ValueTask高那么一丁点。
+    /// </remarks>
+    public class IntKeyObjectRpcCallbackPool : RpcCallbackPool
+        <int, object, (int rpcID, IMiniAwaitable<(object result, System.Exception exception)>)>
+    {
+        int rpcCursor = 0;
+        readonly object rpcCursorLock = new object();
+
+        /// <summary>
+        /// 原子操作 取得RpcId,发送方的的RpcID为正数，回复的RpcID为负数，正负一一对应
+        /// <para>0,int.MinValue 为无效值</para> 
+        /// <seealso cref="RpcRemote.DiversionProcess(int, short, int, object)"/>
+        /// </summary>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected override int GetRpcID()
+        {
+            lock (rpcCursorLock)
+            {
+                if (rpcCursor == int.MaxValue)
+                {
+                    rpcCursor = 1;
+                }
+                else
+                {
+                    rpcCursor++;
+                }
+
+                return rpcCursor;
+            }
+        }
+
+        public override (int rpcID, IMiniAwaitable<(object result, Exception exception)>) Regist(object options = null)
+        {
+            var source = MiniTask<(object result, Exception exception)>.Rent();
+            var rpcID = Regist(source.SetResult, options);
+            return (rpcID, source);
+        }
+    }
+}
