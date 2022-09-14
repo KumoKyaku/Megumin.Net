@@ -1,4 +1,5 @@
-﻿using Net.Remote;
+﻿using Megumin.Remote.Rpc;
+using Net.Remote;
 
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace Megumin.Remote
     {
         public virtual int UID { get; set; }
 
-        public IntKeyObjectRpcCallbackPool RpcCallbackPool { get; } = new IntKeyObjectRpcCallbackPool();
+        public ObjectRpcCallbackPool RpcCallbackPool { get; } = new ObjectRpcCallbackPool();
 
         /// <summary>
         /// 分流普通消息和RPC回复消息

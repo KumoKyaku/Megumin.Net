@@ -1,5 +1,4 @@
-﻿using Megumin.Remote;
-using Net.Remote;
+﻿using Net.Remote;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -332,8 +331,27 @@ using System.Threading.Tasks;
 //}
 
 
-namespace Megumin.Remote
+namespace Megumin.Remote.Rpc
 {
+    /// <summary>
+    /// rpc超时异常
+    /// </summary>
+    public class RcpTimeoutException : TimeoutException
+    {
+        public override string Message => MyMessage + base.Message;
+
+        public Type RequstType { get; internal set; }
+        public Type ResponseType { get; internal set; }
+
+        string MyMessage
+        {
+            get
+            {
+                return $"Rpc请求[{RequstType?.Name}]超时，请求结果类型[{ResponseType?.Name}]";
+            }
+        }
+    }
+
     /// <summary>
     /// Rpc回调注册池
     /// 每个session大约每秒30个包，超时时间默认为30秒；
@@ -375,7 +393,7 @@ namespace Megumin.Remote
             CheckKeyConflict(rpcID);
             lock (dequeueLock)
             {
-                this.Pool[rpcID] = (DateTime.Now, callback);
+                Pool[rpcID] = (DateTime.Now, callback);
             }
             CreateCheckTimeout(rpcID, options);
             return rpcID;
@@ -472,8 +490,8 @@ namespace Megumin.Remote
     /// <para/>Q:为什么用IMiniAwaitable 而不是ValueTask?
     /// <para/>A:开始时这个类直接和Send耦合，需要返回值一致，现在没有修改必要。性能要比ValueTask高那么一丁点。
     /// </remarks>
-    public class IntKeyObjectRpcCallbackPool : RpcCallbackPool
-        <int, object, (int rpcID, IMiniAwaitable<(object result, System.Exception exception)>)>
+    public sealed class ObjectRpcCallbackPool :
+        RpcCallbackPool<int, object, (int rpcID, IMiniAwaitable<(object result, Exception exception)>)>
     {
         int rpcCursor = 0;
         readonly object rpcCursorLock = new object();
