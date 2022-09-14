@@ -9,18 +9,18 @@
     <Grid Margin="0,0,10,3">
         <Rectangle HorizontalAlignment="Left" Height="462" Margin="45,43,0,0" Stroke="Black" VerticalAlignment="Top" Width="283"/>
         <Rectangle HorizontalAlignment="Left" Height="462" Margin="388,43,0,0" Stroke="Black" VerticalAlignment="Top" Width="204"/>
-        <Button Content="开始监听" HorizontalAlignment="Left" Margin="410,65,0,0" VerticalAlignment="Top" Width="91" Click="Button_Click" Height="19" Foreground="#FFE00000" Background="#FFB4B4B4"/>
+        <Button Content="①开始监听" HorizontalAlignment="Left" Margin="410,65,0,0" VerticalAlignment="Top" Width="91" Click="Button_Click" Height="19" Foreground="#FFE00000" Background="#FFB4B4B4"/>
         <Label x:Name="Serverlog" HorizontalAlignment="Left" Margin="410,195,0,0" VerticalAlignment="Top" Width="164" Height="298" Content="" Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"/>
-        <Button Content="创建一个连接" HorizontalAlignment="Left" Margin="66,58,0,0" VerticalAlignment="Top" Width="110" Click="CreateClient"/>
-        <Button Content="ShutDownSend" HorizontalAlignment="Left" Margin="66,140,0,0" VerticalAlignment="Top" Width="110" Click="Button_Click_4"/>
-        <Button Content="发送一个消息" HorizontalAlignment="Left" Margin="410,100,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.346,0.389" Width="88" Click="ServerSendMSG" Height="19"/>
-        <Button Content="TestRPC" HorizontalAlignment="Left" Margin="66,90,0,0" VerticalAlignment="Top" Width="110" Click="TestRpc"/>
+        <Button Content="②创建一个连接" HorizontalAlignment="Left" Margin="66,58,0,0" VerticalAlignment="Top" Width="110" Click="CreateClient"/>
+        <Button Content="⑥ShutDownSend" HorizontalAlignment="Left" Margin="66,140,0,0" VerticalAlignment="Top" Width="110" Click="Button_Click_4"/>
+        <Button Content="⑤发送一个消息" HorizontalAlignment="Left" Margin="410,100,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.346,0.389" Width="88" Click="ServerSendMSG" Height="19"/>
+        <Button Content="③TestRPC" HorizontalAlignment="Left" Margin="66,90,0,0" VerticalAlignment="Top" Width="110" Click="TestRpc"/>
         <Label x:Name="ClientLog" HorizontalAlignment="Left" Margin="66,195,0,0" VerticalAlignment="Top" Width="234" Height="298" Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"/>
         <Label Content="连接端" HorizontalAlignment="Left" Margin="45,13,0,0" VerticalAlignment="Top" Width="173" Height="25"/>
         <Label Content="监听端" HorizontalAlignment="Left" Margin="388,13,0,0" VerticalAlignment="Top" Width="173" Height="25"/>
         <Button Content="主动断开" HorizontalAlignment="Left" Margin="410,135,0,0" VerticalAlignment="Top" Width="87" Click="ServerDisconnect"/>
         <Button Content="主动断开" HorizontalAlignment="Left" Margin="66,167,0,0" VerticalAlignment="Top" Width="110" Click="ClientDisconnect"/>
-        <Button Content="发送一个消息" HorizontalAlignment="Left" Margin="66,114,0,0" VerticalAlignment="Top" Width="110" Click="ClientSend"/>
+        <Button Content="④发送一个消息" HorizontalAlignment="Left" Margin="66,114,0,0" VerticalAlignment="Top" Width="110" Click="ClientSend"/>
         <Button Content="Clear" HorizontalAlignment="Left" Margin="340,74,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.268,-0.038" Click="ClearLog"/>
 
     </Grid>
