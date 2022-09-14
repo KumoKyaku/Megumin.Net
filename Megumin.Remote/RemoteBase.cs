@@ -190,7 +190,7 @@ namespace Megumin.Remote
         /// <summary>
         /// 发送rpcID和消息
         /// </summary>
-        protected abstract void Send(int rpcID, object message, object options = null);
+        public abstract void Send(int rpcID, object message, object options = null);
 
         public void Send(object message, object options = null)
         {

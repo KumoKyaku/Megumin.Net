@@ -205,7 +205,7 @@ namespace Megumin.Remote
         }
 
         /// <summary>
-        ///  <see cref="SendSafeAwait{RpcResult}(object, Action{Exception}, object)"/>收到obj response后，如果是异常，处理异常的逻辑。
+        ///  <see cref="ISendCanAwaitable.SendSafeAwait{RpcResult}(object, Action{Exception}, object)"/>收到obj response后，如果是异常，处理异常的逻辑。
         /// </summary>
         /// <param name="request"></param>
         /// <param name="response"></param>
@@ -224,7 +224,7 @@ namespace Megumin.Remote
         /// <returns></returns>
         /// <remarks>
         /// 异步后续调用TaskPool线程或者MessageThreadTransducer线程,
-        /// <see cref="ObjectRpcCallbackPool.TrySetResult(int, object)"/>
+        /// <see cref="RpcCallbackPool{K, M, A}.TrySetResult(K, M)"/>
         /// <see cref="MiniTask{T}.SetResult(T)"/>
         /// </remarks>
         protected virtual IMiniAwaitable<(object result, Exception exception)> InnerRpcSend(object message, object options = null)
