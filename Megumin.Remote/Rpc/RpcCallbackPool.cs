@@ -433,6 +433,9 @@ namespace Megumin.Remote.Rpc
             ///那么Task会成为孤岛，被GC回收。
 
             ///超时检查
+            ///这里隐藏的小概率bug, 第一个rpcID:100注册，并正常回调，计时器仍在即时。
+            ///在计时器没有结束前， GetRpcID 使用完整个int.MaxValue,又注册进新的 rpcID：100，超时会将新的RpcID100 错误的触发。
+            ///要修正这个隐患很麻烦，触发概率应该很小，暂时不去管。
             if (timeOutMilliseconds >= 0)
             {
                 await Task.Delay(timeOutMilliseconds);

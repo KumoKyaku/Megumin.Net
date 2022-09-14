@@ -179,16 +179,17 @@ namespace Megumin.Remote
 
     public partial class TcpRemote : ISendable, ISendCanAwaitable
     {
-        protected override void Send(int rpcID, object message, object options = null)
+        public override void Send(int rpcID, object message, object options = null)
         {
             //todo 检查当前是否允许发送，可能已经处于断开阶段，不在允许新消息进入发送缓存区
             var allowSend = RemoteState == WorkState.Working || RemoteState == WorkState.NotStart;
             if (!allowSend)
             {
+                //当遇到底层不能发送消息的情况下，如果时Rpc发送，直接触发Rpc异常。
                 if (rpcID > 0)
                 {
                     //对于已经注册了Rpc的消息,直接触发异常。
-                    RpcCallbackPool.TrySetException(rpcID * -1, new SocketException(-1));
+                    RpcLayer.RpcCallbackPool.TrySetException(rpcID, new SocketException(-1));
                 }
                 else
                 {

@@ -26,7 +26,14 @@ namespace Megumin.Remote.Rpc
     {
         public ObjectRpcCallbackPool RpcCallbackPool { get; } = new ObjectRpcCallbackPool();
 
-        public bool Input(int rpcID, object message)
+        /// <summary>
+        /// 如果rpcID为负数，是rpc返回回复，返回true,此消息由RpcLayer处理。
+        /// <para> 否则返回false，RpcLayer忽略此消息。</para>
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public bool TryInput(int rpcID, object message)
         {
             if (rpcID < 0)
             {

@@ -104,7 +104,7 @@ namespace Megumin.Remote
 
         protected virtual Writer SendWriter { get; } = new Writer(8192 * 4);
 
-        protected override void Send(int rpcID, object message, object options = null)
+        public override void Send(int rpcID, object message, object options = null)
         {
             SendWriter.WriteHeader(UdpRemoteMessageDefine.Common);
             if (TrySerialize(SendWriter, rpcID, message, options))

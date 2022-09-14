@@ -104,7 +104,7 @@ namespace Megumin.Remote
             }
         }
 
-        protected override void Send(int rpcID, object message, object options = null)
+        public override void Send(int rpcID, object message, object options = null)
         {
             if (TrySerialize(SendWriter, rpcID, message, options))
             {
