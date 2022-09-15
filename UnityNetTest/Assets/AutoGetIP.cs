@@ -22,7 +22,7 @@ public class AutoGetIP : MonoBehaviour
         var wan = await IPAddressExtension_A6F086FB3EE3403BB5033720C34DA414.GetWANIP();
         WANIP.text = wan?.ToString();
 
-        var gateway = await IPAddressExtension_A6F086FB3EE3403BB5033720C34DA414.GetGateway();
+        var gateway = await IPAddressExtension_A6F086FB3EE3403BB5033720C34DA414.GetGateway(pingCheck: false);
         GatewayIP.text = gateway?.ToString();
 
         var lan = IPAddressExtension_A6F086FB3EE3403BB5033720C34DA414.GetLANIP();

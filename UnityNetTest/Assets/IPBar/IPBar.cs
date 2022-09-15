@@ -15,6 +15,6 @@ public class IPBar : MonoBehaviour
 
     public void Copy()
     {
-
+        GUIUtility.systemCopyBuffer = IP.text;
     }
 }
