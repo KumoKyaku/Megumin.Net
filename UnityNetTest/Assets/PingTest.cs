@@ -13,6 +13,7 @@ public class PingTest : MonoBehaviour
 {
     public TMP_InputField TargetIP;
     public TextMeshProUGUI PingResult;
+    public TextMeshProUGUI RoundtripTime;
     private CancellationTokenSource cancellationTokenSource;
 
     // Start is called before the first frame update
@@ -33,14 +34,8 @@ public class PingTest : MonoBehaviour
         {
             var res = await ping.SendPingAsync(iP);
             Debug.Log($"Ping {TargetIP.text} {res.Status} {res.RoundtripTime}ms");
-            if (res.Status == IPStatus.Success)
-            {
-                PingResult.text = $"{res.RoundtripTime}ms";
-            }
-            else
-            {
-                PingResult.text = res.Status.ToString();
-            }
+            PingResult.text = res.Status.ToString();
+            RoundtripTime.text = $"{res.RoundtripTime}ms";
         }
     }
 

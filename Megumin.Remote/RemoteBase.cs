@@ -264,6 +264,10 @@ namespace Megumin.Remote
         }
 
         /// <summary>
+        /// 反序列化失败时，是否将直接字节数组传递到上层。
+        /// </summary>
+        public bool UseByteArrayOnDeserializeError = true;
+        /// <summary>
         /// 处理一个完整的消息包，已分离报头
         /// </summary>
         protected virtual void ProcessBody(in ReadOnlySequence<byte> bodyBytes,
@@ -275,6 +279,16 @@ namespace Megumin.Remote
             if (TryDeserialize(MessageID, bodyBytes, out var message, options))
             {
                 DeserializeSuccess(RpcID, CMD, MessageID, message);
+            }
+            else
+            {
+                if (UseByteArrayOnDeserializeError)
+                {
+                    //反序列化失败,返回上层一个byte[] 
+                    byte[] bytes = new byte[bodyBytes.Length];
+                    bodyBytes.CopyTo(bytes);
+                    DeserializeSuccess(RpcID, CMD, MessageID, bytes);
+                }
             }
         }
     }
