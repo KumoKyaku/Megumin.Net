@@ -1,6 +1,7 @@
 ﻿using Megumin.Remote;
 using Megumin.Remote.Simple;
 using Megumin.Remote.Test;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ namespace TestWPF
     {
         private TestRemote client;
         private TestRemote server;
+        private TcpRemoteListener listener;
 
         public MainWindow()
         {
@@ -32,7 +34,10 @@ namespace TestWPF
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            TcpRemoteListener listener = new TcpRemoteListener(54321);
+            int port = 54321;
+            int.TryParse(ListenPort.Text, out port);
+            listener?.Stop();
+            listener = new TcpRemoteListener(port);
             Listen(listener);
             this.Serverlog.Content += $"\n 开始监听";
         }
@@ -42,8 +47,16 @@ namespace TestWPF
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
             var accept = await remote.ListenAsync(Create);
             Listen(remote);
-            this.Serverlog.Content += $"\n 收到连接";
-            server = accept;
+            if (accept != null)
+            {
+                this.Serverlog.Content += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
+                server = accept;
+            }
+        }
+
+        private void StopListen_Click(object sender, RoutedEventArgs e)
+        {
+            listener?.Stop();
         }
 
         public TestRemote Create()
@@ -53,10 +66,28 @@ namespace TestWPF
 
         private void CreateClient(object sender, RoutedEventArgs e)
         {
+            int port = 54321;
+            int.TryParse(ConnectPort.Text, out port);
+            IPAddress targetIP = IPAddress.Loopback;
+            IPAddress.TryParse(TargetIP.Text, out targetIP);
+
             client = new TestRemote();
             client.log = this.ClientLog;
-            client.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
-            ClientLog.Content += $"\n 连接成功";
+
+            Connect(port, targetIP);
+        }
+
+        private async void Connect(int port, IPAddress targetIP)
+        {
+            try
+            {
+                await client.ConnectAsync(new IPEndPoint(targetIP, port));
+                ClientLog.Content += $"\n 连接成功";
+            }
+            catch (Exception ex)
+            {
+                ClientLog.Content += $"\n {ex.Message}";
+            }
         }
 
         private void ServerSendMSG(object sender, RoutedEventArgs e)
@@ -129,6 +160,8 @@ public class TestRemote : TcpRemote
         switch (message)
         {
             case TestPacket2 packet2:
+                return new ValueTask<object>(message);
+            default:
                 return new ValueTask<object>(message);
         }
         return NullResult;
