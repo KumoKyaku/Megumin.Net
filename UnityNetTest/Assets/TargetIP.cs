@@ -55,4 +55,9 @@ public class TargetIP : MonoBehaviour
     {
         Target.text = IPAddress.IPv6Any.ToString();
     }
+
+    public void Paste()
+    {
+        Target.text = GUIUtility.systemCopyBuffer;
+    }
 }
