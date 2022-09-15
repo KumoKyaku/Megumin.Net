@@ -51,6 +51,7 @@ public class PingTest : MonoBehaviour
 
     public void PingLoop()
     {
+        cancellationTokenSource?.Cancel();
         cancellationTokenSource = new CancellationTokenSource();
 
 #if UNITY_ANDROID && !UNITY_EDITOR
