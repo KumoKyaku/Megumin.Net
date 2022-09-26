@@ -8,6 +8,12 @@
         "com.unity.settings-manager": "1.0.3"
       }
     },
+    "com.megumin.nettool": {
+      "version": "file:NetTool",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.unity.2d.animation": {
       "version": "8.0.3",
       "depth": 0,
