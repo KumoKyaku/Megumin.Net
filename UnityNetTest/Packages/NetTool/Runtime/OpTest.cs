@@ -3,17 +3,21 @@ using Megumin.Remote.Simple;
 using System;
 using System.Net;
 using TMPro;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 public class OpTest : MonoBehaviour
 {
     public TMP_InputField TargetIP;
     public TMP_InputField TargetPort;
     public TextMeshProUGUI Console;
+    public TMP_InputField SendMessageText;
+
     // Start is called before the first frame update
     void Start()
     {
-        
+        Clear();
     }
 
     // Update is called once per frame
@@ -33,7 +37,7 @@ public class OpTest : MonoBehaviour
         listener?.Stop();
         listener = new TcpRemoteListener(port);
         Listen(listener);
-        Console.text += $"\n 开始监听";
+        Log("开始监听");
     }
 
     private async void Listen(TcpRemoteListener remote)
@@ -44,6 +48,7 @@ public class OpTest : MonoBehaviour
         if (accept != null)
         {
             Console.text += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
+            Log($"收到连接 {accept.Client.RemoteEndPoint}");
             serverSide = accept;
         }
     }
@@ -75,13 +80,28 @@ public class OpTest : MonoBehaviour
     {
         try
         {
-            Console.text += $"\n 开始连接 {targetIP} : {port}";
+            Log($"开始连接 {targetIP} : {port}");
             await client.ConnectAsync(new IPEndPoint(targetIP, port));
             Console.text += $"\n 连接成功";
+            Log($"连接成功");
         }
         catch (Exception ex)
         {
-            Console.text += $"\n {ex.Message}";
+            Log($"{ex.Message}");
         }
+    }
+
+    public void Log(string str)
+    {
+        Console.text += $"{str}\n";
+    }
+
+    int messageIndex = 0;
+    public async void Send()
+    {
+        var send = string.Format(SendMessageText.text, messageIndex);
+        Log($"发送：{send}");
+        var resp = await client.Send<string>(SendMessageText.text);
+        Log($"返回：{resp}");
     }
 }
