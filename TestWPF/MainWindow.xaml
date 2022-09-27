@@ -26,12 +26,13 @@
         <Button Content="主动断开" HorizontalAlignment="Left" Margin="33,153,0,0" VerticalAlignment="Top" Width="109" Click="ServerDisconnect" Grid.Column="2" Height="19"/>
         <Button Content="主动断开" HorizontalAlignment="Left" Margin="66,153,0,0" VerticalAlignment="Top" Width="110" Click="ClientDisconnect" Height="19"/>
         <Button Content="④发送一个消息" HorizontalAlignment="Left" Margin="66,105,0,0" VerticalAlignment="Top" Width="110" Click="ClientSend" Height="19"/>
-        <Button Content="Clear" HorizontalAlignment="Left" Margin="484,510,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.268,-0.038" Click="ClearLog" Height="19" Width="32" Grid.ColumnSpan="3"/>
+        <Button Content="Clear" HorizontalAlignment="Left" Margin="238,510,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.268,-0.038" Click="ClearLog" Height="42" Width="524" Grid.ColumnSpan="3"/>
         <TextBox x:Name="ListenPort" HorizontalAlignment="Center" Margin="0,58,0,0" TextWrapping="Wrap" Text="54321" VerticalAlignment="Top" Width="54" Height="18" Grid.Column="2"/>
         <TextBox x:Name="ConnectPort" HorizontalAlignment="Left" Margin="365,58,0,0" TextWrapping="Wrap" Text="54321" VerticalAlignment="Top" Width="54" Height="18"/>
         <TextBox x:Name="TargetIP" HorizontalAlignment="Left" Margin="188,57,0,0" TextWrapping="Wrap" Text="127.0.0.1" VerticalAlignment="Top" Width="172" Height="17"/>
         <Button x:Name="StopListen" Content="停止监听" HorizontalAlignment="Left" Margin="335,58,0,0" VerticalAlignment="Top" Width="109" Grid.Column="2" Height="19" Click="StopListen_Click"/>
         <Button x:Name="RPCString" Content="RPCString" HorizontalAlignment="Left" Margin="188,81,0,0" VerticalAlignment="Top" Width="172" Click="RPCString_Click"/>
+        <Button x:Name="SendString" Grid.Column="2" Content="发送一个String" HorizontalAlignment="Left" Margin="34,129,0,0" VerticalAlignment="Top" Width="108" Click="SendString_Click"/>
 
     </Grid>
 </Window>

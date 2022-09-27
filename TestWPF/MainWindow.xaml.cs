@@ -146,6 +146,11 @@ namespace TestWPF
                 ClientLog.Content += $"\n RPCString测试失败";
             }
         }
+
+        private void SendString_Click(object sender, RoutedEventArgs e)
+        {
+            server.Send($"测试String {DateTimeOffset.Now}");
+        }
     }
 }
 

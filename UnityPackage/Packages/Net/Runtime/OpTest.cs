@@ -4,7 +4,6 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using TMPro;
-using UnityEditor.PackageManager;
 using UnityEngine;
 
 public class OpTest : MonoBehaviour
@@ -73,6 +72,7 @@ public class OpTest : MonoBehaviour
 
         client = new Remote();
         client.Test = this;
+        client.Post2ThreadScheduler = true;
         Connect(port, targetIP);
     }
 
@@ -101,23 +101,19 @@ public class OpTest : MonoBehaviour
     {
         var send = string.Format(SendMessageText.text, messageIndex);
         Log($"发送：{send}");
-        var resp = await client.Send<string>(SendMessageText.text);
+        var resp = await client.SendSafeAwait<string>(send);
         Log($"返回：{resp}");
+        messageIndex++;
     }
 
     public class Remote : TcpRemote
     {
         public OpTest Test { get; internal set; }
 
-        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        protected override async ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
             Test.Log($"接收：{message}");
             return base.OnReceive(cmd, messageID, message);
-        }
-
-        protected override bool UseThreadSchedule(int rpcID, short cmd, int messageID, object message)
-        {
-            return true;
         }
     }
 }
