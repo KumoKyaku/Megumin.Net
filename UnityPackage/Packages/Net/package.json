@@ -1,0 +1,21 @@
+{
+  "name": "com.megumin.net",
+  "displayName": "Net",
+  "version": "0.0.1",
+  "unity": "2021.2",
+  "description": "Wizard Fast Created.",
+  "category": "PackageWizard",
+  "documentationUrl": "https://example.com/",
+  "changelogUrl": "https://example.com/changelog.html",
+  "licensesUrl": "https://example.com/licensing.html",
+  "hideInEditor": false,
+  "keywords": [
+    "PackageWizard",
+    "Net"
+  ],
+  "author": {
+    "name": "Unity",
+    "email": "unity@example.com",
+    "url": "https://www.unity3d.com"
+  }
+}

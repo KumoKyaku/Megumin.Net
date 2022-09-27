@@ -1,0 +1,1015 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Megumin.Remote</name>
+    </assembly>
+    <members>
+        <member name="T:Megumin.Remote.Heartbeat">
+            <summary>
+            心跳消息
+            </summary>
+            <remarks> 
+                <code>
+                    MessageLUT.Regist(Heartbeat.Default);
+                </code> 
+            </remarks>
+        </member>
+        <member name="T:Megumin.Remote.Simple.EchoTcp">
+            <summary>
+            Tcp回声远端
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.KcpRemote">
+            <summary>
+            todo 连接kcpid
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.KcpRemote.kcprecv">
+            接收===================================================================
+        </member>
+        <member name="T:Megumin.Remote.IMessageHeader">
+            <summary>
+            泛型报头设计，会导致调度器处性能有问题。
+            <see cref="M:Megumin.Remote.MessageThreadTransducer.Push``1(``0,System.Object,Megumin.Remote.IDealMessageable{``0})"/>
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.IObjectMessageReceiver">
+            <summary>
+            object消息 消费者接口
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.IObjectMessageReceiver.ObjectMessageReceive(System.Int32,System.Int16,System.Int32,System.Object)">
+            <summary>
+            处理消息实例,并返回一个可等待结果
+            </summary>
+            <param name="rpcID"></param>
+            <param name="cmd"></param>
+            <param name="messageID"></param>
+            <param name="message"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Megumin.Remote.IDealMessageable">
+            <summary>
+            处理object消息 消费者接口
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.IDealMessageable.Deal(System.Int32,System.Int16,System.Int32,System.Object)">
+            <summary>
+            处理消息实例
+            </summary>
+            <param name="rpcID"></param>
+            <param name="cmd"></param>
+            <param name="messageID"></param>
+            <param name="message"></param>
+        </member>
+        <member name="T:Megumin.Remote.IDealMessageable`1">
+            <summary>
+             处理object消息 消费者接口
+            </summary>
+            <typeparam name="HD">报头类型</typeparam>
+        </member>
+        <member name="M:Megumin.Remote.IDealMessageable`1.Deal(`0@,System.Object)">
+            <summary>
+            处理消息实例
+            </summary>
+            <param name="header"></param>
+            <param name="message"></param>
+        </member>
+        <member name="T:Megumin.Remote.MessageThreadTransducer">
+            <summary>
+            接收消息池
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.MessageThreadTransducer.Update(System.Double)">
+            <summary>
+            在控制执行顺序的线程中刷新，所有异步方法的后续部分都在这个方法中执行
+            </summary>
+            <param name="delta"></param>
+        </member>
+        <member name="M:Megumin.Remote.MessageThreadTransducer.Push(System.Int32,System.Int16,System.Int32,System.Object,Megumin.Remote.IObjectMessageReceiver)">
+            <summary>
+            切换线程后的回调函数实际上就是IObjectMessageReceiver,既然可设置回调函数,就没有必要在有一个异步返回值.
+            <para>将需要的异步操作都封装到 IObjectMessageReceiver</para>
+            </summary>
+            <param name="rpcID"></param>
+            <param name="cmd"></param>
+            <param name="messageID"></param>
+            <param name="message"></param>
+            <param name="r"></param>
+            <returns></returns>
+            <exception cref="T:System.ArgumentNullException"></exception>
+        </member>
+        <member name="M:Megumin.Remote.MessageThreadTransducer.Push(System.Int32,System.Int16,System.Int32,System.Object,Megumin.Remote.IDealMessageable)">
+            <summary>
+            专用函数,比<see cref="M:Megumin.Remote.MessageThreadTransducer.Switch"/>性能高,但是通用性不好
+            </summary>
+            <param name="rpcID"></param>
+            <param name="cmd"></param>
+            <param name="messageID"></param>
+            <param name="message"></param>
+            <param name="r"></param>
+            <exception cref="T:System.ArgumentNullException"></exception>
+        </member>
+        <member name="M:Megumin.Remote.MessageThreadTransducer.Push``1(``0,System.Object,Megumin.Remote.IDealMessageable{``0})">
+            <summary>
+            可能导致大量性能开销
+            </summary>
+            <typeparam name="HD"></typeparam>
+            <param name="header"></param>
+            <param name="message"></param>
+            <param name="r"></param>
+        </member>
+        <member name="M:Megumin.Remote.MessageThreadTransducer.Invoke(System.Action)">
+            <summary>
+            切换执行线程
+            <see cref="M:Megumin.Remote.MessageThreadTransducer.Switch"/>
+            </summary>
+            <param name="action"></param>
+        </member>
+        <member name="M:Megumin.Remote.MessageThreadTransducer.Push``1(``0)">
+            <summary>
+            将一个值或者一组值转换到这个线程,继续执行逻辑.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="value"></param>
+            <returns></returns>
+            <remarks>没实现,这个方法存在意义不大</remarks>
+        </member>
+        <member name="M:Megumin.Remote.MessageThreadTransducer.Switch">
+            <summary>
+            <inheritdoc cref="M:Megumin.Remote.ThreadSwitcher.Switch"/>
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Remote.MessageThreadTransducer.MiniSwitch">
+            <summary>
+            性能比<see cref="M:Megumin.Remote.MessageThreadTransducer.Switch"/>高, 通用性也好,但是没有经过验证有没有bug.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Megumin.Remote.ThreadSwitcher">
+            <summary>
+            通用线程切换器,查看meguminexplosion 库
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.ThreadSwitcher.WaitQueue">
+            <summary>
+            可以合并Source来提高性能,但是会遇到异步后续出现异常的情况,比较麻烦.
+            所以每个Switch调用处使用不同的source,安全性更好
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.ThreadSwitcher.Tick">
+            <summary>
+            由指定线程调用,回调其他线程需要切换到这个线程的方法
+            <para>保证先await 后Tick, 不然 await会发现Task同步完成,无法切换线程.</para>
+            <para><see cref="P:System.Threading.Tasks.Task.Status"/>无法指示是否被await </para>
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.ThreadSwitcher.Switch">
+            <summary>
+            通用性高,但是用到TaskCompletionSource和异步各种中间对象和异步机制.
+            性能开销大不如明确的类型和回调接口.
+            <para>异步后续在<see cref="M:Megumin.Remote.ThreadSwitcher.Tick"/>线程调用</para>
+            </summary>
+            <returns></returns>
+            <remarks>BUG,无法保证先await 后Tick</remarks>
+        </member>
+        <member name="T:Megumin.Remote.RemoteBase">
+            <summary>
+            逻辑流程定义。
+            这个类用来定义Remote功能需要有哪些必要回调函数。
+            不定义在<see cref="T:Net.Remote.IRemote"/>是因为这些函数都不应该是public的。
+            已经包含在<see cref="T:Net.Remote.IRemote"/>中的函数，不再这里定义。
+            <para></para>
+            通常这些函数都是业务逻辑需要用到的函数，并且与网络协议无关。
+            这个类起到一个必要实现函数列表备忘作用。
+            <para></para>
+            Lenght(总长度，包含自身报头) [int] [4] + RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]
+            </summary>
+            <remarks>为了防止冒泡效应，只定义抽象函数，声明极少数字段。
+            <para></para>
+            <see cref="M:Megumin.Remote.RemoteBase.TryDeserialize(System.Int32,System.Buffers.ReadOnlySequence{System.Byte}@,System.Object@,System.Object)"/>
+            没有设计成扩展函数或者静态函数是方便子类重写。
+            <para/> 
+            Q：异步方法会不会延长声明周期，导致对象永不销毁？
+            A：存疑，感觉应该不会，需要测试。异步调用会注册到IOCP线程池中。如果异步接收没收到0字节或者异常，那么对象会一直活着。
+            </remarks>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.#cctor">
+            <summary>
+            究竟要不要初始化内嵌消息.
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.RemoteBase.Logger">
+            <summary>
+            记录器
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.OnDisconnect(System.Net.Sockets.SocketError,Megumin.Remote.ActiveOrPassive)">
+            <summary>
+            当网络连接已经断开
+            <para>todo 这个函数没有处理线程转换</para>
+            </summary>
+            <param name="error"></param>
+            <param name="activeOrPassive">主动断开还是被动断开</param>
+            <remarks>主要用于通知外部停止继续发送，在这个函数被动调用前，允许Send，在这个函数调用后，不在允许Send</remarks>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.PostDisconnect(System.Net.Sockets.SocketError,Megumin.Remote.ActiveOrPassive)">
+            <summary>
+            断开连接之后
+            <para>todo 这个函数没有处理线程转换</para>
+            </summary>
+            /// <param name="error"></param>
+            <param name="activeOrPassive">主动断开还是被动断开</param>
+            <remarks>可以用于触发重连，并将现有发送缓冲区转移到心得连接中</remarks>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.TrySerialize(System.Buffers.IBufferWriter{System.Byte},System.Int32,System.Object,System.Object)">
+            <summary>
+            序列化消息
+            <para></para>
+            Lenght(总长度，包含自身报头) [int] [4] 长度由writer外部自动封装，这里不用处理。
+            </summary>
+            <param name="writer"></param>
+            <param name="rpcID"></param>
+            <param name="message"></param>
+            <param name="options"></param>
+            <returns></returns>
+            <remarks>只处理 RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.TrySerialize(System.Buffers.IBufferWriter{System.Byte},System.Int32,System.Buffers.ReadOnlySequence{System.Byte}@,System.Object)">
+            <summary>
+            序列化消息，转发用。转发是重写RPC 和 CMD，其他保持不动。
+            </summary>
+            <param name="writer"></param>
+            <param name="rpcID"></param>
+            <param name="sequence">MessageID + 正文序列</param>
+            <param name="options"></param>
+            <returns></returns>
+            <remarks> RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.TryDeserialize(System.Int32,System.Buffers.ReadOnlySequence{System.Byte}@,System.Object@,System.Object)">
+            <summary>
+            尝试反序列化
+            </summary>
+            <param name="messageID"></param>
+            <param name="byteSequence"></param>
+            <param name="message"></param>
+            <param name="options"></param>
+            <returns></returns>
+            <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.Send(System.Int32,System.Object,System.Object)">
+            <summary>
+            发送rpcID和消息
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.RemoteBase.Post2ThreadScheduler">
+            <summary>
+            默认关闭线程转换<see cref="M:Megumin.Remote.MessageThreadTransducer.Update(System.Double)"/>
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.UseThreadSchedule(System.Int32,System.Int16,System.Int32,System.Object)">
+            <summary>
+            是否使用<see cref="T:Megumin.Remote.MessageThreadTransducer"/>
+            <para>精确控制各个消息是否切换到主线程。</para>
+            <para>用于处理在某些时钟精确的且线程无关消息时跳过轮询等待。</para>
+            例如：同步两个远端时间戳的消息。
+            </summary>
+            <param name="rpcID"></param>
+            <param name="cmd"></param>
+            <param name="messageID"></param>
+            <param name="message"></param>
+            <returns></returns>
+            <remarks>在Unity中也可以重写这个函数，判断调用线程是不是unity主线程，如果是则不需要转化线程</remarks>
+        </member>
+        <member name="F:Megumin.Remote.RemoteBase.NullResult">
+            <summary>
+            返回一个空对象，在没有返回时使用。同步完成。
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.OnReceive(System.Int16,System.Int32,System.Object)">
+            <summary>
+            通常用户在这里处理收到的消息
+            </summary>
+            <param name="cmd"></param>
+            <param name="messageID"></param>
+            <param name="message"></param>
+            <returns></returns>
+            <remarks>含有远程返回的rpc回复消息会被直接通过回调函数发送到异步调用处，不会触发这里
+            <para/> 这个函数不要定义在<see cref="T:Net.Remote.IReceiveMessage"/>里，
+            由于具体业务逻辑不同，这个函数的签名可能有很多中变化，不能标准化。
+            <para/> 既然不能标准化，所以也不能声明委托事件，会导致控制流更加复杂。
+            </remarks>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.DeserializeSuccess(System.Int32,System.Int16,System.Int32,System.Object)">
+            <summary>
+            解析消息成功
+            </summary>
+            <param name="rpcID"></param>
+            <param name="cmd"></param>
+            <param name="messageID"></param>
+            <param name="message"></param>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.ProcessBody(System.Buffers.ReadOnlySequence{System.Byte}@,System.Object)">
+            <summary>
+            处理一个完整的消息包，未解析报头
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.RemoteBase.UseByteArrayOnDeserializeError">
+            <summary>
+            反序列化失败时，是否将直接字节数组传递到上层。
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.ProcessBody(System.Buffers.ReadOnlySequence{System.Byte}@,System.Object,System.Int32,System.Int16,System.Int32)">
+            <summary>
+            处理一个完整的消息包，已分离报头
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.RpcRemote">
+            <summary>
+            支持Rpc功能的
+            <para/>优化了发送逻辑，使用一个异步模式取代了一个底层泛型。
+            <para/>Rpcpool类型可以确定，提高了效率。
+            <para/>层次划分更加明确。
+            <para/>
+            没有设计成扩展函数或者静态函数是方便子类重写。
+            </summary>
+            <remarks>一些与RPC支持相关的函数写在这里。</remarks>
+        </member>
+        <member name="M:Megumin.Remote.RpcRemote.DiversionProcess(System.Int32,System.Int16,System.Int32,System.Object)">
+            <summary>
+            分流普通消息和RPC回复消息
+            </summary>
+            <param name="rpcID"></param>
+            <param name="cmd"></param>
+            <param name="messageID"></param>
+            <param name="message"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Remote.RpcRemote.Push2MessageThreadTransducer(System.Int32,System.Int16,System.Int32,System.Object)">
+            <summary>
+            推到线程转化器中
+            </summary>
+            <param name="rpcID"></param>
+            <param name="cmd"></param>
+            <param name="messageID"></param>
+            <param name="message"></param>
+            <remarks>独立一个函数，不然<see cref="M:Megumin.Remote.MessageThreadTransducer.Push(System.Int32,System.Int16,System.Int32,System.Object,Megumin.Remote.IDealMessageable)"/>继承者无法调用</remarks>
+        </member>
+        <member name="T:Megumin.Remote.Rpc.RcpTimeoutException">
+            <summary>
+            rpc超时异常
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.Rpc.RpcCallbackPool`3">
+            <summary>
+            Rpc回调注册池
+            每个session大约每秒30个包，超时时间默认为30秒；
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.Rpc.RpcCallbackPool`3.DefaultTimeout">
+            <summary>
+            默认30000ms
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.Rpc.RpcCallbackPool`3.CheckKeyConflict(`0)">
+            <summary>
+            rpcID冲突检查
+            </summary>
+            <param name="key"></param>
+        </member>
+        <member name="M:Megumin.Remote.Rpc.RpcCallbackPool`3.CreateCheckTimeout(`0,System.Object)">
+            <summary>
+            创建超时检查
+            </summary>
+            <param name="rpcID"></param>
+            <param name="options"></param>
+        </member>
+        <member name="M:Megumin.Remote.Rpc.RpcCallbackPool`3.CreateCheckTimeout(`0,System.Int32)">
+            <summary>
+            创建超时检查
+            </summary>
+            <param name="rpcID"></param>
+            <param name="timeOutMilliseconds"></param>
+        </member>
+        <member name="T:Megumin.Remote.Rpc.ObjectRpcCallbackPool">
+            <summary>
+            <inheritdoc/>
+            </summary>
+            <remarks>
+            <para/>Q:为什么用IMiniAwaitable 而不是ValueTask?
+            <para/>A:开始时这个类直接和Send耦合，需要返回值一致，现在没有修改必要。性能要比ValueTask高那么一丁点。
+            </remarks>
+        </member>
+        <member name="M:Megumin.Remote.Rpc.ObjectRpcCallbackPool.GetRpcID">
+            <summary>
+            原子操作 取得RpcId,发送方的的RpcID为正数，回复的RpcID为负数，正负一一对应
+            <para>0,int.MinValue 为无效值</para> 
+            <seealso cref="M:Megumin.Remote.RpcRemote.DiversionProcess(System.Int32,System.Int16,System.Int32,System.Object)"/>
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Remote.Rpc.IRpcCallback`1.OnSendSafeAwaitException(System.Object,System.Object,System.Action{System.Exception},System.Exception)">
+            <summary>
+             <see cref="M:Net.Remote.ISendCanAwaitable.SendSafeAwait``1(System.Object,System.Action{System.Exception},System.Object)"/>收到obj response后，如果是异常，处理异常的逻辑。
+            </summary>
+            <param name="request"></param>
+            <param name="response"></param>
+            <param name="onException"></param>
+            <param name="finnalException"></param>
+        </member>
+        <member name="T:Megumin.Remote.Rpc.RpcLayer">
+            <summary>
+            独立的Rpc层
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.Rpc.RpcLayer.TryInput(System.Int32,System.Object)">
+            <summary>
+            如果rpcID为负数，是rpc返回回复，返回true,此消息由RpcLayer处理。
+            <para> 否则返回false，RpcLayer忽略此消息。</para>
+            </summary>
+            <param name="rpcID"></param>
+            <param name="message"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Remote.Rpc.RpcLayer.ValidResult``1(System.Object,System.Object,System.Exception,System.Object)">
+            <summary>
+            验证resp空引用和返回类型,补充和转化异常
+            </summary>
+            <typeparam name="RpcResult"></typeparam>
+            <param name="request"></param>
+            <param name="resp"></param>
+            <param name="ex"></param>
+            <param name="options"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Remote.Rpc.RpcLayer.InnerRpcSend(System.Object,Megumin.Remote.Rpc.IRpcCallback{System.Int32},System.Object)">
+            <summary>
+            内部Rpc发送，泛型在这一步转为非泛型。
+            </summary>
+            <param name="message"></param>
+            <param name="callback"></param>
+            <param name="options"></param>
+            <returns></returns>
+            <remarks>
+            异步后续调用TaskPool线程或者MessageThreadTransducer线程,
+            <see cref="M:Megumin.Remote.Rpc.RpcCallbackPool`3.TrySetResult(`0,`1)"/>
+            <see cref="M:System.Threading.Tasks.MiniTask`1.SetResult(`0)"/>
+            </remarks>
+        </member>
+        <member name="T:Megumin.Remote.TcpRemote">
+            <summary>
+            
+            </summary>
+            <remarks>消息报头结构：
+            Lenght(总长度，包含自身报头) [int] [4] + RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
+        </member>
+        <member name="T:Megumin.Remote.TcpRemote.Disconnector">
+            <summary>
+            断开器
+            file:///E:\Git\Megumin.Net\Doc\如何正确处理网络断开.md
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemote.Disconnector.OnRecv0">
+            <summary>
+            收到0字节 表示远程主动断开连接
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemote.Disconnector.OnRecvError(System.Net.Sockets.SocketError)">
+            <summary>
+            接收出现错误
+            </summary>
+            <param name="error"></param>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemote.Disconnector.OnSendError(System.Net.Sockets.SocketError)">
+            <summary>
+            发送出现错误
+            </summary>
+            <param name="error"></param>
+        </member>
+        <member name="F:Megumin.Remote.TcpRemote.WorkState.Stoped">
+            <summary>
+            所有工作停止，不允许Push到发送队列。
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.TcpRemote.WorkState.StopingAll">
+            <summary>
+            正在停止,不允许Push到发送队列，底层停止发送。
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.TcpRemote.WorkState.StopingWaitQueueSending">
+            <summary>
+            正在停止,不允许Push到发送队列，但底层仍可能正在发送。
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.TcpRemote.WorkState.NotStart">
+            <summary>
+            从未尝试开始
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.TcpRemote.WorkState.Working">
+            <summary>
+            发送接收都正常
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.TcpRemote.RemoteState">
+            <summary>
+            当前状态,使用此标记控制 底层发送 底层接收 接收数据处理三个循环正确退出。
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemote.#ctor">
+            <summary>
+            Mono/IL2CPP 请使用中使用<see cref="M:Megumin.Remote.TcpRemote.#ctor(System.Net.Sockets.AddressFamily)"/>
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemote.#ctor(System.Net.Sockets.AddressFamily)">
+            <remarks>
+            <para>SocketException: Protocol option not supported</para>
+            http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
+            </remarks>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemote.SetSocket(System.Net.Sockets.Socket,System.Boolean)">
+            <summary>
+            设置Client Socket
+            </summary>
+            <param name="socket"></param>
+            <param name="reconnectForce"></param>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemote.StartWork">
+            <summary>
+            开始发送接收
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.TcpRemote._connectlock">
+            <summary>
+            连接保护器，防止多次调用
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.TcpRemote.IsConnecting">
+            <summary>
+            正在连接
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.TcpRemote.SendPipe">
+            <summary>
+            发送管道
+            </summary>
+            <remarks>发送管道没有涵盖所有案例，尽量不要给外界访问</remarks>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemote.ReadSendPipe(Megumin.Remote.TcpSendPipe)">
+            <summary>
+            开始读取发送管道，使用Socket发送消息
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.TcpRemote.Pipe">
+            <summary>
+            不使用线程同步上下文，全部推送到线程池调用。useSynchronizationContext 用来保证await前后线程一致。
+            </summary>
+            <remarks>
+            <para/>useSynchronizationContext 如果为true的话，
+            <para/>那么pipe read write 异步后续只会在调用线程执行。
+            <para/>构造 连接 StartWork调用链通常导致pipe异步后续在unity中会被锁定在主线程。
+            <para/>https://source.dot.net/#System.IO.Pipelines/System/IO/Pipelines/PipeAwaitable.cs,115
+            </remarks>
+        </member>
+        <member name="P:Megumin.Remote.TcpRemote.IsReceiving">
+            <summary>
+            当前socket是不是在接收。
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemote.FillRecvPipe(System.IO.Pipelines.PipeWriter)">
+            <summary>
+            从Socket接收
+            </summary>
+            <param name="pipeWriter"></param>
+        </member>
+        <member name="P:Megumin.Remote.TcpRemote.IsDealReceiving">
+            <summary>
+            正在处理消息
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemote.StartReadRecvPipe(System.IO.Pipelines.PipeReader)">
+            <summary>
+            开始读取接收到的数据
+            </summary>
+            <param name="pipeReader"></param>
+        </member>
+        <member name="P:Megumin.Remote.TcpRemote.LastReceiveTimeFloat">
+            <remarks>留给Unity用的。在unity中赋值</remarks>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemoteListener.ListenAsync``1(System.Func{``0})">
+            <summary>
+            创建TCPRemote并开始接收
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Megumin.Remote.ISendBlock">
+            <summary>
+            要发送的字节块
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.ISendBlock.SendSuccess">
+            <summary>
+            发送成功
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.ISendBlock.NeedToResend">
+            <summary>
+            当前消息需要重写发送
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.ISendBlock.SendMemory">
+            <summary>
+            要发送的内存块
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.ISendBlock.SendSegment">
+            <summary>
+            要发送的内存块
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.IWriter">
+            <summary>
+            消息字节写入器
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.IWriter.Discard">
+            <summary>
+            放弃发送，废弃当前写入器
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.IWriter.PackSuccess">
+            <summary>
+            消息打包成功
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.TcpSendPipe">
+            <summary>
+            Tcp发送管道 存在并发/异步函数重入问题
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.TcpSendPipe.Writer.index">
+            <summary>
+            当前游标位置
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.TcpSendPipe.Writer.Ensure(System.Int32)">
+            <summary>
+            确保当前buffer足够大
+            </summary>
+            <param name="sizeHint"></param>
+        </member>
+        <member name="M:Megumin.Remote.TcpSendPipe.Writer.NeedToResend">
+            <summary>
+            TODO: BUG,这里需要重新发送的消息应该防止开始位置保证消息的有序性.要保证ReadNext时返回这个消息.
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.TcpSendPipe.sendFailQueue">
+            <summary>
+            发送失败队列
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.TcpSendPipe.GetWriter">
+            <summary>
+            取得一个可用写入器
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Remote.TcpSendPipe.ReadNext">
+            <summary>
+            取得下一个待发送消息。
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="F:Megumin.Remote.UdpRemoteMessageDefine.LLMsg">
+            <summary>
+            低级别消息，没有rpc等高级功能，不经过Kcp等附加协议，直接处理
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.UdpAuthRequest">
+            <summary>
+            Udp认证请求
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.UdpAuthResponse">
+            <summary>
+            Udp认证应答
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.UdpRemote.DealAuthBuffer(System.Net.IPEndPoint,System.Byte[])">
+            <summary>
+            处理认证
+            </summary>
+            <param name="endPoint"></param>
+            <param name="recvbuffer"></param>
+        </member>
+        <member name="M:Megumin.Remote.UdpRemote.Writer.Pop">
+            <summary>
+            弹出一个序列化完毕的缓冲。
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Remote.UdpRemote.SocketSend(System.Buffers.IMemoryOwner{System.Byte},System.Int32)">
+            <summary>
+            网络层实际发送数据位置
+            </summary>
+            <param name="buffer"></param>
+            <param name="lenght"></param>
+        </member>
+        <member name="M:Megumin.Remote.UdpRemote.ClientSideRecv">
+            <summary>
+            主动侧需要手动开启接收，被动侧由listener接收然后分发
+            </summary>
+            <param name="port"></param>
+        </member>
+        <member name="M:Megumin.Remote.UdpRemote.ServerSideRecv(System.Net.IPEndPoint,System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            主动侧需要手动开启接收，被动侧由listener接收然后分发
+            </summary>
+            <param name="endPoint"></param>
+            <param name="buffer"></param>
+            <param name="offset"></param>
+            <param name="count"></param>
+        </member>
+        <member name="T:Megumin.Remote.UdpRemoteListener">
+            <summary>
+            2018年时IPV4 IPV6 udp中不能混用，不知道现在情况
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.UdpRemoteListener.UdpReceives">
+            <remarks>
+            Q:要不要用同步队列，预计有多个线程入队，只有一个线程出队，会不会有线程安全问题？
+            </remarks>
+        </member>
+        <member name="F:Megumin.Remote.UdpRemoteListener.SendSockets">
+             <summary>
+             服务端使用20个Socket向客户端发送.
+             <para/> TODO NAT情况复杂，可能无法发送 https://www.cnblogs.com/mq0036/p/4644776.html
+             <para/> (1)完全Cone NAT 无论目标地址和端口怎样，每次都把该私有源IP地址/端口映射到同一个全局源地址/端口；外网的任何主机都可以发送报文到该映射的全局地址而访问到该内部主机。路由器的静态地址映射就是属于这种。
+            (2)限制Cone NAT 地址/端口映射的情况同完全Cone NAT的，但外网的主机要访问内网主机，该内网主机必须先发送过报文给该外网主机的地址。
+            (3)端口限制Cone NAT 地址/端口映射情况同完全Cone NAT的，但外网主机要访问内网主机，该内网主机必须先发送过报文给该外网主机的地址和端口。大多数路由器的NAPT就是属于这种情况。本文后面论及的Cone NAT也是指这种情况。
+            (4)Symmetric NAT 对不同的目标地址/端口，源私有地址映射到源全局地址不变，但是映射的全局端口会改变。外网主机必须先收到过内网主机的报文，才能访问到该内网主机。一些路由器和防火墙产品的NAT就是属于这种情况。
+             <para/> 1,2是没问题的，3通常需要客户端先发送一个消息到发送端口，不然SendSockets由于和listen端口不一致，会被NAT丢弃消息。4则完全没有办法。
+             需要一个测试方法测试连接是否支持SendSockets发送
+             最开始可以先用listen端口发送，异步测试是否支持，等到能支持时转到SendSockets发送。，不支持必须使用 listen端口发送。
+             </summary>
+        </member>
+        <member name="M:Megumin.Remote.UdpRemoteListener.AcceptAsync">
+            <remarks>
+            Q：如果同时调用多次ReceiveAsync有没有实际意义？能不能达到加速接收的目的？
+            </remarks>
+        </member>
+        <member name="M:Megumin.Remote.UdpRemoteListener.Deal">
+            <summary>
+            接收和处理分开
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.ActiveOrPassive">
+            <summary>
+            主动还是被动
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.ActiveOrPassive.Active">
+            <summary>
+            主动的
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.ActiveOrPassive.Passive">
+            <summary>
+            被动的
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.IMeguminRemoteLogger">
+            <summary>
+            记录器
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.IRemoteUID`1">
+            <summary>
+            事实上 无论UID是Int,long,还是string,都无法满足全部需求。当你需要其他类型是，请修改源码。
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.IRemoteUID`1.UID">
+            <summary>
+            预留给用户使用的ID，（用户自己赋值ID，自己管理引用，框架不做处理）
+            </summary>
+        </member>
+        <member name="T:System.Threading.Tasks.MiniTask`1">
+            <summary>
+            一个简单异步任务实现，特点是缓存任务不构造任务实例。
+            <para>不支持保持线程上下文功能,也就是异步后续的线程为<see cref="M:System.Threading.Tasks.MiniTask`1.SetResult(`0)"/>线程.</para>
+            如果任务没有完成访问<see cref="P:System.Threading.Tasks.MiniTask`1.Result"/>,会返回null而不是阻塞。这与Task不一致.
+            todo 使用 IValueTaskSource 优化
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="F:System.Threading.Tasks.MiniTask`1.State.Canceled">
+            <summary>
+            取消的
+            </summary>
+        </member>
+        <member name="P:System.Threading.Tasks.MiniTask`1.MaxCount">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:System.Threading.Tasks.MiniTask`1.Rent">
+            <summary>
+            池化,await 一次,并complete一次后自动回池,谨慎使用,不要保存task.拿到后立刻转交或者await.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:System.Threading.Tasks.MiniTask`1.AlreadyEnterAsync">
+            <summary>
+            是否进入异步挂起阶段, <see langword="await"/>关键字是否已经被执行.
+            </summary>
+        </member>
+        <member name="P:System.Threading.Tasks.MiniTask`1.IsCompleted">
+            <inheritdoc/>
+            <remarks><see cref="F:System.Threading.Tasks.MiniTask`1.State.Canceled"/> 不能算完成状态，
+            <para></para>否则 先CancelWithNotExceptionAndContinuation，之后await 
+            <para></para>会触发异步状态机同步完成，会直接取结果，进行异步后续，无法起到中断效果。
+            <para></para>一定要 进入if (!awaiter.IsCompleted) 分支走一下UnsafeOnCompleted 触发回池。后续优化</remarks>
+        </member>
+        <member name="P:System.Threading.Tasks.MiniTask`1.Result">
+            <summary>
+            请不要同步访问Result。即使同步完成也应该使用await 关键字。同步访问可能无法取得正确的值，或抛出异常。
+            </summary>
+        </member>
+        <member name="M:System.Threading.Tasks.MiniTask`1.OnCompleted(System.Action)">
+            <summary>
+            无需实现
+            </summary>
+            <param name="continuation"></param>
+        </member>
+        <member name="T:System.Threading.Tasks.IMiniAwaitable">
+            <summary>
+            可异步等待的
+            <para>不支持ContinueWith，建议将任何ContinueWith转化为await。ContinueWith的复杂度很高，我写不出绝对安全的实现。</para>
+            https://www.codeproject.com/Articles/1018071/ContinueWith-Vs-await#
+            </summary>
+        </member>
+        <member name="P:System.Threading.Tasks.IMiniAwaitable.IsCompleted">
+            实现需要处理多少情况
+            1 异步调用  同步调用
+            2 异步完成  同步完成
+            3 成功完成  失败完成 （没有取消功能，只有超时）
+            以上彼此正交
+            异步调用 UnsafeOnCompleted  SetResult 先后调用顺序
+            记住 await 时才调用 UnsafeOnCompleted，认为 await == UnsafeOnCompleted == 将下文代码包装成回调函数注册到Task中即可。
+            async == AsyncTaskMethodBuilder.Create().Task,并在方法末尾SetResult。async是隐藏的生成一个Task/ValueTask。
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:System.Threading.Tasks.IMiniAwaitable.UnsafeOnCompleted(System.Action)">
+            <summary>
+            
+            </summary>
+            <param name="continuation"></param>
+        </member>
+        <member name="M:System.Threading.Tasks.IMiniAwaitable.OnCompleted(System.Action)">
+            <summary>
+            
+            </summary>
+            <param name="continuation"></param>
+        </member>
+        <member name="M:System.Threading.Tasks.IMiniAwaitable.CancelWithNotExceptionAndContinuation">
+            <summary>
+            通过此方法结束一个await 而不触发后续方法，也不触发异常，并释放所有资源
+            主要针对某些时候持有Task,却不await
+            </summary>
+        </member>
+        <member name="M:System.Threading.Tasks.IMiniAwaitable.ValidateEnd">
+            <summary>
+            验证是否完成,在GetResult时调用,应该保证如果未完成时阻塞.
+            </summary>
+        </member>
+        <member name="P:System.Threading.Tasks.MiniTaskAwaiter.IsCompleted">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:System.Threading.Tasks.MiniTaskAwaiter.GetResult">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:System.Threading.Tasks.MiniTaskAwaiter.UnsafeOnCompleted(System.Action)">
+            <summary>
+            当没有同步完成时，向CanAwaiter注册回调，CanAwaite会将回调保存起来，用于在完成时调用。
+            </summary>
+            <param name="continuation"></param>
+        </member>
+        <member name="T:System.Threading.Tasks.IMiniAwaitable`1">
+            <summary>
+            <inheritdoc/>
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="P:System.Threading.Tasks.IMiniAwaitable`1.Result">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:System.Threading.Tasks.IMiniAwaitable`1.SetResult(`0)">
+            <summary>
+            通过设定结果值触发后续方法
+            </summary>
+            <param name="result"></param>
+        </member>
+        <member name="T:System.Threading.Tasks.MiniTaskAwaiter`1">
+            <summary>
+            
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="P:System.Threading.Tasks.MiniTaskAwaiter`1.IsCompleted">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:System.Threading.Tasks.MiniTaskAwaiter`1.GetResult">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:System.Threading.Tasks.MiniTaskAwaiter`1.UnsafeOnCompleted(System.Action)">
+            <summary>
+            当没有同步完成时，向CanAwaiter注册回调，CanAwaite会将回调保存起来，用于在完成时调用。
+            </summary>
+            <param name="continuation"></param>
+        </member>
+        <member name="T:System.Threading.Tasks.MiniTaskBuilder`1">
+            <summary>
+            TODO
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="T:ICanAwaitableEx_D248AE7ECAD0420DAF1BCEA2801012FF">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:ICanAwaitableEx_D248AE7ECAD0420DAF1BCEA2801012FF.GetAwaiter(System.Threading.Tasks.IMiniAwaitable)">
+            <summary>
+            
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="canAwaitable"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ICanAwaitableEx_D248AE7ECAD0420DAF1BCEA2801012FF.GetAwaiter``1(System.Threading.Tasks.IMiniAwaitable{``0})">
+            <summary>
+            
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="canAwaitable"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F">
+            <summary>
+            小端
+            </summary>
+        </member>
+        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.WriteTo(System.Int32,System.Span{System.Byte})">
+            <summary>
+            
+            </summary>
+            <param name="num"></param>
+            <param name="span"></param>
+            <returns>offset</returns>
+        </member>
+        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Span{System.Byte},System.Int32)">
+            <summary>
+            写入一个int
+            </summary>
+            <param name="span"></param>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Span{System.Byte},System.Int16)">
+            <summary>
+            写入一个short
+            </summary>
+            <param name="span"></param>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.ReadGuid(System.ReadOnlySpan{System.Byte})">
+            <summary>
+            todo 优化alloc
+            </summary>
+            <param name="span"></param>
+            <returns></returns>
+        </member>
+        <member name="T:InterlockedID`1">
+            <summary>
+            线程安全ID生成器
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+    </members>
+</doc>

@@ -39,6 +39,12 @@
     <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
     <ProjectReference Include="..\NetRemoteStandard\NetRemoteStandard.csproj" />
   </ItemGroup>
+  
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition=" '$(TargetFramework)' == 'netstandard2.1'">
+    <Exec Command="xcopy bin\$(Configuration)\netstandard2.1\*.dll $(SolutionDir)UnityPackage\Packages\Net\Plugins\ /s /y /d" />
+    <Exec Command="xcopy bin\$(Configuration)\netstandard2.1\*.pdb $(SolutionDir)UnityPackage\Packages\Net\Plugins\ /s /y /d" />
+    <Exec Command="xcopy bin\$(Configuration)\netstandard2.1\*.xml $(SolutionDir)UnityPackage\Packages\Net\Plugins\ /s /y /d" />
+  </Target>
 
   <!--以下是项目通用配置-->
 

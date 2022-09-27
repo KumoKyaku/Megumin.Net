@@ -1,0 +1,18 @@
+{
+    "name": "Megumin.GameFramework.Net.Editor",
+    "rootNamespace": "Megumin.GameFramework.Net.Editor",
+    "references": [
+        "Megumin.GameFramework.Net"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

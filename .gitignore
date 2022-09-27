@@ -14,7 +14,7 @@ ExportedObj/
 .consulo/
 Remote/Properties/PublishProfiles/
 packages/
-!UnityNetTest/Packages
+!UnityPackage/Packages
 
 # 2021年5月9日
 
@@ -79,7 +79,3 @@ sysinfo.txt
 #/*/*.zip
 
 
-
-
-
-UnityNetTest/Assets/Plugins/
