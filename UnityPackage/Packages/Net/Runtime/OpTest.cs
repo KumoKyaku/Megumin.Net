@@ -2,7 +2,9 @@ using Megumin.Remote;
 using Megumin.Remote.Simple;
 using System;
 using System.Net;
+using System.Threading.Tasks;
 using TMPro;
+using UnityEditor.PackageManager;
 using UnityEngine;
 
 public class OpTest : MonoBehaviour
@@ -21,7 +23,7 @@ public class OpTest : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        Megumin.Remote.MessageThreadTransducer.Update(Time.deltaTime);
     }
 
     private TcpRemoteListener listener;
@@ -61,7 +63,7 @@ public class OpTest : MonoBehaviour
         Console.text = "";
     }
 
-    private EchoTcp client;
+    private Remote client;
     public void ConnectTarget()
     {
         int port = 54321;
@@ -69,8 +71,8 @@ public class OpTest : MonoBehaviour
         IPAddress targetIP = IPAddress.Loopback;
         IPAddress.TryParse(TargetIP.text, out targetIP);
 
-        client = new EchoTcp();
-
+        client = new Remote();
+        client.Test = this;
         Connect(port, targetIP);
     }
 
@@ -101,5 +103,21 @@ public class OpTest : MonoBehaviour
         Log($"发送：{send}");
         var resp = await client.Send<string>(SendMessageText.text);
         Log($"返回：{resp}");
+    }
+
+    public class Remote : TcpRemote
+    {
+        public OpTest Test { get; internal set; }
+
+        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        {
+            Test.Log($"接收：{message}");
+            return base.OnReceive(cmd, messageID, message);
+        }
+
+        protected override bool UseThreadSchedule(int rpcID, short cmd, int messageID, object message)
+        {
+            return true;
+        }
     }
 }

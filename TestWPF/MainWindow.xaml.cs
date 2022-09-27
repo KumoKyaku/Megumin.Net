@@ -166,6 +166,7 @@ public class TestRemote : TcpRemote
                     log.Content += $"\n 收到{nameof(TestPacket2)} value:{packet2.Value}";
                     break;
                 default:
+                    log.Content += $"\n 收到{message.GetType().Name} value:{message}";
                     break;
             }
         });

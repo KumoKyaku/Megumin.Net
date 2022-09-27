@@ -16,7 +16,7 @@ namespace Megumin.Remote
     public class Heartbeat : IMeguminFormater
     {
         public static Heartbeat Default { get; } = new Heartbeat();
-        public int MessageID { get; } = MSGID.HeartbeatsMessageID;
+        public int MessageID { get; } = MSGID.Heartbeats;
         public Type BindType { get; } = typeof(Heartbeat);
 
         public void Serialize(IBufferWriter<byte> writer, object value, object options = null)

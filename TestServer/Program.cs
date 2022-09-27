@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using static TestConfig;
 using System.Security.Cryptography;
+using Megumin.Message;
 
 namespace TestServer
 {
@@ -62,8 +63,6 @@ namespace TestServer
         const bool UsePost2ThreadScheduler = false;
         static void Main(string[] args)
         {
-            MessageLUT.Regist(new TestPacket1());
-            MessageLUT.Regist(new TestPacket2());
             Console.WriteLine($"服务器/Server----UsePost2ThreadScheduler:{UsePost2ThreadScheduler}");
             ListenAsync();
             Console.WriteLine($"客户端配置 RemoteCount:{RemoteCount}   MessageCount:{MessageCount}   TotalMessageCount:{RemoteCount * (long)MessageCount}");

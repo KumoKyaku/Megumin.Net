@@ -92,6 +92,6 @@ namespace Megumin.Remote
         /// <summary>
         /// 心跳包ID，255好识别，buffer[10-13]=[255,0,0,0]
         /// </summary>
-        public const int HeartbeatsMessageID = 255;
+        public const int Heartbeats = 255;
     }
 }

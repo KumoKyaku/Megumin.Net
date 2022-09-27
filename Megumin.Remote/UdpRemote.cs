@@ -205,7 +205,7 @@ namespace Megumin.Remote
         //*********************************心跳处理
         protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
-            if (messageID == MSGID.HeartbeatsMessageID)
+            if (messageID == MSGID.Heartbeats)
             {
                 return new ValueTask<object>(message);
             }

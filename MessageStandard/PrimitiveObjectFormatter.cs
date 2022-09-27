@@ -496,4 +496,70 @@ namespace Megumin.Message
         #endregion
     }
 
+    internal class DatetimeFormatter : IMeguminFormater<DateTime>
+    {
+        public void Serialize(IBufferWriter<byte> writer, DateTime value, object options = null)
+        {
+            var span = writer.GetSpan(8);
+            span.Write(value.ToBinary());
+            writer.Advance(8);
+        }
+
+        public int MessageID => MSGID.DateTime;
+        public Type BindType => typeof(DateTime);
+
+        public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
+        {
+            Serialize(writer, (DateTimeOffset)value, options);
+        }
+
+        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        {
+            return DateTime.FromBinary(byteSequence.ReadLong());
+        }
+    }
+
+    internal class DatetimeOffsetFormatter : IMeguminFormater<DateTimeOffset>
+    {
+        public void Serialize(IBufferWriter<byte> writer, DateTimeOffset value, object options = null)
+        {
+            var span = writer.GetSpan(8);
+            span.Write(value.ToUnixTimeMilliseconds());
+            writer.Advance(8);
+        }
+
+        public int MessageID => MSGID.DateTimeOffset;
+        public Type BindType => typeof(DateTimeOffset);
+
+        public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
+        {
+            Serialize(writer, (DateTimeOffset)value, options);
+        }
+
+        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        {
+            return DateTimeOffset.FromUnixTimeMilliseconds(byteSequence.ReadLong());
+        }
+    }
+
+    internal class ByteArrayFormatter : IMeguminFormater<byte[]>
+    {
+        public void Serialize(IBufferWriter<byte> writer, byte[] value, object options = null)
+        {
+            writer.Write(value);
+        }
+
+        public int MessageID => MSGID.ByteArray;
+        public Type BindType => typeof(byte[]);
+
+        public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
+        {
+            Serialize(writer, (byte[])value, options);
+        }
+
+        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        {
+            return byteSequence.ToArray();
+        }
+    }
 }

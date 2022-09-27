@@ -100,6 +100,9 @@ namespace Megumin.Remote
             Regist(new FloatFormatter());
             Regist(new LongFormatter());
             Regist(new DoubleFormatter());
+            Regist(new DatetimeFormatter());
+            Regist(new DatetimeOffsetFormatter());
+            Regist(new ByteArrayFormatter());
 
             //注册内置消息
             Regist(new TestPacket1());

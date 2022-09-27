@@ -58,6 +58,15 @@
             <remarks>返回值不考虑泛型，泛型虽然能避免值类型消息装箱，但是调用时要使用反射去转化为
             对应类型接口，在rpc回调转型处仍然会有类型匹配失败问题，得不偿失。</remarks>
         </member>
+        <member name="M:Megumin.Remote.IMeguminFormater`1.Serialize(System.Buffers.IBufferWriter{System.Byte},`0,System.Object)">
+            <summary>
+            序列化函数
+            </summary>
+            <param name="writer"></param>
+            <param name="value"></param>
+            <param name="options"></param>
+            <remarks>序列化函数不在提供序列化多少字节，需要在writer中自己统计</remarks>
+        </member>
         <member name="T:Megumin.Remote.IMeguminSelfFormater">
             <summary>
             对象自身就是序列化器，是MessageLut没注册时的fallback。
@@ -209,15 +218,125 @@
             错误的类型，表示框架未记录的类型。不是void，也不是任何异常ErrorType。
             </summary>
         </member>
+        <member name="F:Megumin.Remote.MSGID.TypeToJumpCode">
+            <summary>
+            https://github.com/neuecc/MessagePack-CSharp/blob/ffc18319670d49246db1abbd05c404a820280776/src/MessagePack.UnityClient/Assets/Scripts/MessagePack/Formatters/PrimitiveObjectFormatter.cs#L16
+            </summary>
+        </member>
         <member name="F:Megumin.Remote.MSGID.UdpConnectMessageID">
             <summary>
             Udp握手连接使用的消息ID编号
             </summary>
         </member>
-        <member name="F:Megumin.Remote.MSGID.HeartbeatsMessageID">
+        <member name="F:Megumin.Remote.MSGID.Heartbeats">
             <summary>
             心跳包ID，255好识别，buffer[10-13]=[255,0,0,0]
             </summary>
+        </member>
+        <member name="T:Megumin.Message.TestPacket1">
+            <summary>
+            序列化后长度为1024字节
+            </summary>
+        </member>
+        <member name="P:Megumin.Message.TestPacket1.MessageID">
+            <inheritdoc/>
+        </member>
+        <member name="T:Megumin.Message.TestPacket2">
+            <summary>
+            序列化后长度为1024字节
+            </summary>
+        </member>
+        <member name="P:Megumin.Message.TestPacket2.MessageID">
+            <inheritdoc/>
+        </member>
+        <member name="T:Megumin.Message.StringFormatter">
+            <summary>
+            内置UTF8 string 格式化器，性能低没有优化
+            </summary>
+        </member>
+        <member name="T:Megumin.Message.SpanByteExtension_37AAF334E75041368C6B47A256F0F93F">
+            <summary>
+            小端
+            </summary>
+        </member>
+        <member name="M:Megumin.Message.SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Int32,System.Span{System.Byte})">
+            <summary>
+            写入一个int
+            </summary>
+            <param name="num"></param>
+            <param name="span"></param>
+            <returns>offset</returns>
+        </member>
+        <member name="M:Megumin.Message.SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Span{System.Byte},System.Int32)">
+            <summary>
+            写入一个int
+            </summary>
+            <param name="span"></param>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Span{System.Byte},System.Int64)">
+            <summary>
+            写入一个long
+            </summary>
+            <param name="span"></param>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Int64,System.Span{System.Byte})">
+            <summary>
+            写入一个long
+            </summary>
+            <param name="span"></param>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Span{System.Byte},System.Single)">
+            <summary>
+            写入一个short
+            </summary>
+            <param name="span"></param>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Single,System.Span{System.Byte})">
+            <summary>
+            写入一个short
+            </summary>
+            <param name="span"></param>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Span{System.Byte},System.Double)">
+            <summary>
+            写入一个double
+            </summary>
+            <param name="span"></param>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Double,System.Span{System.Byte})">
+            <summary>
+            写入一个double
+            </summary>
+            <param name="span"></param>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Span{System.Byte},System.Int16)">
+            <summary>
+            写入一个short
+            </summary>
+            <param name="span"></param>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.ReadGuid(System.ReadOnlySpan{System.Byte})">
+            <summary>
+            todo 优化alloc
+            </summary>
+            <param name="span"></param>
+            <returns></returns>
         </member>
     </members>
 </doc>

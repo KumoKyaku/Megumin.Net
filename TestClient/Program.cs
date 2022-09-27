@@ -8,6 +8,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using static TestConfig;
+using Megumin.Message;
 
 public static class TestConfig
 {
@@ -26,8 +27,6 @@ namespace TestClient
     {
         static void Main(string[] args)
         {
-            MessageLUT.Regist(new TestPacket1());
-            MessageLUT.Regist(new TestPacket2());
             Console.WriteLine("客户端/Client");
             ConAsync();
             Console.ReadLine();

@@ -1,4 +1,5 @@
-﻿using Megumin.Remote;
+﻿using Megumin.Message;
+using Megumin.Remote;
 using Megumin.Remote.Simple;
 using Megumin.Remote.Test;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -58,9 +59,6 @@ namespace UnitTest
 
         public void EchoTest(IRemote remote)
         {
-            MessageLUT.Regist(new TestPacket1());
-            MessageLUT.Regist(new TestPacket2());
-
             TestPacket1 packet1 = new TestPacket1() { Value = 5645645 };
             var ret = remote.SendSafeAwait<TestPacket1>(packet1, 
                 options: SendOption.Never).ConfigureAwait(false)
