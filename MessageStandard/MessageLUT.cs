@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Megumin.Message;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
@@ -94,7 +95,7 @@ namespace Megumin.Remote
         static MessageLUT()
         {
             //注册基础类型
-            "tst".ToString();
+            Regist(new StringFormatter());
         }
 
         /// <summary>

@@ -89,7 +89,7 @@ namespace Megumin.Remote
                 lock (syncLock)
                 {
                     Ensure(sizeHint);
-                    return new Memory<byte>(buffer, index, sizeHint);
+                    return new Memory<byte>(buffer, index, buffer.Length - index);
                 }
             }
 
@@ -98,7 +98,7 @@ namespace Megumin.Remote
                 lock (syncLock)
                 {
                     Ensure(sizeHint);
-                    return new Span<byte>(buffer, index, sizeHint);
+                    return new Span<byte>(buffer, index, buffer.Length - index);
                 }
             }
 
@@ -109,7 +109,7 @@ namespace Megumin.Remote
             void Ensure(int sizeHint)
             {
                 var leftLength = buffer.Length - index;
-                if (leftLength >= sizeHint)
+                if (leftLength >= sizeHint && leftLength > 0)
                 {
                     //现有数组足够长；
                 }
