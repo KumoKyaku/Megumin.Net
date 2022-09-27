@@ -77,10 +77,12 @@ namespace Megumin.Remote
         /// 注册基础类型
         /// </summary>
         /// <param name="key"></param>
-        public static void RegistBasicType(KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        public static void RegistBasicType(KeyAlreadyHave key = KeyAlreadyHave.Replace)
         {
             Regist(new DefaultFormater<string>(MSGID.StringID), key);
             Regist(new DefaultFormater<int>(MSGID.IntID), key);
+            Regist(new DefaultFormater<long>(MSGID.LongID), key);
+            Regist(new DefaultFormater<float>(MSGID.FloatID), key);
             Regist(new DefaultFormater<double>(MSGID.DoubleID), key);
         }
     }

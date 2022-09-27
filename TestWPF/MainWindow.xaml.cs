@@ -133,6 +133,20 @@ namespace TestWPF
             ClientLog.Content = "";
             Serverlog.Content = "";
         }
+
+        private async void RPCString_Click(object sender, RoutedEventArgs e)
+        {
+            const string TestStr = "RPCString测试";
+            var resp = await client.SendSafeAwait<string>(TestStr);
+            if (resp == TestStr)
+            {
+                ClientLog.Content += $"\n RPCString测试成功";
+            }
+            else
+            {
+                ClientLog.Content += $"\n RPCString测试失败";
+            }
+        }
     }
 }
 

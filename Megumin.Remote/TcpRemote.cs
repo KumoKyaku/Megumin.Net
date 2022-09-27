@@ -256,7 +256,7 @@ namespace Megumin.Remote
                         return;
                     }
 
-#if NET5_0
+#if NET5_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
                     var length = target.SendMemory.Length;
                     var result = await Client.SendAsync(target.SendMemory,
                                                         SocketFlags.None).ConfigureAwait(false);
@@ -338,7 +338,7 @@ namespace Megumin.Remote
                 try
                 {
 
-#if NET5_0
+#if NET5_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
                     count = await Client.ReceiveAsync(buffer, SocketFlags.None)
                         .ConfigureAwait(false);
 #else

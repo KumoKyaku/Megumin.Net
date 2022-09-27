@@ -31,6 +31,7 @@
         <TextBox x:Name="ConnectPort" HorizontalAlignment="Left" Margin="365,58,0,0" TextWrapping="Wrap" Text="54321" VerticalAlignment="Top" Width="54" Height="18"/>
         <TextBox x:Name="TargetIP" HorizontalAlignment="Left" Margin="188,57,0,0" TextWrapping="Wrap" Text="127.0.0.1" VerticalAlignment="Top" Width="172" Height="17"/>
         <Button x:Name="StopListen" Content="停止监听" HorizontalAlignment="Left" Margin="335,58,0,0" VerticalAlignment="Top" Width="109" Grid.Column="2" Height="19" Click="StopListen_Click"/>
+        <Button x:Name="RPCString" Content="RPCString" HorizontalAlignment="Left" Margin="188,81,0,0" VerticalAlignment="Top" Width="172" Click="RPCString_Click"/>
 
     </Grid>
 </Window>

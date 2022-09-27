@@ -56,6 +56,18 @@ namespace Megumin.Remote
         object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null);
     }
 
+    public interface IMeguminFormater<T> : IMeguminFormater
+    {
+        /// <summary>
+        /// 序列化函数
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="value"></param>
+        /// <param name="options"></param>
+        /// <remarks>序列化函数不在提供序列化多少字节，需要在writer中自己统计</remarks>
+        void Serialize(IBufferWriter<byte> writer, T value, object options = null);
+    }
+
     /// <summary>
     /// 对象自身就是序列化器，是MessageLut没注册时的fallback。
     /// </summary>
@@ -78,6 +90,12 @@ namespace Megumin.Remote
     {
         static readonly Dictionary<int, IMeguminFormater> IDDic = new Dictionary<int, IMeguminFormater>();
         static readonly Dictionary<Type, IMeguminFormater> TypeDic = new Dictionary<Type, IMeguminFormater>();
+
+        static MessageLUT()
+        {
+            //注册基础类型
+            "tst".ToString();
+        }
 
         /// <summary>
         /// 注册序列化器
