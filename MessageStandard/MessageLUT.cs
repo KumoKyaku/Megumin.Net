@@ -96,6 +96,10 @@ namespace Megumin.Remote
         {
             //注册基础类型
             Regist(new StringFormatter());
+            Regist(new IntFormatter());
+            Regist(new FloatFormatter());
+            Regist(new LongFormatter());
+            Regist(new DoubleFormatter());
         }
 
         /// <summary>

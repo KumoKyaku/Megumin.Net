@@ -4,7 +4,6 @@ using System.Text;
 
 namespace Megumin.Remote
 {
-
     public class UdpRemoteMessageDefine
     {
         public const byte UdpAuthRequest = 10;
@@ -28,8 +27,8 @@ namespace Megumin.Remote
         public void Serialize(Span<byte> span)
         {
             span[0] = UdpRemoteMessageDefine.UdpAuthRequest;
-            Guid.WriteTo(span.Slice(1));
-            Password.WriteTo(span.Slice(17));
+            Guid.Write(span.Slice(1));
+            Password.Write(span.Slice(17));
         }
 
         public static UdpAuthRequest Deserialize(Span<byte> span)
@@ -60,9 +59,9 @@ namespace Megumin.Remote
         {
             span[0] = UdpRemoteMessageDefine.UdpAuthResponse;
             span[1] = (byte)(IsNew ? 1 : 0);
-            Guid.WriteTo(span.Slice(2));
-            Password.WriteTo(span.Slice(18));
-            KcpChannel.WriteTo(span.Slice(22));
+            Guid.Write(span.Slice(2));
+            Password.Write(span.Slice(18));
+            KcpChannel.Write(span.Slice(22));
         }
 
         public static UdpAuthResponse Deserialize(Span<byte> span)

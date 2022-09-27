@@ -84,11 +84,11 @@ namespace Megumin.Remote
         /// <param name="key"></param>
         public static void RegistBasicType(KeyAlreadyHave key = KeyAlreadyHave.Replace)
         {
-            Regist(new DefaultFormater<string>(MSGID.StringID), key);
-            Regist(new DefaultFormater<int>(MSGID.IntID), key);
-            Regist(new DefaultFormater<long>(MSGID.LongID), key);
-            Regist(new DefaultFormater<float>(MSGID.FloatID), key);
-            Regist(new DefaultFormater<double>(MSGID.DoubleID), key);
+            Regist(new DefaultFormater<string>(MSGID.String), key);
+            Regist(new DefaultFormater<int>(MSGID.Int32), key);
+            Regist(new DefaultFormater<long>(MSGID.Int64), key);
+            Regist(new DefaultFormater<float>(MSGID.Single), key);
+            Regist(new DefaultFormater<double>(MSGID.Double), key);
         }
     }
 
