@@ -30,7 +30,11 @@ namespace Megumin.Message
 
         public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
         {
+#if NET5_0_OR_GREATER
+            return UTF8.GetString(byteSequence);
+#else
             return UTF8.GetString(byteSequence.ToArray());
+#endif
         }
     }
 

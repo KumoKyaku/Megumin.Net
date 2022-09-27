@@ -37,8 +37,8 @@ namespace Megumin.Remote
         //    return new MSGIDAttribute(id);
         //}
 
-        public const int TestPacket1ID = -101;
-        public const int TestPacket2ID = -102;
+        public const int TestPacket1 = -101;
+        public const int TestPacket2 = -102;
         /// <summary>
         /// 错误的类型，表示框架未记录的类型。不是void，也不是任何异常ErrorType。
         /// </summary>

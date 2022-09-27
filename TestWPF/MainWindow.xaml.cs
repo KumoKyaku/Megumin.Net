@@ -1,4 +1,5 @@
-﻿using Megumin.Remote;
+﻿using Megumin.Message;
+using Megumin.Remote;
 using Megumin.Remote.Simple;
 using Megumin.Remote.Test;
 using System;
@@ -23,8 +24,6 @@ namespace TestWPF
         public MainWindow()
         {
             InitializeComponent();
-            MessageLUT.Regist(new TestPacket1());
-            MessageLUT.Regist(new TestPacket2());
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -175,8 +174,10 @@ public class TestRemote : TcpRemote
         {
             case TestPacket2 packet2:
                 return new ValueTask<object>(message);
+            case string str:
+                return new ValueTask<object>(str);
             default:
-                return new ValueTask<object>(message);
+                break;
         }
         return NullResult;
     }

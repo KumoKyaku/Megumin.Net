@@ -15,6 +15,11 @@ namespace Megumin.Remote
     /// </summary>
     public class ProtobufLUT : MessageLUT
     {
+        static ProtobufLUT()
+        {
+            RegistBasicType();
+        }
+
         /// <summary>
         /// 注册程序集中所有议类
         /// </summary>

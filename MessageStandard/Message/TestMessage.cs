@@ -1,10 +1,11 @@
-﻿using System;
-using System.Buffers;
+﻿using Megumin.Remote;
+using System;
 using System.Buffers.Binary;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Megumin.Remote.Test
+namespace Megumin.Message
 {
     /// <summary>
     /// 序列化后长度为1024字节
@@ -15,7 +16,7 @@ namespace Megumin.Remote.Test
 
         public int Value { get; set; }
         ///<inheritdoc/>
-        public int MessageID { get; } = 1000;
+        public int MessageID => MSGID.TestPacket1;
         public Type BindType => this.GetType();
 
         public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
@@ -53,7 +54,7 @@ namespace Megumin.Remote.Test
 
         public float Value { get; set; }
         ///<inheritdoc/>
-        public int MessageID { get; } = 1001;
+        public int MessageID => MSGID.TestPacket2;
         public Type BindType => this.GetType();
 
         public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
@@ -81,6 +82,4 @@ namespace Megumin.Remote.Test
             return result;
         }
     }
-
-
 }

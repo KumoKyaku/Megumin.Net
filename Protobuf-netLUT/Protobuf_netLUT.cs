@@ -13,6 +13,11 @@ namespace Megumin.Remote
     /// </summary>
     public class Protobuf_netLUT: MessageLUT
     {
+        static Protobuf_netLUT()
+        {
+            RegistBasicType();
+        }
+
         /// <summary>
         /// 注册程序集中所有协议类
         /// </summary>
