@@ -256,7 +256,7 @@ namespace Megumin.Remote
                         return;
                     }
 
-#if NET5_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
+#if NET5_0_OR_GREATER
                     var length = target.SendMemory.Length;
                     var result = await Client.SendAsync(target.SendMemory,
                                                         SocketFlags.None).ConfigureAwait(false);
@@ -337,8 +337,11 @@ namespace Megumin.Remote
 
                 try
                 {
-
-#if NET5_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
+                    //大约找到了NETSTANDARD2_1_OR_GREATER 这个API 在netstandard2.0 中没有，以前使用旧的写法没问题，
+                    //最近切换到NETSTANDARD2_1  这个API就失效了。
+                    //源码放在unity中NETSTANDARD2_1_OR_GREATER 这个宏unity不识别，仍然用的旧API，所以源码在unity中正常。
+                    //大约就是这样。 切换到新api有很多，具体不知道是哪一个有问题。暂时只能全用旧的写法
+#if NET5_0_OR_GREATER
                     count = await Client.ReceiveAsync(buffer, SocketFlags.None)
                         .ConfigureAwait(false);
 #else

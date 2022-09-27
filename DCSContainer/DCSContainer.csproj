@@ -10,7 +10,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DocumentationFile>bin\Debug\netstandard2.0\MMONET.DCSContainer.xml</DocumentationFile>
     <LangVersion>7.3</LangVersion>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
@@ -18,7 +18,7 @@
     <LangVersion>7.3</LangVersion>
     <DocumentationFile>bin\Release\netstandard2.0\MMONET.DCSContainer.xml</DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
