@@ -11,7 +11,9 @@ namespace Megumin.Message
     {
         public void Serialize(IBufferWriter<byte> writer, GetTime value, object options = null)
         {
-            return;
+            var span = writer.GetSpan(4);
+            span.Write(PreReceiveType);
+            writer.Advance(4);
         }
 
         public int MessageID => MSGID.GetTime;
@@ -19,12 +21,12 @@ namespace Megumin.Message
 
         public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
         {
-            return;
+            Serialize(writer, (GetTime)value, options);
         }
 
         public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
         {
-            return new GetTime();
+            return new GetTime() { PreReceiveType = byteSequence.ReadInt() };
         }
     }
 

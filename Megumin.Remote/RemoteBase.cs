@@ -234,6 +234,10 @@ namespace Megumin.Remote
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual bool UseThreadSchedule(int rpcID, short cmd, int messageID, object message)
         {
+            if (message is IReceiveThreadControlable controlable)
+            {
+                return controlable.ReceiveThreadPost2ThreadScheduler;
+            }
             return Post2ThreadScheduler;
         }
 

@@ -26,4 +26,9 @@ namespace Megumin.Message
     {
         ValueTask<object> GetResponse(object request);
     }
+
+    public interface IReceiveThreadControlable
+    {
+        bool ReceiveThreadPost2ThreadScheduler { get; }
+    }
 }

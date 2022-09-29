@@ -1,4 +1,5 @@
 using Megumin;
+using Megumin.Message;
 using Megumin.Remote;
 using Megumin.Remote.Simple;
 using System;
@@ -108,6 +109,13 @@ public class OpTest : MonoBehaviour
         Log($"·¢ËÍ£º{send}");
         var resp = await client.SendSafeAwait<string>(send);
         Log($"·µ»Ø£º{resp}");
+    }
+
+    public async void RemoteTime()
+    {
+        var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime());
+        var span = (DateTimeOffset.UtcNow - remotetime).TotalMilliseconds;
+        Log($"Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}");
     }
 
     public class Remote : TcpRemote

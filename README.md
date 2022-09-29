@@ -142,6 +142,29 @@ protected virtual async ValueTask<object> OnReceive(short cmd, int messageID, ob
 #### 注意：  异步发送方法等待的返回值虽然也是接收到的消息，但是会被分发到异步函数回调中，不会触发本函数。即使异步发送方法没有使用await关键字而导致异步后续没有注册，返回消息也不会触发本函数，返回消息将被忽略。 *（事实上，很难实现找不到异步后续时将消息分发到此函数中。因为不持有返回的Task引用时，想要将消息转送到本回调函数，需要对Task增加额外的标记，生命周期难以控制，控制流会变得更难以理解。详细情况参阅源码RpcCallbackPool.CreateCheckTimeout）*  
 
 ---
+## 4. 由发送端和消息协议控制的的响应机制
+具体响应方式参考`PreReceive`函数源码，参考IPreReceiveable，ICmdOption，SendOption.Echo等。  
+Heartbeat，RTT，Timestamp Synchronization等功能都由此机制实现。  
+
++ 在某些时候，比如测试消息是否正常收发，发送端可能希望远端做出特定方式的响应，比如echo，将消息原样返回。  
+这种需求不是针对某一个特定消息类型的，也不是对于某个消息类型永远做出这样的响应，可能仅仅是针对某个时刻的某条消息。  
+对于这样的需求，在OnReceive函数中实现并不合适，没有办法根据消息类型进行抽象。   
+  - 通过CmdID == 1来实现。发送时指定option参数，option实现ICmdOption，将CmdID传递到底层报头中。
+  - 通过IPreReceiveable.PreReceiveType == 1来实现，发送的消息协议实现IPreReceiveable接口，并且PreReceiveType的值等于1。
+  - 接收端在PreReceive函数中处理，并决定此消息是否继续传递到OnReceive函数中。
++ 在另一些时候，更通用的是，发送端发出一个消息，但是处于一些特殊原因，不希望将响应函数写在OnReceive函数中。  
+可以通过消息协议继承IAutoResponseable接口实现，并且PreReceiveType == 2。  
+接收端`PreReceive`函数中处理此类消息，并调用GetResponse返回结果到发送端。
+    ```cs
+    public interface IAutoResponseable : IPreReceiveable
+    {
+        ValueTask<object> GetResponse(object request);
+    }
+    ```
+  - 比如消息协议是跨项目的，但是OnReceive函数不是。
+  - 比如一些简单并且通用的基础函数调用，不想污染OnReceive函数。GetTime,GetSystemInfo等。但又不想将这些功能内置到网络模块中。 
+
+---
 ---
 
 # 重要
