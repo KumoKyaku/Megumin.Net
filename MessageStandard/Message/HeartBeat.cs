@@ -6,15 +6,17 @@ using System.Text;
 
 namespace Megumin.Message
 {
-    public class HeartBeats : IMeguminFormater<HeartBeats>
+    public class Heartbeat : IMeguminFormater<Heartbeat>
     {
-        public void Serialize(IBufferWriter<byte> writer, HeartBeats value, object options = null)
+        public static Heartbeat Default { get; } = new Heartbeat();
+
+        public void Serialize(IBufferWriter<byte> writer, Heartbeat value, object options = null)
         {
             return;
         }
 
-        public int MessageID => MSGID.Heartbeats;
-        public Type BindType => typeof(HeartBeats);
+        public int MessageID => MSGID.Heartbeat;
+        public Type BindType => typeof(Heartbeat);
 
         public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
         {
@@ -23,7 +25,7 @@ namespace Megumin.Message
 
         public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
         {
-            return new HeartBeats();
+            return new Heartbeat();
         }
     }
 }

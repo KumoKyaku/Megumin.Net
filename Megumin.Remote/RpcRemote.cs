@@ -1,8 +1,10 @@
-﻿using Megumin.Remote.Rpc;
+﻿using Megumin.Message;
+using Megumin.Remote.Rpc;
 using Net.Remote;
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,8 +41,71 @@ namespace Megumin.Remote
                 //如果有特殊需求，就重写这个方法。
 
                 //这个消息非Rpc返回
-                //普通响应onRely
-                var reply = await OnReceive(cmd, messageID, message).ConfigureAwait(false);
+
+                //普通响应
+
+                object reply = null;
+                reply = await PreReceive(cmd, messageID, message, out var stopReceive);
+
+                //DealRelay(rpcID, reply);
+                if (reply != null)
+                {
+                    if (reply is Task<object> task)
+                    {
+                        reply = await task.ConfigureAwait(false);
+                    }
+
+                    if (reply is ValueTask<object> vtask)
+                    {
+                        reply = await vtask.ConfigureAwait(false);
+                    }
+
+                    if (reply != null)
+                    {
+                        //将一个Rpc应答回复给远端
+                        //将rpcID * -1，区分上行下行
+                        Send(rpcID * -1, reply);
+                    }
+                }
+
+                if (!stopReceive)
+                {
+                    reply = await OnReceive(cmd, messageID, message).ConfigureAwait(false);
+
+                    //DealRelay(rpcID, reply);
+                    if (reply != null)
+                    {
+                        if (reply is Task<object> task)
+                        {
+                            reply = await task.ConfigureAwait(false);
+                        }
+
+                        if (reply is ValueTask<object> vtask)
+                        {
+                            reply = await vtask.ConfigureAwait(false);
+                        }
+
+                        if (reply != null)
+                        {
+                            //将一个Rpc应答回复给远端
+                            //将rpcID * -1，区分上行下行
+                            Send(rpcID * -1, reply);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 手动内联，少一个异步方法可以节省一些开销。避免生成异步状态机等，可以与DiversionProcess 合成一个。
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="reply"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected virtual async void DealRelay(int rpcID, object reply)
+        {
+            if (reply != null)
+            {
                 if (reply is Task<object> task)
                 {
                     reply = await task.ConfigureAwait(false);

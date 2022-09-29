@@ -437,9 +437,11 @@ namespace Megumin.Remote
     {
     }
 
-    public class SendOption : IRpcTimeoutOption
+    public class SendOption : IRpcTimeoutOption, ICmdOption
     {
         public static readonly SendOption Never = new SendOption() { MillisecondsDelay = -1 };
+        public static readonly SendOption Echo = new SendOption() { MillisecondsDelay = 30000, Cmd = 1 };
         public int MillisecondsDelay { get; set; }
+        public short Cmd { get; set; }
     }
 }

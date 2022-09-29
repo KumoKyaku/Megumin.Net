@@ -1,3 +1,4 @@
+using Megumin;
 using Megumin.Remote;
 using Megumin.Remote.Simple;
 using System;
@@ -12,10 +13,12 @@ public class OpTest : MonoBehaviour
     public TMP_InputField TargetPort;
     public TextMeshProUGUI Console;
     public TMP_InputField SendMessageText;
+    public RTT RTT;
 
     // Start is called before the first frame update
     void Start()
     {
+        Application.targetFrameRate = 60;
         Clear();
     }
 
@@ -84,6 +87,7 @@ public class OpTest : MonoBehaviour
             await client.ConnectAsync(new IPEndPoint(targetIP, port));
             Console.text += $"\n 连接成功";
             Log($"连接成功");
+            RTT.SetTarget(client);
         }
         catch (Exception ex)
         {
@@ -100,10 +104,10 @@ public class OpTest : MonoBehaviour
     public async void Send()
     {
         var send = string.Format(SendMessageText.text, messageIndex);
+        messageIndex++;
         Log($"发送：{send}");
         var resp = await client.SendSafeAwait<string>(send);
         Log($"返回：{resp}");
-        messageIndex++;
     }
 
     public class Remote : TcpRemote

@@ -227,6 +227,17 @@ namespace Net.Remote
         int MillisecondsDelay { get; }
     }
 
+    public interface ICmdOption
+    {
+        /// <summary>
+        /// 1:Echo
+        /// </summary>
+        /// <remarks>
+        /// 没有固定标准，具体参考PreReceive函数中实现。
+        /// </remarks>
+        short Cmd { get; }
+    }
+
     /// <summary>
     /// todo 只有主动链接测 不停的发送心跳,自动断线重连,回调用于UI
     /// </summary>

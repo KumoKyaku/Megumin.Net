@@ -1,4 +1,5 @@
-﻿using Net.Remote;
+﻿using Megumin.Message;
+using Net.Remote;
 using System;
 using System.Buffers;
 using System.Net;
@@ -205,7 +206,7 @@ namespace Megumin.Remote
         //*********************************心跳处理
         protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
-            if (messageID == MSGID.Heartbeats)
+            if (messageID == MSGID.Heartbeat)
             {
                 return new ValueTask<object>(message);
             }

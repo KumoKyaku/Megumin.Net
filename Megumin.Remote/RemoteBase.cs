@@ -1,4 +1,5 @@
-﻿using Megumin.Remote;
+﻿using Megumin.Message;
+using Megumin.Remote;
 
 using Net.Remote;
 
@@ -42,7 +43,7 @@ namespace Megumin.Remote
         /// </summary>
         static RemoteBase()
         {
-            MessageLUT.Regist(Heartbeat.Default);
+            //MessageLUT.Regist(Heartbeat.Default);
         }
 
         /// <summary>
@@ -101,12 +102,12 @@ namespace Megumin.Remote
 
             if (formater != null)
             {
-                //写入rpcID CMD
-                var span = writer.GetSpan(10);
-                span.Write(rpcID);
-                span.Slice(4).Write((short)0); //CMD 为预留，填0
-                span.Slice(6).Write(formater.MessageID);
-                writer.Advance(10);
+                WriteRpcIDCMD(writer, rpcID, options);
+
+                //写入MessageID
+                var span = writer.GetSpan(4);
+                span.Write(formater.MessageID);
+                writer.Advance(4);
 
                 try
                 {
@@ -141,11 +142,7 @@ namespace Megumin.Remote
         {
             try
             {
-                //写入rpcID CMD
-                var span = writer.GetSpan(6);
-                span.Write(rpcID);
-                span.Slice(4).Write((short)0); //CMD 为预留，填0
-                writer.Advance(6);
+                WriteRpcIDCMD(writer, rpcID, options);
 
                 foreach (var item in sequence)
                 {
@@ -159,6 +156,26 @@ namespace Megumin.Remote
                 Logger?.Log($"转发用序列化过程出现异常。Lenght:{sequence.Length}。\n {e}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// 写入rpcID CMD
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="rpcID"></param>
+        /// <param name="options"></param>
+        protected virtual void WriteRpcIDCMD(IBufferWriter<byte> writer, int rpcID, object options = null)
+        {
+            //写入rpcID CMD
+            var span = writer.GetSpan(6);
+            span.Write(rpcID);
+            short cmd = 0;
+            if (options is ICmdOption cmdOption)
+            {
+                cmd = cmdOption.Cmd;
+            }
+            span.Slice(4).Write(cmd);
+            writer.Advance(6);
         }
 
         /// <summary>
@@ -225,6 +242,48 @@ namespace Megumin.Remote
         /// </summary>
         internal protected static readonly ValueTask<object> NullResult
             = new ValueTask<object>(result: null);
+
+        /// <summary>
+        /// 开始时想通过MSGID，固定[256-512)消息id时，自动Echo 此消息。
+        /// 结果发现会造成两端死循环，两边不停的重复发送这条消息，造成网络风暴,此方式行不通。
+        /// <para></para>
+        /// 改为由CMD == 1和<seealso cref="IPreReceiveable.PreReceiveType"/> == 1实现。
+        /// </summary>
+        /// <param name="cmd"></param>
+        /// <param name="messageID"></param>
+        /// <param name="message"></param>
+        /// <param name="stopReceive"></param>
+        /// <returns></returns>
+        protected virtual ValueTask<object> PreReceive(short cmd, int messageID, object message, out bool stopReceive)
+        {
+            stopReceive = true;
+
+            if (cmd == 1)
+            {
+                //Echo
+                return new ValueTask<object>(result: message);
+            }
+
+            if (message is IAutoResponseable autoRespones)
+            {
+                if (autoRespones.PreReceiveType == 2)
+                {
+                    return autoRespones.GetResponse(message);
+                }
+            }
+
+            if (message is IPreReceiveable receive)
+            {
+                if (receive.PreReceiveType == 1)
+                {
+                    //Echo
+                    return new ValueTask<object>(result: message);
+                }
+            }
+
+            stopReceive = false;
+            return NullResult;
+        }
 
         /// <summary>
         /// 通常用户在这里处理收到的消息

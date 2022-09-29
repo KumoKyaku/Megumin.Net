@@ -617,6 +617,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2061956768}
   - component: {fileID: 2061956769}
+  - component: {fileID: 2061956770}
   m_Layer: 0
   m_Name: FPS
   m_TagString: Untagged
@@ -651,7 +652,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dabf3e3ed3674994fba62a80dab4448c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Content: 'FPS : 0'
+  Content: 'FPS : 60'
   Position:
     serializedVersion: 2
     x: 50
@@ -663,7 +664,7 @@ MonoBehaviour:
     m_Normal:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
-      m_TextColor: {r: 0, g: 0, b: 0, a: 1}
+      m_TextColor: {r: 1, g: 1, b: 1, a: 1}
     m_Hover:
       m_Background: {fileID: 0}
       m_ScaledBackgrounds: []
@@ -713,7 +714,7 @@ MonoBehaviour:
       m_Top: 0
       m_Bottom: 0
     m_Font: {fileID: 0}
-    m_FontSize: 0
+    m_FontSize: 40
     m_FontStyle: 0
     m_Alignment: 0
     m_WordWrap: 0
@@ -726,6 +727,25 @@ MonoBehaviour:
     m_StretchWidth: 1
     m_StretchHeight: 0
   INTERVAL: 0.5
+--- !u!114 &2061956770
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2061956767}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ba5865ab91a33b4ca0b064649b182e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fontSize: 20
+  Space: 1600
+  FPS: 1
+  INTERVAL: 0.5
+  DELAY: 0
+  INDELAY: 0
+  Time: 1
 --- !u!1001 &2842786245900485212
 PrefabInstance:
   m_ObjectHideFlags: 0
