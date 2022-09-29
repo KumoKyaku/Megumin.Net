@@ -107,6 +107,7 @@ namespace Megumin.Remote
             //注册内置消息
             Regist(new TestPacket1());
             Regist(new TestPacket2());
+            Regist(new TestPacket3());
             Regist(new Heartbeat());
             Regist(new GetTime());
         }

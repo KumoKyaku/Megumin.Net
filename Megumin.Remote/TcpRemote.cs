@@ -52,11 +52,11 @@ namespace Megumin.Remote
             /// </summary>
             Working = 0,
         }
-        
+
         /// <summary>
         /// 当前状态,使用此标记控制 底层发送 底层接收 接收数据处理三个循环正确退出。
         /// </summary>
-        public WorkState RemoteState { get;internal protected set; } = WorkState.NotStart;
+        public WorkState RemoteState { get; internal protected set; } = WorkState.NotStart;
 
         /// <summary>
         /// Mono/IL2CPP 请使用中使用<see cref="TcpRemote(AddressFamily)"/>
@@ -170,7 +170,7 @@ namespace Megumin.Remote
             }
             return ConnectAsync(Client, endPoint, retryCount);
         }
-   
+
         public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
         {
             disconnector?.Disconnect(triggerOnDisConnect, waitSendQueue);
@@ -234,7 +234,7 @@ namespace Megumin.Remote
                         return;
                     }
 
-                    if (RemoteState != WorkState.Working 
+                    if (RemoteState != WorkState.Working
                         && RemoteState != WorkState.StopingWaitQueueSending)
                     {
                         return;
@@ -295,6 +295,9 @@ namespace Megumin.Remote
     {
         /// <summary>
         /// 不使用线程同步上下文，全部推送到线程池调用。useSynchronizationContext 用来保证await前后线程一致。
+        /// <para/>
+        /// FlushAsync后，另一头的触发是通过ThreadPoolScheduler来触发的，不是调用FlushAsync的线程，
+        /// 所以useSynchronizationContext = false时，不用担心 IOCP线程 执行pipeReader，反序列化等造成IOCP线程阻塞问题。
         /// </summary>
         /// <remarks>
         /// <para/>useSynchronizationContext 如果为true的话，
@@ -308,7 +311,7 @@ namespace Megumin.Remote
         /// 当前socket是不是在接收。
         /// </summary>
         public bool IsReceiving { get; protected set; }
-        
+
         /// <summary>
         /// 从Socket接收
         /// </summary>
@@ -348,8 +351,9 @@ namespace Megumin.Remote
 
                     if (MemoryMarshal.TryGetArray<byte>(buffer, out var segment))
                     {
-                        //重设长度
-                        segment = new ArraySegment<byte>(segment.Array, segment.Offset, buffer.Length);
+                        //重设长度 这里使用queryCount而不是buffer.Length。不能完全保证buffer.Length等于queryCount。
+                        //修复一个可能的接受长度错误，当接收pipe取得Memory长度大于queryCount时，可能造成接受数据丢失或者数组越界。
+                        segment = new ArraySegment<byte>(segment.Array, segment.Offset, queryCount);
                     }
                     else
                     {
@@ -367,7 +371,7 @@ namespace Megumin.Remote
                     {
                         pipeWriter.Advance(count);
                     }
-                    
+
                     IsReceiving = false;
                 }
                 catch (SocketException e)
@@ -426,7 +430,7 @@ namespace Megumin.Remote
                         {
                             //取得消息体
                             var body = unDealBuffer.Slice(offset + 4, nextSegmentLength - 4);
-                            
+
                             //先计数后处理，如果某个数据段出现错误可以略过该段
                             unReadLenght -= nextSegmentLength;
                             offset += nextSegmentLength;
@@ -437,7 +441,8 @@ namespace Megumin.Remote
                             //半包，继续读取
                             if (nextSegmentLength > 1024 * 256)
                             {
-                                //todo，长度非常大可能是一个错误.
+                                //todo，长度非常大可能是一个未知错误。
+                                Logger?.Log($"nextSegmentLength > 1024 * 256,长度非常大可能是一个未知错误。");
                             }
                             break;
                         }

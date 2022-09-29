@@ -151,6 +151,11 @@ namespace TestWPF
         {
             server.Send($"测试String {DateTimeOffset.Now}");
         }
+
+        private void SendBigMessage_Click(object sender, RoutedEventArgs e)
+        {
+            client.Send(new TestPacket3() { Value = 300 }); ;
+        }
     }
 }
 
@@ -169,6 +174,9 @@ public class TestRemote : TcpRemote
                     break;
                 case TestPacket2 packet2:
                     log.Content += $"\n 收到{nameof(TestPacket2)} value:{packet2.Value}";
+                    break;
+                case TestPacket3 packet3:
+                    log.Content += $"\n 收到{nameof(TestPacket3)} value:{packet3.Value}";
                     break;
                 default:
                     log.Content += $"\n 收到{message.GetType().Name} value:{message}";
