@@ -233,9 +233,14 @@
             心跳包ID，255好识别，buffer[10-13]=[255,0,0,0]
             </summary>
         </member>
+        <member name="F:Megumin.Remote.MSGID.Heartbeat">
+            <summary>
+            心跳包ID，256好识别，buffer[10-13]=[255,1,0,0]
+            </summary>
+        </member>
         <member name="T:Megumin.Message.TestPacket1">
             <summary>
-            序列化后长度为1024字节
+            序列化后长度为1024 * 10字节
             </summary>
         </member>
         <member name="P:Megumin.Message.TestPacket1.MessageID">
@@ -247,6 +252,14 @@
             </summary>
         </member>
         <member name="P:Megumin.Message.TestPacket2.MessageID">
+            <inheritdoc/>
+        </member>
+        <member name="T:Megumin.Message.TestPacket3">
+            <summary>
+            序列化后长度为1024 * 50字节
+            </summary>
+        </member>
+        <member name="P:Megumin.Message.TestPacket3.MessageID">
             <inheritdoc/>
         </member>
         <member name="T:Megumin.Message.StringFormatter">
@@ -337,6 +350,24 @@
             </summary>
             <param name="span"></param>
             <returns></returns>
+        </member>
+        <member name="T:Megumin.Message.IPreReceiveable">
+            <summary>
+            由发送端和消息协议控制的的响应机制
+            </summary>
+        </member>
+        <member name="P:Megumin.Message.IPreReceiveable.PreReceiveType">
+            <summary>
+            1: Echo
+            2: AutoResp
+            </summary>
+            <remarks>具体实现在PreReceive函数中</remarks>
+        </member>
+        <member name="T:Megumin.Message.IAutoResponseable">
+            <summary>
+            <inheritdoc/>
+            自动回复
+            </summary>
         </member>
     </members>
 </doc>

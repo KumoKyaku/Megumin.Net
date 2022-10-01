@@ -4,16 +4,6 @@
         <name>Megumin.Remote</name>
     </assembly>
     <members>
-        <member name="T:Megumin.Remote.Heartbeat">
-            <summary>
-            心跳消息
-            </summary>
-            <remarks> 
-                <code>
-                    MessageLUT.Regist(Heartbeat.Default);
-                </code> 
-            </remarks>
-        </member>
         <member name="T:Megumin.Remote.Simple.EchoTcp">
             <summary>
             Tcp回声远端
@@ -247,6 +237,14 @@
             <returns></returns>
             <remarks> RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
         </member>
+        <member name="M:Megumin.Remote.RemoteBase.WriteRpcIDCMD(System.Buffers.IBufferWriter{System.Byte},System.Int32,System.Object)">
+            <summary>
+            写入rpcID CMD
+            </summary>
+            <param name="writer"></param>
+            <param name="rpcID"></param>
+            <param name="options"></param>
+        </member>
         <member name="M:Megumin.Remote.RemoteBase.TryDeserialize(System.Int32,System.Buffers.ReadOnlySequence{System.Byte}@,System.Object@,System.Object)">
             <summary>
             尝试反序列化
@@ -286,6 +284,19 @@
             <summary>
             返回一个空对象，在没有返回时使用。同步完成。
             </summary>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.PreReceive(System.Int16,System.Int32,System.Object,System.Boolean@)">
+            <summary>
+            开始时想通过MSGID，固定[256-512)消息id时，自动Echo 此消息。
+            结果发现会造成两端死循环，两边不停的重复发送这条消息，造成网络风暴,此方式行不通。
+            <para></para>
+            改为由CMD == 1和<seealso cref="P:Megumin.Message.IPreReceiveable.PreReceiveType"/> == 1实现。
+            </summary>
+            <param name="cmd"></param>
+            <param name="messageID"></param>
+            <param name="message"></param>
+            <param name="stopReceive"></param>
+            <returns></returns>
         </member>
         <member name="M:Megumin.Remote.RemoteBase.OnReceive(System.Int16,System.Int32,System.Object)">
             <summary>
@@ -336,15 +347,12 @@
             </summary>
             <remarks>一些与RPC支持相关的函数写在这里。</remarks>
         </member>
-        <member name="M:Megumin.Remote.RpcRemote.DiversionProcess(System.Int32,System.Int16,System.Int32,System.Object)">
+        <member name="M:Megumin.Remote.RpcRemote.DealRelay(System.Int32,System.Object)">
             <summary>
-            分流普通消息和RPC回复消息
+            手动内联，少一个异步方法可以节省一些开销。避免生成异步状态机等，可以与DiversionProcess 合成一个。
             </summary>
             <param name="rpcID"></param>
-            <param name="cmd"></param>
-            <param name="messageID"></param>
-            <param name="message"></param>
-            <returns></returns>
+            <param name="reply"></param>
         </member>
         <member name="M:Megumin.Remote.RpcRemote.Push2MessageThreadTransducer(System.Int32,System.Int16,System.Int32,System.Object)">
             <summary>
@@ -367,16 +375,22 @@
             每个session大约每秒30个包，超时时间默认为30秒；
             </summary>
         </member>
+        <member name="P:Megumin.Remote.Rpc.RpcCallbackPool`3.PostThreadSetting">
+            <summary>
+            主要由<see cref="T:Net.Remote.IRpcThreadOption"/>决定，其次由UseThreadSchedule决定。
+            </summary>
+        </member>
         <member name="P:Megumin.Remote.Rpc.RpcCallbackPool`3.DefaultTimeout">
             <summary>
             默认30000ms
             </summary>
         </member>
-        <member name="M:Megumin.Remote.Rpc.RpcCallbackPool`3.CheckKeyConflict(`0)">
+        <member name="M:Megumin.Remote.Rpc.RpcCallbackPool`3.CheckKeyConflict(`0,System.Object)">
             <summary>
             rpcID冲突检查
             </summary>
             <param name="key"></param>
+            <param name="options"></param>
         </member>
         <member name="M:Megumin.Remote.Rpc.RpcCallbackPool`3.CreateCheckTimeout(`0,System.Object)">
             <summary>
@@ -392,6 +406,13 @@
             <param name="rpcID"></param>
             <param name="timeOutMilliseconds"></param>
         </member>
+        <member name="M:Megumin.Remote.Rpc.RpcCallbackPool`3.TrySetUseThreadScheduleResult(`0,System.Boolean)">
+            <summary>
+            DeserializeSuccess后设置回调线程，只有PostThreadSetting含有Key并且值为null时才设置。
+            </summary>
+            <param name="rpcID"></param>
+            <param name="trans"></param>
+        </member>
         <member name="T:Megumin.Remote.Rpc.ObjectRpcCallbackPool">
             <summary>
             <inheritdoc/>
@@ -405,7 +426,6 @@
             <summary>
             原子操作 取得RpcId,发送方的的RpcID为正数，回复的RpcID为负数，正负一一对应
             <para>0,int.MinValue 为无效值</para> 
-            <seealso cref="M:Megumin.Remote.RpcRemote.DiversionProcess(System.Int32,System.Int16,System.Int32,System.Object)"/>
             </summary>
             <returns></returns>
         </member>
@@ -564,6 +584,9 @@
         <member name="P:Megumin.Remote.TcpRemote.Pipe">
             <summary>
             不使用线程同步上下文，全部推送到线程池调用。useSynchronizationContext 用来保证await前后线程一致。
+            <para/>
+            FlushAsync后，另一头的触发是通过ThreadPoolScheduler来触发的，不是调用FlushAsync的线程，
+            所以useSynchronizationContext = false时，不用担心 IOCP线程 执行pipeReader，反序列化等造成IOCP线程阻塞问题。
             </summary>
             <remarks>
             <para/>useSynchronizationContext 如果为true的话，

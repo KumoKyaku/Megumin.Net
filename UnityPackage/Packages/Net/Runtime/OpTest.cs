@@ -126,9 +126,24 @@ public class OpTest : MonoBehaviour
         {
             RpcComplatePost2ThreadScheduler = false,
         };
-        var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime(), options: sendOption);
+        var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime(), options: sendOption).ConfigureAwait(false);
         var span = (DateTimeOffset.UtcNow - remotetime).TotalMilliseconds;
+        await MainThread.Switch();
         Log($"Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}");
+    }
+
+    [Button]
+    public void ThreadTest()
+    {
+        this.LogThreadID(1);
+        Task.Run(async () =>
+        {
+            this.LogThreadID(2);
+            await Task.Delay(10);
+            this.LogThreadID(3);
+            await MainThread.Switch();
+            this.LogThreadID(4);
+        });
     }
 
     public class Remote : TcpRemote
