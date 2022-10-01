@@ -3,6 +3,7 @@ using Megumin.Remote;
 using Megumin.Remote.Simple;
 using Megumin.Remote.Test;
 using System;
+using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -202,6 +203,16 @@ public class TestRemote : TcpRemote
         }
         return NullResult;
     }
+
+    //protected override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, object options, int RpcID, short CMD, int MessageID)
+    //{
+    //    var len = bodyBytes.Length;
+    //    log.Dispatcher.Invoke(() =>
+    //    {
+    //        log.Content += $"\n 收到bodyBytes len:{len} rpcID：{RpcID} CMD:{CMD}  MessageID:{MessageID}";
+    //    });
+    //    base.ProcessBody(bodyBytes, options, RpcID, CMD, MessageID);
+    //}
 
     protected override void PostDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
     {

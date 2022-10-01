@@ -201,7 +201,8 @@ namespace Megumin.Remote
             if (TrySerialize(writer, rpcID, message, options))
             {
                 //序列化成功
-                writer.PackSuccess();
+                var len = writer.WriteLengthOnHeader();
+                //Logger?.Log($"序列化{message.GetType().Name}成功,总长度{len}");
             }
             else
             {
@@ -424,7 +425,7 @@ namespace Megumin.Remote
                     while (unReadLenght > 4)
                     {
                         //下一个包体总长度
-                        var nextSegmentLength = unDealBuffer.ReadInt();
+                        var nextSegmentLength = unDealBuffer.ReadInt(offset); //读取长度记得加上偏移
 
                         if (unReadLenght >= nextSegmentLength)
                         {

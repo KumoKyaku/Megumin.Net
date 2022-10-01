@@ -151,12 +151,12 @@ namespace Megumin.Message
         #region Int
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ReadInt(this in ReadOnlySequence<byte> byteSequence)
+        public static int ReadInt(this in ReadOnlySequence<byte> byteSequence, int offset = 0)
         {
             unsafe
             {
                 Span<byte> span = stackalloc byte[4];
-                byteSequence.Slice(0, 4).CopyTo(span);
+                byteSequence.Slice(offset, 4).CopyTo(span);
                 return span.ReadInt();
             }
         }

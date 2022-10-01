@@ -42,7 +42,14 @@ namespace Megumin.Remote
         /// <summary>
         /// 消息打包成功
         /// </summary>
-        void PackSuccess();
+        /// <returns>消息总长度</returns>
+        [Obsolete("Use WriteLengthOnHeader")]
+        int PackSuccess();
+        /// <summary>
+        /// 将总长度写入消息4位
+        /// </summary>
+        /// <returns>消息总长度</returns>
+        int WriteLengthOnHeader();
     }
 
     /// <summary>
@@ -51,7 +58,7 @@ namespace Megumin.Remote
     public class TcpSendPipe
     {
         public int DefaultWriterSize { get; set; } = 8192;
-        internal protected class Writer : IBufferWriter<byte>, IWriter, ISendBlock
+        public class Writer : IBufferWriter<byte>, IWriter, ISendBlock
         {
             private TcpSendPipe sendPipe;
             private byte[] buffer;
@@ -129,10 +136,19 @@ namespace Megumin.Remote
                 Reset();
             }
 
-            public void PackSuccess()
+            public int PackSuccess()
             {
                 buffer.AsSpan().Write(index);//在起始位置写入长度
                 sendPipe.Push2Queue(this);
+                return index;
+            }
+
+            public int WriteLengthOnHeader()
+            {
+                var len = index;
+                buffer.AsSpan().Write(index);//在起始位置写入长度
+                sendPipe.Push2Queue(this);
+                return len; //直接返回index可能会有多线程错误，Push2Queue后直接发送并释放，导致index重置。
             }
 
             public void SendSuccess()
@@ -151,6 +167,7 @@ namespace Megumin.Remote
             }
 
             public ArraySegment<byte> SendSegment => new ArraySegment<byte>(buffer, 0, index);
+
         }
 
         ConcurrentQueue<Writer> sendQueue = new ConcurrentQueue<Writer>();

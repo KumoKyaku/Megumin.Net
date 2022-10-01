@@ -3,10 +3,13 @@ using Megumin.Message;
 using Megumin.Remote;
 using Megumin.Remote.Simple;
 using System;
+using System.Buffers;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 public class OpTest : MonoBehaviour
 {
@@ -88,6 +91,7 @@ public class OpTest : MonoBehaviour
             await client.ConnectAsync(new IPEndPoint(targetIP, port));
             Console.text += $"\n 连接成功";
             Log($"连接成功");
+            client.Logger = new MyLogger();
             RTT.SetTarget(client);
         }
         catch (Exception ex)
@@ -114,6 +118,7 @@ public class OpTest : MonoBehaviour
     [Button]
     public async void RemoteTime()
     {
+        this.LogThreadID();
         var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime());
         var span = (DateTimeOffset.UtcNow - remotetime).TotalMilliseconds;
         Log($"Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}");
@@ -122,6 +127,7 @@ public class OpTest : MonoBehaviour
     [Button]
     public async void RemoteTime2()
     {
+        this.LogThreadID();
         SendOption sendOption = new SendOption()
         {
             RpcComplatePost2ThreadScheduler = false,
@@ -130,6 +136,22 @@ public class OpTest : MonoBehaviour
         var span = (DateTimeOffset.UtcNow - remotetime).TotalMilliseconds;
         await MainThread.Switch();
         Log($"Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}");
+    }
+
+    public async void TestRTT()
+    {
+        DateTimeOffset sendTime = DateTimeOffset.UtcNow;
+        var (obj, ex) = await client.Send<Heartbeat>(Heartbeat.Default, options: SendOption.Echo);
+        if (ex == null)
+        {
+            DateTimeOffset respTime = DateTimeOffset.UtcNow;
+            var rtt = (int)((respTime - sendTime).TotalMilliseconds);
+            Log($"RTT:{rtt}ms");
+        }
+        else
+        {
+            Log("RTT:--ms");
+        }
     }
 
     [Button]
@@ -155,5 +177,20 @@ public class OpTest : MonoBehaviour
             Test.Log($"接收：{message}");
             return base.OnReceive(cmd, messageID, message);
         }
+
+        public override void OnSendSafeAwaitException(object request, object response, Action<Exception> onException, Exception finnalException)
+        {
+            base.OnSendSafeAwaitException(request, response, onException, finnalException);
+            Debug.Log(finnalException);
+            Test.Log($"接收：{finnalException}");
+        }
+    }
+}
+
+internal class MyLogger : IMeguminRemoteLogger
+{
+    public void Log(string error)
+    {
+        Debug.LogError(error);
     }
 }
