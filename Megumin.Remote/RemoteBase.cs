@@ -262,7 +262,7 @@ namespace Megumin.Remote
         {
             stopReceive = true;
 
-            if (cmd == 1)
+            if ((cmd & 0b0000_0001) != 0)
             {
                 //Echo
                 return new ValueTask<object>(result: message);

@@ -14,6 +14,13 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.tayx.graphy": {
+      "version": "https://github.com/Tayx94/graphy.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "e571e3a23306f56f39782f70aeeaf28a18419646"
+    },
     "com.unity.2d.animation": {
       "version": "8.0.3",
       "depth": 0,

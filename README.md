@@ -149,7 +149,7 @@ Heartbeat，RTT，Timestamp Synchronization等功能都由此机制实现。
 + 在某些时候，比如测试消息是否正常收发，发送端可能希望远端做出特定方式的响应，比如echo，将消息原样返回。  
 这种需求不是针对某一个特定消息类型的，也不是对于某个消息类型永远做出这样的响应，可能仅仅是针对某个时刻的某条消息。  
 对于这样的需求，在OnReceive函数中实现并不合适，没有办法根据消息类型进行抽象。   
-  - 通过CmdID == 1来实现。发送时指定option参数，option实现ICmdOption，将CmdID传递到底层报头中。
+  - 通过CmdID == 1 << 0来实现。发送时指定option参数，option实现ICmdOption，将CmdID传递到底层报头中。
   - 通过IPreReceiveable.PreReceiveType == 1来实现，发送的消息协议实现IPreReceiveable接口，并且PreReceiveType的值等于1。
   - 接收端在PreReceive函数中处理，并决定此消息是否继续传递到OnReceive函数中。
 + 在另一些时候，更通用的是，发送端发出一个消息，但是处于一些特殊原因，不希望将响应函数写在OnReceive函数中。  

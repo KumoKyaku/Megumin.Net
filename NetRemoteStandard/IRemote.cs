@@ -230,12 +230,28 @@ namespace Net.Remote
     public interface ICmdOption
     {
         /// <summary>
-        /// 1:Echo
+        /// <![CDATA[
+        /// 1 << 0 :Echo,       
+        /// 1 << 15 :Test
+        /// ]]>
         /// </summary>
         /// <remarks>
         /// 没有固定标准，具体参考PreReceive函数中实现。
         /// </remarks>
         short Cmd { get; }
+    }
+
+    /// <summary>
+    /// 由SendOption针对消息实例设置RpcSend异步后续的执行，是否使用MessageThreadTransducer
+    /// </summary>
+    public interface IRpcThreadOption
+    {
+        /// <summary>
+        /// <para/> true: 强制使用ThreadScheduler;
+        /// <para/> false: 强制不使用ThreadScheduler;
+        /// <para/> null表示不控制，由其他设置决定;
+        /// </summary>
+        bool? RpcComplatePost2ThreadScheduler { get; }
     }
 
     /// <summary>
@@ -252,7 +268,7 @@ namespace Net.Remote
         /// </summary>
         /// <param name="result"></param>
         /// <param name="exception"></param>
-        void OnEndReconnect(int result,SocketException exception);
+        void OnEndReconnect(int result, SocketException exception);
         /// <summary>
         /// 重试次数
         /// </summary>

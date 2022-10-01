@@ -156,6 +156,13 @@ namespace TestWPF
         {
             client.Send(new TestPacket3() { Value = 300 }); ;
         }
+
+        private async void TestTime_Click(object sender, RoutedEventArgs e)
+        {
+            var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime());
+            var span = (DateTimeOffset.UtcNow - remotetime).TotalMilliseconds;
+            ClientLog.Content += $"Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}";
+        }
     }
 }
 

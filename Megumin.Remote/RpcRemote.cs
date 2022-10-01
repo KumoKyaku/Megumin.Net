@@ -24,28 +24,43 @@ namespace Megumin.Remote
     {
         public virtual int UID { get; set; }
         public RpcLayer RpcLayer = new RpcLayer();
-        /// <summary>
-        /// 分流普通消息和RPC回复消息
-        /// </summary>
-        /// <param name="rpcID"></param>
-        /// <param name="cmd"></param>
-        /// <param name="messageID"></param>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected async virtual void DiversionProcess(int rpcID, short cmd, int messageID, object message)
+
+        protected virtual async void ProcessRecevie(int rpcID, short cmd, int messageID, object message)
         {
-            if (!RpcLayer.TryInput(rpcID, message))
+            //这里封装起来OnReceive故意隐藏rpcID，就是让上层忽略rpc细节。
+            //如果有特殊需求，就重写这个方法。
+
+            //这个消息非Rpc返回
+
+            //普通响应
+
+            object reply = null;
+            reply = await PreReceive(cmd, messageID, message, out var stopReceive);
+
+            //DealRelay(rpcID, reply);
+            if (reply != null)
             {
-                //这里封装起来OnReceive故意隐藏rpcID，就是让上层忽略rpc细节。
-                //如果有特殊需求，就重写这个方法。
+                if (reply is Task<object> task)
+                {
+                    reply = await task.ConfigureAwait(false);
+                }
 
-                //这个消息非Rpc返回
+                if (reply is ValueTask<object> vtask)
+                {
+                    reply = await vtask.ConfigureAwait(false);
+                }
 
-                //普通响应
+                if (reply != null)
+                {
+                    //将一个Rpc应答回复给远端
+                    //将rpcID * -1，区分上行下行
+                    Send(rpcID * -1, reply);
+                }
+            }
 
-                object reply = null;
-                reply = await PreReceive(cmd, messageID, message, out var stopReceive);
+            if (!stopReceive)
+            {
+                reply = await OnReceive(cmd, messageID, message).ConfigureAwait(false);
 
                 //DealRelay(rpcID, reply);
                 if (reply != null)
@@ -65,32 +80,6 @@ namespace Megumin.Remote
                         //将一个Rpc应答回复给远端
                         //将rpcID * -1，区分上行下行
                         Send(rpcID * -1, reply);
-                    }
-                }
-
-                if (!stopReceive)
-                {
-                    reply = await OnReceive(cmd, messageID, message).ConfigureAwait(false);
-
-                    //DealRelay(rpcID, reply);
-                    if (reply != null)
-                    {
-                        if (reply is Task<object> task)
-                        {
-                            reply = await task.ConfigureAwait(false);
-                        }
-
-                        if (reply is ValueTask<object> vtask)
-                        {
-                            reply = await vtask.ConfigureAwait(false);
-                        }
-
-                        if (reply != null)
-                        {
-                            //将一个Rpc应答回复给远端
-                            //将rpcID * -1，区分上行下行
-                            Send(rpcID * -1, reply);
-                        }
                     }
                 }
             }
@@ -125,20 +114,33 @@ namespace Megumin.Remote
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override void DeserializeSuccess(int rpcID, short cmd, int messageID, object message)
         {
-            var trans = UseThreadSchedule(rpcID, cmd, messageID, message);
+            ///分流普通消息和RPC回复消息
 
-            ///在这里处理线程转换,是否将后续处理切换到<see cref="MessageThreadTransducer"/>线程中去.
-            ///切换线程后调用 还是直接调用<see cref="DiversionProcess"/>的区别
+            var post = UseThreadSchedule(rpcID, cmd, messageID, message);
 
-            if (trans)
+            //第一版设计中先计算是否使用线程调度器，在分流。
+            //后续设置Rpc过程是否使用线程调度器，增加发送处设置。
+            //在超时抛出异常时，仍然需要决定是否转换线程，
+            //所以现在先分流决定走Rpc流程还是Recevie流程，每个流程自己处理线程调度。
+
+            //Rpc线程转换在RpcLayer 内部处理
+            this.RpcLayer.RpcCallbackPool.TrySetUseThreadScheduleResult(rpcID, post);
+
+            if (!RpcLayer.TryInput(rpcID, message))
             {
-                Push2MessageThreadTransducer(rpcID, cmd, messageID, message);
-            }
-            else
-            {
-                DiversionProcess(rpcID, cmd, messageID, message);
+                ///在这里处理线程转换,是否将后续处理切换到<see cref="MessageThreadTransducer"/>线程中去.
+                ///切换线程后调用 还是直接调用<see cref="ProcessRecevie"/>的区别
+                if (post)
+                {
+                    Push2MessageThreadTransducer(rpcID, cmd, messageID, message);
+                }
+                else
+                {
+                    ProcessRecevie(rpcID, cmd, messageID, message);
+                }
             }
         }
 
@@ -159,7 +161,7 @@ namespace Megumin.Remote
 
         void IDealMessageable.Deal(int rpcID, short cmd, int messageID, object message)
         {
-            DiversionProcess(rpcID, cmd, messageID, message);
+            ProcessRecevie(rpcID, cmd, messageID, message);
         }
 
         public virtual ValueTask<(RpcResult result, Exception exception)>

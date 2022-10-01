@@ -362,6 +362,11 @@ namespace Megumin.Remote.Rpc
             = new Dictionary<K, (DateTime startTime, Action<(M result, Exception exception)> source)>();
 
         /// <summary>
+        /// 主要由<see cref="IRpcThreadOption"/>决定，其次由UseThreadSchedule决定。
+        /// </summary>
+        protected Dictionary<K, bool?> PostThreadSetting { get; } = new Dictionary<K, bool?>();
+
+        /// <summary>
         /// 默认30000ms
         /// </summary>
         public int DefaultTimeout { get; set; } = 30000;
@@ -372,16 +377,25 @@ namespace Megumin.Remote.Rpc
         /// rpcID冲突检查
         /// </summary>
         /// <param name="key"></param>
-        protected void CheckKeyConflict(K key)
+        /// <param name="options"></param>
+        protected void CheckKeyConflict(K key, object options = null)
         {
-            if (TryDequeue(key, out var callback))
+            if (TryDequeue(key, out var callback, out var post))
             {
-                //Todo,线程转换应该分离出去
-                MessageThreadTransducer.Invoke(() =>
+                if (post)
+                {
+                    //Todo,线程转换应该分离出去
+                    MessageThreadTransducer.Invoke(() =>
+                    {
+                        //如果出现RpcID冲突，认为前一个已经超时。
+                        callback.source?.Invoke((default, new TimeoutException("RpcID overlaps and timeouts the previous callback/RpcID 重叠，对前一个回调进行超时处理")));
+                    });
+                }
+                else
                 {
                     //如果出现RpcID冲突，认为前一个已经超时。
                     callback.source?.Invoke((default, new TimeoutException("RpcID overlaps and timeouts the previous callback/RpcID 重叠，对前一个回调进行超时处理")));
-                });
+                }
             }
         }
 
@@ -390,7 +404,19 @@ namespace Megumin.Remote.Rpc
         public K Regist(Action<(M result, Exception exception)> callback, object options = null)
         {
             var rpcID = GetRpcID();
-            CheckKeyConflict(rpcID);
+
+            ///RpcSend 设置 回调线程
+            if (options is IRpcThreadOption threadOption)
+            {
+                PostThreadSetting[rpcID] = threadOption.RpcComplatePost2ThreadScheduler;
+            }
+            else
+            {
+                PostThreadSetting[rpcID] = null;
+            }
+
+            CheckKeyConflict(rpcID, options);
+
             lock (dequeueLock)
             {
                 Pool[rpcID] = (DateTime.Now, callback);
@@ -464,6 +490,32 @@ namespace Megumin.Remote.Rpc
             return false;
         }
 
+        public bool TryDequeue(K rpcID,
+            out (DateTime startTime, Action<(M result, Exception exception)> source) rpc,
+            out bool post)
+        {
+            lock (dequeueLock)
+            {
+                post = false;
+                if (PostThreadSetting.TryGetValue(rpcID, out var postSetting))
+                {
+                    PostThreadSetting.Remove(rpcID);
+                    if (postSetting.HasValue)
+                    {
+                        post = (bool)postSetting;
+                    }
+                }
+
+                if (Pool.TryGetValue(rpcID, out rpc))
+                {
+                    Pool.Remove(rpcID);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public bool TrySetResult(K rpcID, M msg)
         {
             return TryComplate(rpcID, msg, null);
@@ -474,12 +526,39 @@ namespace Megumin.Remote.Rpc
             return TryComplate(rpcID, default, exception);
         }
 
+        /// <summary>
+        /// DeserializeSuccess后设置回调线程，只有PostThreadSetting含有Key并且值为null时才设置。
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="trans"></param>
+        public void TrySetUseThreadScheduleResult(K rpcID, bool trans)
+        {
+            if (PostThreadSetting.ContainsKey(rpcID))
+            {
+                if (PostThreadSetting[rpcID] == null)
+                {
+                    PostThreadSetting[rpcID] = trans;
+                }
+            }
+        }
+
         bool TryComplate(K rpcID, M msg, Exception exception)
         {
             ///rpc响应
-            if (TryDequeue(rpcID, out var rpc))
+            if (TryDequeue(rpcID, out var rpc, out var postThread))
             {
-                rpc.source.Invoke((msg, exception));
+                if (postThread == true)
+                {
+                    MessageThreadTransducer.Invoke(() =>
+                    {
+                        rpc.source.Invoke((msg, exception));
+                    });
+                }
+                else
+                {
+                    rpc.source.Invoke((msg, exception));
+                }
+
                 return true;
             }
             return false;
@@ -502,7 +581,6 @@ namespace Megumin.Remote.Rpc
         /// <summary>
         /// 原子操作 取得RpcId,发送方的的RpcID为正数，回复的RpcID为负数，正负一一对应
         /// <para>0,int.MinValue 为无效值</para> 
-        /// <seealso cref="RpcRemote.DiversionProcess(int, short, int, object)"/>
         /// </summary>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
