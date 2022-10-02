@@ -41,7 +41,15 @@ namespace Megumin.Remote
             }
         }
 
-        public async ValueTask Sync(ISendCanAwaitable remote, int count = 7, int interval = 100)
+        /// <summary>
+        /// 实测受到延迟和丢包率影响。延迟对结果影响不大。丢包率在5%误差100ms左右
+        /// <para>count 10-20 interval 50ms-100比较合适</para>
+        /// </summary>
+        /// <param name="remote"></param>
+        /// <param name="count"></param>
+        /// <param name="interval"></param>
+        /// <returns></returns>
+        public async ValueTask Sync(ISendCanAwaitable remote, int count = 20, int interval = 50)
         {
             List<Task<OffsetValue>> tasks = new List<Task<OffsetValue>>();
             tasks.Clear();

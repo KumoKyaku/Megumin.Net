@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using TestWPF;
+using System.Collections.Generic;
 
 namespace TestWPF
 {
@@ -179,6 +180,7 @@ namespace TestWPF
 
 public class TestRemote : TcpRemote
 {
+    static Dictionary<string, TestRemote> AllClient = new Dictionary<string, TestRemote>();
     public Label log { get; set; }
     public bool LogRecvBytes { get; internal set; }
 
@@ -198,6 +200,9 @@ public class TestRemote : TcpRemote
                 case TestPacket3 packet3:
                     log.Content += $"\n 收到{nameof(TestPacket3)} value:{packet3.Value}";
                     break;
+                case Authentication auth:
+                    log.Content += $"\n 收到{nameof(Authentication)} Token:{auth.Token}";
+                    break;
                 default:
                     log.Content += $"\n 收到{message.GetType().Name} value:{message}";
                     break;
@@ -208,6 +213,20 @@ public class TestRemote : TcpRemote
         {
             case TestPacket2 packet2:
                 return new ValueTask<object>(message);
+            case Authentication auth2:
+                if (AllClient.ContainsKey(auth2.Token))
+                {
+                    return new ValueTask<object>(200);
+                }
+                if (auth2.Token.StartsWith("TestClient"))
+                {
+                    AllClient.Add(auth2.Token, this);
+                    return new ValueTask<object>(200);
+                }
+                else
+                {
+                    return new ValueTask<object>(404);
+                }
             case string str:
                 return new ValueTask<object>(str);
             default:
@@ -226,7 +245,7 @@ public class TestRemote : TcpRemote
                 log.Content += $"\n 收到bodyBytes len:{len} rpcID：{RpcID} CMD:{CMD}  MessageID:{MessageID}";
             });
         }
-        
+
         base.ProcessBody(bodyBytes, options, RpcID, CMD, MessageID);
     }
 

@@ -90,6 +90,7 @@ namespace Megumin.Remote
         /// Udp握手连接使用的消息ID编号
         /// </summary>
         public const int UdpConnectMessageID = 101;
+        public const int Authentication = 150;
         /// <summary>
         /// 心跳包ID，255好识别，buffer[10-13]=[255,0,0,0]
         /// </summary>

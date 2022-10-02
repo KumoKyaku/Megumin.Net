@@ -8,10 +8,13 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 public class OpTest : MonoBehaviour
 {
@@ -99,10 +102,38 @@ public class OpTest : MonoBehaviour
             Log($"连接成功");
             client.Logger = new MyLogger();
             RTT.SetTarget(client);
+            Auth();
         }
         catch (Exception ex)
         {
             Log($"{ex.Message}");
+        }
+    }
+
+    public void Disconnect()
+    {
+        client.Disconnect();
+    }
+
+    public async ValueTask Auth()
+    {
+        Authentication authentication = new Authentication();
+        authentication.Token = "TestClient9527";
+        var (result,ex) = await client.Send<int>(authentication);
+        if (ex == null)
+        {
+            if (result == 200)
+            {
+                Log($"{authentication.Token} 认证成功");
+            }
+            else
+            {
+                Log($"{authentication.Token} 认证失败 {result}");
+            }
+        }
+        else
+        {
+            Log($"{authentication.Token} 认证失败 {ex}");
         }
     }
 
@@ -176,11 +207,13 @@ public class OpTest : MonoBehaviour
 
     public TextMeshProUGUI TimeLable;
     public TextMeshProUGUI UtcNowOffset;
+    public int TimeStampSyncSampleCount = 7;
+    public int TimeStampSyncSampleInterval = 100;
     public async void TimeStampSync()
     {
         TimeStampSynchronization synchronization = new TimeStampSynchronization();
         synchronization.DebugLog = true;
-        await synchronization.Sync(client);
+        await synchronization.Sync(client, TimeStampSyncSampleCount, TimeStampSyncSampleInterval);
         if (UtcNowOffset)
         {
             UtcNowOffset.text = synchronization.OffsetMilliseconds.ToString();
@@ -210,6 +243,81 @@ public class OpTest : MonoBehaviour
             base.OnSendSafeAwaitException(request, response, onException, finnalException);
             Debug.Log(finnalException);
             Test.Log($"接收：{finnalException}");
+        }
+
+        protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+            Test.OnDisconnect(error, activeOrPassive);
+        }
+
+        internal void ReConnectFrom(Remote client)
+        {
+            //SendPipe = client.SendPipe;
+            RpcLayer = client.RpcLayer;
+        }
+    }
+
+    public GameObject AutoReConnectUI;
+    private void OnDisconnect(SocketError error, ActiveOrPassive activeOrPassive)
+    {
+        CancellationTokenSource source = new CancellationTokenSource();
+        ReConnect(source.Token);
+    }
+
+    public GameObject AutoReConnectErrorUI;
+    public void ReConnectError()
+    {
+        if (AutoReConnectUI)
+        {
+            AutoReConnectUI.SetActive(false);
+        }
+
+        if (AutoReConnectErrorUI)
+        {
+            AutoReConnectErrorUI.SetActive(true);
+        }
+    }
+
+    public async void ReConnect(CancellationToken token)
+    {
+        if (AutoReConnectUI)
+        {
+            AutoReConnectUI.SetActive(true);
+        }
+
+        client.Disconnect();
+
+        var  client2 = new Remote();
+        client2.Test = this;
+        client2.Post2ThreadScheduler = true;
+
+        try
+        {
+            Log($"断线重连 {client.ConnectIPEndPoint.Address} : {client.ConnectIPEndPoint.Port}");
+            await client2.ConnectAsync(client.ConnectIPEndPoint);
+            if (token.IsCancellationRequested)
+            {
+                client2.Disconnect();
+            }
+            else
+            {
+                Console.text += $"\n 连接成功";
+                Log($"连接成功");
+                client.Logger = new MyLogger();
+                RTT.SetTarget(client);
+                await Auth();
+                if (token.IsCancellationRequested)
+                {
+                    client2.Disconnect();
+                }
+
+                //将旧发送缓存 连接到新 remote
+                client2.ReConnectFrom(client);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"{ex.Message}");
         }
     }
 
