@@ -1,7 +1,8 @@
-using Megumin;
+ï»¿using Megumin;
 using Megumin.Message;
 using Megumin.Remote;
 using Megumin.Remote.Simple;
+using Net.Remote;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -33,7 +34,7 @@ public class OpTest : MonoBehaviour
         Megumin.Remote.MessageThreadTransducer.Update(Time.deltaTime);
         if (TimeLable)
         {
-            TimeLable.text = DateTimeOffset.Now.ToString("HH:ss:fff");
+            TimeLable.text = DateTimeOffset.Now.ToString("HH:mm:ss:fff");
         }
     }
 
@@ -48,25 +49,25 @@ public class OpTest : MonoBehaviour
         listener?.Stop();
         listener = new TcpRemoteListener(port);
         Listen(listener);
-        Log("¿ªÊ¼¼àÌı");
+        Log("å¼€å§‹ç›‘å¬");
     }
 
     private async void Listen(TcpRemoteListener remote)
     {
-        /// ×î½üÒ»´Î²âÊÔ±¾»úÍ¬Ê±ÔËĞĞ¿Í»§¶Ë·şÎñÆ÷16000+Á¬½ÓÊ±£¬·şÎñÆ÷¾Ü¾øÁ¬½Ó¡£
+        /// æœ€è¿‘ä¸€æ¬¡æµ‹è¯•æœ¬æœºåŒæ—¶è¿è¡Œå®¢æˆ·ç«¯æœåŠ¡å™¨16000+è¿æ¥æ—¶ï¼ŒæœåŠ¡å™¨æ‹’ç»è¿æ¥ã€‚
         var accept = await remote.ListenAsync(Create);
         Listen(remote);
         if (accept != null)
         {
-            Console.text += $"\n ÊÕµ½Á¬½Ó {accept.Client.RemoteEndPoint} ";
-            Log($"ÊÕµ½Á¬½Ó {accept.Client.RemoteEndPoint}");
+            Console.text += $"\n æ”¶åˆ°è¿æ¥ {accept.Client.RemoteEndPoint} ";
+            Log($"æ”¶åˆ°è¿æ¥ {accept.Client.RemoteEndPoint}");
             serverSide = accept;
         }
     }
 
     public EchoTcp Create()
     {
-        return new EchoTcp() {  };
+        return new EchoTcp() { };
     }
 
     public void Clear()
@@ -92,10 +93,10 @@ public class OpTest : MonoBehaviour
     {
         try
         {
-            Log($"¿ªÊ¼Á¬½Ó {targetIP} : {port}");
+            Log($"å¼€å§‹è¿æ¥ {targetIP} : {port}");
             await client.ConnectAsync(new IPEndPoint(targetIP, port));
-            Console.text += $"\n Á¬½Ó³É¹¦";
-            Log($"Á¬½Ó³É¹¦");
+            Console.text += $"\n è¿æ¥æˆåŠŸ";
+            Log($"è¿æ¥æˆåŠŸ");
             client.Logger = new MyLogger();
             RTT.SetTarget(client);
         }
@@ -115,9 +116,9 @@ public class OpTest : MonoBehaviour
     {
         var send = string.Format(SendMessageText.text, messageIndex);
         messageIndex++;
-        Log($"·¢ËÍ£º{send}");
+        Log($"å‘é€ï¼š{send}");
         var resp = await client.SendSafeAwait<string>(send);
-        Log($"·µ»Ø£º{resp}");
+        Log($"è¿”å›ï¼š{resp}");
     }
 
     [Button]
@@ -177,65 +178,21 @@ public class OpTest : MonoBehaviour
     public TextMeshProUGUI UtcNowOffset;
     public async void TimeStampSync()
     {
-        List<Task<int>> tasks = new List<Task<int>>();
-        for (int i = 0; i < 7; i++)
-        {
-            tasks.Add(GetOffset());
-            await Task.Delay(100);
-        }
-
-        await Task.WhenAll(tasks);
-        List<int> offsets = new List<int>();
-        foreach (var item in tasks)
-        {
-            if (item.Result >= 0)
-            {
-                offsets.Add(item.Result);
-            }
-        }
-
-        if (offsets.Count == 0)
-        {
-            return;
-        }
-
-        offsets.Sort();
-        Debug.Log($"Offset Count:{offsets.Count} Min:{offsets.First()} Max:{offsets.Last()}");
-        if (offsets.Count > 2)
-        {
-            offsets.RemoveAt(offsets.Count - 1);
-            offsets.RemoveAt(0);
-        }
-
-        var offset = (int)offsets.Average();
+        TimeStampSynchronization synchronization = new TimeStampSynchronization();
+        synchronization.DebugLog = true;
+        await synchronization.Sync(client);
         if (UtcNowOffset)
         {
-            UtcNowOffset.text = offset.ToString();
+            UtcNowOffset.text = synchronization.OffsetMilliseconds.ToString();
         }
     }
 
-    [Button]
-    public async Task<int> GetOffset()
+    public class TimeStampSynchronization : Megumin.Remote.TimeStampSynchronization
     {
-        SendOption sendOption = new SendOption()
+        public override void Log(object obj)
         {
-            MillisecondsDelay = 2000,
-            RpcComplatePost2ThreadScheduler = false,
-        };
-        var sendTime = DateTimeOffset.UtcNow;
-        var (remotetime,ex) = await client.Send<DateTimeOffset>(new GetTime(), options: sendOption).ConfigureAwait(false);
-        var offset = -1;
-        if (ex == null)
-        {
-            var loacalUtcNow = DateTimeOffset.UtcNow;
-            var rtt = loacalUtcNow - sendTime;
-            var calRemoteUtcNow = remotetime + (rtt / 2);
-            // LoacalUtcNow + Offset = RemoteUtcNow
-            var offsetSpan = calRemoteUtcNow - loacalUtcNow;
-            offset = (int)offsetSpan.TotalMilliseconds;
+            Debug.Log(obj);
         }
-        Debug.Log($"²âÊÔUtcNow offset:{offset}");
-        return offset;
     }
 
     public class Remote : TcpRemote
@@ -244,7 +201,7 @@ public class OpTest : MonoBehaviour
 
         protected override async ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
-            Test.Log($"½ÓÊÕ£º{message}");
+            Test.Log($"æ¥æ”¶ï¼š{message}");
             return base.OnReceive(cmd, messageID, message);
         }
 
@@ -252,7 +209,7 @@ public class OpTest : MonoBehaviour
         {
             base.OnSendSafeAwaitException(request, response, onException, finnalException);
             Debug.Log(finnalException);
-            Test.Log($"½ÓÊÕ£º{finnalException}");
+            Test.Log($"æ¥æ”¶ï¼š{finnalException}");
         }
     }
 

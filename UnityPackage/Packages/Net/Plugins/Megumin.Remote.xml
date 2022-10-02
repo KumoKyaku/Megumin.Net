@@ -377,7 +377,7 @@
         </member>
         <member name="P:Megumin.Remote.Rpc.RpcCallbackPool`3.PostThreadSetting">
             <summary>
-            主要由<see cref="T:Net.Remote.IRpcThreadOption"/>决定，其次由UseThreadSchedule决定。
+            主要由<see cref="T:Megumin.Remote.IRpcThreadOption"/>决定，其次由UseThreadSchedule决定。
             </summary>
         </member>
         <member name="P:Megumin.Remote.Rpc.RpcCallbackPool`3.DefaultTimeout">
@@ -476,6 +476,18 @@
             <see cref="M:Megumin.Remote.Rpc.RpcCallbackPool`3.TrySetResult(`0,`1)"/>
             <see cref="M:System.Threading.Tasks.MiniTask`1.SetResult(`0)"/>
             </remarks>
+        </member>
+        <member name="T:Megumin.Remote.IRpcThreadOption">
+            <summary>
+            由SendOption针对消息实例设置RpcSend异步后续的执行，是否使用MessageThreadTransducer
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.IRpcThreadOption.RpcComplatePost2ThreadScheduler">
+            <summary>
+            <para/> true: 强制使用ThreadScheduler;
+            <para/> false: 强制不使用ThreadScheduler;
+            <para/> null表示不控制，由其他设置决定;
+            </summary>
         </member>
         <member name="T:Megumin.Remote.TcpRemote">
             <summary>
@@ -665,6 +677,13 @@
             <summary>
             消息打包成功
             </summary>
+            <returns>消息总长度</returns>
+        </member>
+        <member name="M:Megumin.Remote.IWriter.WriteLengthOnHeader">
+            <summary>
+            将总长度写入消息4位
+            </summary>
+            <returns>消息总长度</returns>
         </member>
         <member name="T:Megumin.Remote.TcpSendPipe">
             <summary>
@@ -703,6 +722,11 @@
             取得下一个待发送消息。
             </summary>
             <returns></returns>
+        </member>
+        <member name="T:Megumin.Remote.TimeStampSynchronization">
+            <summary>
+            时间戳同步
+            </summary>
         </member>
         <member name="F:Megumin.Remote.UdpRemoteMessageDefine.LLMsg">
             <summary>
@@ -990,90 +1014,6 @@
             </summary>
             <typeparam name="T"></typeparam>
             <param name="canAwaitable"></param>
-            <returns></returns>
-        </member>
-        <member name="T:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F">
-            <summary>
-            小端
-            </summary>
-        </member>
-        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Int32,System.Span{System.Byte})">
-            <summary>
-            写入一个int
-            </summary>
-            <param name="num"></param>
-            <param name="span"></param>
-            <returns>offset</returns>
-        </member>
-        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Span{System.Byte},System.Int32)">
-            <summary>
-            写入一个int
-            </summary>
-            <param name="span"></param>
-            <param name="value"></param>
-            <returns></returns>
-        </member>
-        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Span{System.Byte},System.Int64)">
-            <summary>
-            写入一个long
-            </summary>
-            <param name="span"></param>
-            <param name="value"></param>
-            <returns></returns>
-        </member>
-        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Int64,System.Span{System.Byte})">
-            <summary>
-            写入一个long
-            </summary>
-            <param name="span"></param>
-            <param name="value"></param>
-            <returns></returns>
-        </member>
-        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Span{System.Byte},System.Single)">
-            <summary>
-            写入一个short
-            </summary>
-            <param name="span"></param>
-            <param name="value"></param>
-            <returns></returns>
-        </member>
-        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Single,System.Span{System.Byte})">
-            <summary>
-            写入一个short
-            </summary>
-            <param name="span"></param>
-            <param name="value"></param>
-            <returns></returns>
-        </member>
-        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Span{System.Byte},System.Double)">
-            <summary>
-            写入一个double
-            </summary>
-            <param name="span"></param>
-            <param name="value"></param>
-            <returns></returns>
-        </member>
-        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Double,System.Span{System.Byte})">
-            <summary>
-            写入一个double
-            </summary>
-            <param name="span"></param>
-            <param name="value"></param>
-            <returns></returns>
-        </member>
-        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.Write(System.Span{System.Byte},System.Int16)">
-            <summary>
-            写入一个short
-            </summary>
-            <param name="span"></param>
-            <param name="value"></param>
-            <returns></returns>
-        </member>
-        <member name="M:SpanByteExtension_37AAF334E75041368C6B47A256F0F93F.ReadGuid(System.ReadOnlySpan{System.Byte})">
-            <summary>
-            todo 优化alloc
-            </summary>
-            <param name="span"></param>
             <returns></returns>
         </member>
         <member name="T:InterlockedID`1">
