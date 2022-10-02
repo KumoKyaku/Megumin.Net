@@ -242,19 +242,6 @@ namespace Net.Remote
     }
 
     /// <summary>
-    /// 由SendOption针对消息实例设置RpcSend异步后续的执行，是否使用MessageThreadTransducer
-    /// </summary>
-    public interface IRpcThreadOption
-    {
-        /// <summary>
-        /// <para/> true: 强制使用ThreadScheduler;
-        /// <para/> false: 强制不使用ThreadScheduler;
-        /// <para/> null表示不控制，由其他设置决定;
-        /// </summary>
-        bool? RpcComplatePost2ThreadScheduler { get; }
-    }
-
-    /// <summary>
     /// todo 只有主动链接测 不停的发送心跳,自动断线重连,回调用于UI
     /// </summary>
     interface IReconnetCallback

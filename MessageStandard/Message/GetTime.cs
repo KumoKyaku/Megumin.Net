@@ -14,6 +14,10 @@ namespace Megumin.Message
             var span = writer.GetSpan(4);
             span.Write(PreReceiveType);
             writer.Advance(4);
+
+            var post = writer.GetSpan(1);
+            post.Write(ReceiveThreadPost2ThreadScheduler);
+            writer.Advance(1);
         }
 
         public int MessageID => MSGID.GetTime;
@@ -26,7 +30,10 @@ namespace Megumin.Message
 
         public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
         {
-            return new GetTime() { PreReceiveType = byteSequence.ReadInt() };
+            var result = new GetTime();
+            result.PreReceiveType = byteSequence.ReadInt();
+            result.ReceiveThreadPost2ThreadScheduler = byteSequence.ReadBoolNullable(4);
+            return result;
         }
     }
 
@@ -38,6 +45,11 @@ namespace Megumin.Message
         }
 
         public int PreReceiveType { get; set; } = 2;
+    }
+
+    partial class GetTime: IReceiveThreadControlable
+    {
+        public bool? ReceiveThreadPost2ThreadScheduler { get; set; } = false;
     }
 }
 

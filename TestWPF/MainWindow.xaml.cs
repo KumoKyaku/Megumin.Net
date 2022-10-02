@@ -162,7 +162,17 @@ namespace TestWPF
         {
             var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime());
             var span = (DateTimeOffset.UtcNow - remotetime).TotalMilliseconds;
-            ClientLog.Content += $"Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}";
+            ClientLog.Content += $"\n Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}";
+        }
+
+        private void LogRecvBytes_Checked(object sender, RoutedEventArgs e)
+        {
+            server.LogRecvBytes = true;
+        }
+
+        private void LogRecvBytes_Unchecked(object sender, RoutedEventArgs e)
+        {
+            server.LogRecvBytes = false;
         }
     }
 }
@@ -170,6 +180,8 @@ namespace TestWPF
 public class TestRemote : TcpRemote
 {
     public Label log { get; set; }
+    public bool LogRecvBytes { get; internal set; }
+
     int disCount = 0;
     protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
     {
@@ -204,15 +216,19 @@ public class TestRemote : TcpRemote
         return NullResult;
     }
 
-    //protected override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, object options, int RpcID, short CMD, int MessageID)
-    //{
-    //    var len = bodyBytes.Length;
-    //    log.Dispatcher.Invoke(() =>
-    //    {
-    //        log.Content += $"\n 收到bodyBytes len:{len} rpcID：{RpcID} CMD:{CMD}  MessageID:{MessageID}";
-    //    });
-    //    base.ProcessBody(bodyBytes, options, RpcID, CMD, MessageID);
-    //}
+    protected override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, object options, int RpcID, short CMD, int MessageID)
+    {
+        if (LogRecvBytes)
+        {
+            var len = bodyBytes.Length;
+            log.Dispatcher.Invoke(() =>
+            {
+                log.Content += $"\n 收到bodyBytes len:{len} rpcID：{RpcID} CMD:{CMD}  MessageID:{MessageID}";
+            });
+        }
+        
+        base.ProcessBody(bodyBytes, options, RpcID, CMD, MessageID);
+    }
 
     protected override void PostDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
     {

@@ -35,6 +35,7 @@
         <Button x:Name="SendString" Grid.Column="2" Content="发送一个String" HorizontalAlignment="Left" Margin="34,129,0,0" VerticalAlignment="Top" Width="108" Click="SendString_Click"/>
         <Button x:Name="SendBigMessage" Content="SendBigMessage" HorizontalAlignment="Left" Margin="188,105,0,0" VerticalAlignment="Top" Width="104" Click="SendBigMessage_Click"/>
         <Button x:Name="TestTime" Content="Time" HorizontalAlignment="Left" Margin="188,129,0,0" VerticalAlignment="Top" Width="104" Click="TestTime_Click"/>
+        <CheckBox x:Name="LogRecvBytes" Grid.Column="2" Content="LogRecvBytes" HorizontalAlignment="Left" Margin="34,83,0,0" VerticalAlignment="Top" Width="108" Checked="LogRecvBytes_Checked" Unchecked="LogRecvBytes_Unchecked" IsChecked="False"/>
 
     </Grid>
 </Window>

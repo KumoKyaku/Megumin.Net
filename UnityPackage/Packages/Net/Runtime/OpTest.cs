@@ -4,12 +4,13 @@ using Megumin.Remote;
 using Megumin.Remote.Simple;
 using System;
 using System.Buffers;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 public class OpTest : MonoBehaviour
 {
@@ -30,6 +31,10 @@ public class OpTest : MonoBehaviour
     void Update()
     {
         Megumin.Remote.MessageThreadTransducer.Update(Time.deltaTime);
+        if (TimeLable)
+        {
+            TimeLable.text = DateTimeOffset.Now.ToString("HH:ss:fff");
+        }
     }
 
     private TcpRemoteListener listener;
@@ -168,6 +173,71 @@ public class OpTest : MonoBehaviour
         });
     }
 
+    public TextMeshProUGUI TimeLable;
+    public TextMeshProUGUI UtcNowOffset;
+    public async void TimeStampSync()
+    {
+        List<Task<int>> tasks = new List<Task<int>>();
+        for (int i = 0; i < 7; i++)
+        {
+            tasks.Add(GetOffset());
+            await Task.Delay(100);
+        }
+
+        await Task.WhenAll(tasks);
+        List<int> offsets = new List<int>();
+        foreach (var item in tasks)
+        {
+            if (item.Result >= 0)
+            {
+                offsets.Add(item.Result);
+            }
+        }
+
+        if (offsets.Count == 0)
+        {
+            return;
+        }
+
+        offsets.Sort();
+        Debug.Log($"Offset Count:{offsets.Count} Min:{offsets.First()} Max:{offsets.Last()}");
+        if (offsets.Count > 2)
+        {
+            offsets.RemoveAt(offsets.Count - 1);
+            offsets.RemoveAt(0);
+        }
+
+        var offset = (int)offsets.Average();
+        if (UtcNowOffset)
+        {
+            UtcNowOffset.text = offset.ToString();
+        }
+    }
+
+    [Button]
+    public async Task<int> GetOffset()
+    {
+        SendOption sendOption = new SendOption()
+        {
+            MillisecondsDelay = 2000,
+            RpcComplatePost2ThreadScheduler = false,
+        };
+        var sendTime = DateTimeOffset.UtcNow;
+        var (remotetime,ex) = await client.Send<DateTimeOffset>(new GetTime(), options: sendOption).ConfigureAwait(false);
+        var offset = -1;
+        if (ex == null)
+        {
+            var loacalUtcNow = DateTimeOffset.UtcNow;
+            var rtt = loacalUtcNow - sendTime;
+            var calRemoteUtcNow = remotetime + (rtt / 2);
+            // LoacalUtcNow + Offset = RemoteUtcNow
+            var offsetSpan = calRemoteUtcNow - loacalUtcNow;
+            offset = (int)offsetSpan.TotalMilliseconds;
+        }
+        Debug.Log($"≤‚ ‘UtcNow offset:{offset}");
+        return offset;
+    }
+
     public class Remote : TcpRemote
     {
         public OpTest Test { get; internal set; }
@@ -185,12 +255,13 @@ public class OpTest : MonoBehaviour
             Test.Log($"Ω” ’£∫{finnalException}");
         }
     }
-}
 
-internal class MyLogger : IMeguminRemoteLogger
-{
-    public void Log(string error)
+    internal class MyLogger : IMeguminRemoteLogger
     {
-        Debug.LogError(error);
+        public void Log(string error)
+        {
+            Debug.LogError(error);
+        }
     }
 }
+
