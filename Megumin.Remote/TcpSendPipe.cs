@@ -18,10 +18,6 @@ namespace Megumin.Remote
         /// </summary>
         void SendSuccess();
         /// <summary>
-        /// 当前消息需要重写发送
-        /// </summary>
-        void NeedToResend();
-        /// <summary>
         /// 要发送的内存块
         /// </summary>
         ReadOnlyMemory<byte> SendMemory { get; }
@@ -40,12 +36,6 @@ namespace Megumin.Remote
         /// 放弃发送，废弃当前写入器
         /// </summary>
         void Discard();
-        /// <summary>
-        /// 消息打包成功
-        /// </summary>
-        /// <returns>消息总长度</returns>
-        [Obsolete("Use WriteLengthOnHeader")]
-        int PackSuccess();
         /// <summary>
         /// 将总长度写入消息4位
         /// </summary>
@@ -78,12 +68,13 @@ namespace Megumin.Remote
             {
                 lock (syncLock)
                 {
-                    if (buffer == null)
-                    {
-                        buffer = ArrayPool<byte>.Shared.Rent(sendPipe.DefaultWriterSize);
-                    }
-
                     index = 4;
+
+                    if (buffer != null)
+                    {
+                        ArrayPool<byte>.Shared.Return(buffer);
+                        buffer = null;
+                    }
                 }
             }
 
@@ -116,6 +107,13 @@ namespace Megumin.Remote
             /// <param name="sizeHint"></param>
             void Ensure(int sizeHint)
             {
+                if (buffer == null)
+                {
+                    var size = Math.Max(sizeHint, sendPipe.DefaultWriterSize);
+                    buffer = ArrayPool<byte>.Shared.Rent(size);
+                    return;
+                }
+
                 var leftLength = buffer.Length - index;
                 if (leftLength >= sizeHint && leftLength > 0)
                 {
@@ -137,13 +135,6 @@ namespace Megumin.Remote
                 Reset();
             }
 
-            public int PackSuccess()
-            {
-                buffer.AsSpan().Write(index);//在起始位置写入长度
-                sendPipe.Push2Queue(this);
-                return index;
-            }
-
             public int WriteLengthOnHeader()
             {
                 var len = index;
@@ -159,43 +150,28 @@ namespace Megumin.Remote
 
             public ReadOnlyMemory<byte> SendMemory => new ReadOnlyMemory<byte>(buffer, 0, index);
 
-            /// <summary>
-            /// TODO: BUG,这里需要重新发送的消息应该防止开始位置保证消息的有序性.要保证ReadNext时返回这个消息.
-            /// </summary>
-            public void NeedToResend()
-            {
-                sendPipe.Push2Queue(this);
-            }
-
             public ArraySegment<byte> SendSegment => new ArraySegment<byte>(buffer, 0, index);
 
         }
 
         ConcurrentQueue<Writer> sendQueue = new ConcurrentQueue<Writer>();
 
-        /// <summary>
-        /// 发送失败队列
-        /// </summary>
-        ConcurrentQueue<Writer> sendFailQueue = new ConcurrentQueue<Writer>();
-
         protected readonly object _pushLock = new object();
         private void Push2Queue(Writer writer)
         {
-            TaskCompletionSource<ISendBlock> curSource = null;
             lock (_pushLock)
             {
-                if (source != null)
+                sendQueue.Enqueue(writer);
+                if (sendQueue.TryPeek(out var block))
                 {
-                    curSource = source;
-                    source = null;
-                }
-                else
-                {
-                    sendQueue.Enqueue(writer);
+                    if (source != null)
+                    {
+                        var curSource = source;
+                        source = null;
+                        curSource?.SetResult(block);
+                    }
                 }
             }
-
-            curSource?.SetResult(writer);
         }
 
         /// <summary>
@@ -208,40 +184,58 @@ namespace Megumin.Remote
         }
 
         TaskCompletionSource<ISendBlock> source;
+
         /// <summary>
         /// 取得下一个待发送消息。
         /// </summary>
         /// <returns></returns>
         public ValueTask<ISendBlock> ReadNext()
         {
-            if (sendFailQueue.TryDequeue(out var writer))
+            if (source != null)
             {
-                return new ValueTask<ISendBlock>(writer);
+                throw new Exception($"ReadSendPipe 重复挂起，同一时刻只能有一出发送，这里不符合预期"); //todo 已经有个发送任务在等了。
             }
-            else if (sendQueue.TryDequeue(out var send))
+
+            lock (_pushLock)
             {
-                return new ValueTask<ISendBlock>(send);
-            }
-            else if (source != null)
-            {
-                throw new Exception(); //todo 已经有个发送任务在等了。
-            }
-            else
-            {
-                //todo IValueTaskSource
-                source = new TaskCompletionSource<ISendBlock>();
-                return new ValueTask<ISendBlock>(source.Task);
+                if (sendQueue.TryPeek(out var block))
+                {
+                    return new ValueTask<ISendBlock>(block);
+                }
+                else
+                {
+                    //todo IValueTaskSource
+                    source = new TaskCompletionSource<ISendBlock>();
+                    return new ValueTask<ISendBlock>(source.Task);
+                }
             }
         }
 
-        public ValueTask<ISendBlock> TryPeek()
+        public bool Advance(ISendBlock sendBlock)
         {
-            return default;
-        }
+            if (sendQueue.TryDequeue(out var first))
+            {
+                if (first != sendBlock)
+                {
+                    throw new InvalidOperationException($"发送队列出现排序错误");
+                }
+                sendBlock.SendSuccess();
+                return true;
+            }
 
-        public bool AdvanceOne()
-        {
             return false;
+        }
+
+        /// <summary>
+        /// 取消正在挂起的ReadNext
+        /// </summary>
+        /// <remarks>
+        /// 会导致Socket发送循环中断，需要重新调用ReadSendPipe。
+        /// 用于断线重连时，将旧的Remote的SendPipe，赋值给新的Remote，并取消旧的Remote的pending。
+        /// </remarks>
+        public void CancelPendingRead()
+        {
+            source = null;
         }
     }
 }

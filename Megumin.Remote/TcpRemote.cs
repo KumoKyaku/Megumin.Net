@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Sources;
 
@@ -81,7 +82,7 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="socket"></param>
         /// <param name="reconnectForce"></param>
-        internal protected virtual void SetSocket(Socket socket, bool reconnectForce = false)
+        public virtual void SetSocket(Socket socket, bool reconnectForce = false)
         {
             if (Client != null)
             {
@@ -97,7 +98,7 @@ namespace Megumin.Remote
         }
 
         /// <summary>
-        /// 开始发送接收
+        /// 开始发送接收 TODO,拆分成4个函数
         /// </summary>
         internal protected virtual void StartWork()
         {
@@ -108,6 +109,26 @@ namespace Megumin.Remote
                 StartReadRecvPipe(Pipe.Reader);
                 ReadSendPipe(SendPipe);
             }
+        }
+
+        public void StartSocketSend()
+        {
+
+        }
+
+        public void StopSocketSend()
+        {
+
+        }
+
+        public void StartSocketReceive()
+        {
+
+        }
+
+        public void StopSocketReceive()
+        {
+
         }
     }
 
@@ -121,7 +142,7 @@ namespace Megumin.Remote
         /// 正在连接
         /// </summary>
         bool IsConnecting = false;
-        private async Task ConnectAsync(Socket socket, IPEndPoint endPoint, int retryCount = 0)
+        private async Task ConnectAsync(Socket socket, IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
         {
             lock (_connectlock)
             {
@@ -139,9 +160,13 @@ namespace Megumin.Remote
 
             while (retryCount >= 0)
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    throw new TaskCanceledException("连接被取消");
+                }
                 try
                 {
-                    await Client.ConnectAsync(endPoint).ConfigureAwait(false);
+                    await socket.ConnectAsync(endPoint).ConfigureAwait(false);
                     IsConnecting = false;
                     disconnector.tcpRemote = this;
                     StartWork();
@@ -218,7 +243,7 @@ namespace Megumin.Remote
         /// 发送管道
         /// </summary>
         /// <remarks>发送管道没有涵盖所有案例，尽量不要给外界访问</remarks>
-        protected TcpSendPipe SendPipe { get; } = new TcpSendPipe();
+        protected TcpSendPipe SendPipe { get; set; } = new TcpSendPipe();
 
         public bool IsSending { get; protected set; }
 
@@ -254,7 +279,6 @@ namespace Megumin.Remote
                         && RemoteState != WorkState.StopingWaitQueueSending)
                     {
                         //拿到待发送数据时，Socket已经不能发送了
-                        target.NeedToResend();
                         return;
                     }
 
@@ -270,11 +294,10 @@ namespace Megumin.Remote
                     if (result == length)
                     {
                         //发送成功
-                        target.SendSuccess();
+                        sendPipe.Advance(target);
                     }
                     else
                     {
-                        target.NeedToResend();
                         //发送不成功，result 是错误码
                         //https://docs.microsoft.com/zh-cn/dotnet/api/system.net.sockets.sockettaskextensions.sendasync?view=netstandard-2.0
                         disconnector?.OnSendError((SocketError)result);
