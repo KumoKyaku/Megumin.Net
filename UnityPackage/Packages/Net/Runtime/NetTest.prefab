@@ -2089,8 +2089,8 @@ MonoBehaviour:
   UtcNowOffset: {fileID: 9079154007976684587}
   TimeStampSyncSampleCount: 7
   TimeStampSyncSampleInterval: 100
-  AutoReConnectUI: {fileID: 0}
-  AutoReConnectErrorUI: {fileID: 0}
+  AutoReConnectUI: {fileID: 6904041151291100759}
+  AutoReConnectErrorUI: {fileID: 5793599488853095684}
 --- !u!1 &2842786244389636045
 GameObject:
   m_ObjectHideFlags: 0
@@ -10895,7 +10895,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2816856358021184620}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1998101793578196673}
+        m_TargetAssemblyTypeName: OpTest, Megumin.GameFramework.Net
+        m_MethodName: CancelReconnect
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8787064480805568668
 GameObject:
   m_ObjectHideFlags: 0
@@ -11017,7 +11029,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6090427509671056653}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1998101793578196673}
+        m_TargetAssemblyTypeName: OpTest, Megumin.GameFramework.Net
+        m_MethodName: Home
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8915112367634707157
 GameObject:
   m_ObjectHideFlags: 0
@@ -11395,7 +11419,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6792443267762616422}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1998101793578196673}
+        m_TargetAssemblyTypeName: OpTest, Megumin.GameFramework.Net
+        m_MethodName: RetryReconnect
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &9110526030131210010
 GameObject:
   m_ObjectHideFlags: 0

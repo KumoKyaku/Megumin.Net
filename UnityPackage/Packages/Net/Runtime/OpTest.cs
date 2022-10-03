@@ -115,7 +115,7 @@ public class OpTest : MonoBehaviour
         client.Disconnect();
     }
 
-    public async ValueTask Auth()
+    public async ValueTask<bool> Auth()
     {
         Authentication authentication = new Authentication();
         authentication.Token = "TestClient9527";
@@ -125,6 +125,7 @@ public class OpTest : MonoBehaviour
             if (result == 200)
             {
                 Log($"{authentication.Token} 认证成功");
+                return true;
             }
             else
             {
@@ -135,6 +136,7 @@ public class OpTest : MonoBehaviour
         {
             Log($"{authentication.Token} 认证失败 {ex}");
         }
+        return false;
     }
 
     public void Log(string str)
@@ -258,10 +260,27 @@ public class OpTest : MonoBehaviour
     }
 
     public GameObject AutoReConnectUI;
-    private void OnDisconnect(SocketError error, ActiveOrPassive activeOrPassive)
+    private async void OnDisconnect(SocketError error, ActiveOrPassive activeOrPassive)
     {
-        CancellationTokenSource source = new CancellationTokenSource();
-        ReConnect(source.Token);
+        await MainThread.Switch();
+        Log($"OnDisconnect {error} : {activeOrPassive}");
+        ReConnect();
+    }
+
+    public void CancelReconnect()
+    {
+        reconnectCancelSource?.Cancel();
+    }
+
+    public void RetryReconnect()
+    {
+        reconnectCancelSource?.Cancel();
+        ReConnect();
+    }
+
+    public void Home()
+    {
+
     }
 
     public GameObject AutoReConnectErrorUI;
@@ -278,13 +297,33 @@ public class OpTest : MonoBehaviour
         }
     }
 
-    public async void ReConnect(CancellationToken token)
+
+    CancellationTokenSource reconnectCancelSource = null;
+    /// <summary>
+    /// 重来三种方式：
+    /// 1: 新创建一个Socket，设置到旧的remote中。
+    /// 2：新建一个remote，并使用旧的remote的rpclayer，sendpipe。
+    /// 3：新建一个remote，旧的remote使用 新remote的socket revepipe,重新激活旧的remote
+    /// 只有方法2成立。重连后需要验证发消息。需要使用remote功能，所以1不成立。
+    /// 收发消息后，socket ReceiveAsync已经挂起，socket已经和remote绑定，不能切换socket，所以方法3不成立。
+    /// </summary>
+    public async void ReConnect()
     {
+        reconnectCancelSource?.Cancel();
+        reconnectCancelSource = new CancellationTokenSource();
+        var token = reconnectCancelSource.Token;
+
         if (AutoReConnectUI)
         {
             AutoReConnectUI.SetActive(true);
         }
 
+        if (AutoReConnectErrorUI)
+        {
+            AutoReConnectErrorUI.SetActive(false);
+        }
+
+        await Task.Delay(1000);
         client.Disconnect();
 
         var  client2 = new Remote();
@@ -295,29 +334,35 @@ public class OpTest : MonoBehaviour
         {
             Log($"断线重连 {client.ConnectIPEndPoint.Address} : {client.ConnectIPEndPoint.Port}");
             await client2.ConnectAsync(client.ConnectIPEndPoint);
-            if (token.IsCancellationRequested)
-            {
-                client2.Disconnect();
-            }
-            else
+            if (!token.IsCancellationRequested)
             {
                 Console.text += $"\n 连接成功";
                 Log($"连接成功");
                 client.Logger = new MyLogger();
                 RTT.SetTarget(client);
-                await Auth();
-                if (token.IsCancellationRequested)
+                var success = await Auth();
+                if (success && !token.IsCancellationRequested)
                 {
-                    client2.Disconnect();
-                }
+                    //将旧发送缓存 连接到新 remote
+                    client2.ReConnectFrom(client);
 
-                //将旧发送缓存 连接到新 remote
-                client2.ReConnectFrom(client);
+                    //重连成功
+                    if (AutoReConnectUI)
+                    {
+                        AutoReConnectUI.SetActive(false);
+                    }
+                    return;
+                }
             }
+           
+            //重连失败
+            client2.Disconnect();
+            ReConnectError();
         }
         catch (Exception ex)
         {
             Log($"{ex.Message}");
+            ReConnectError();
         }
     }
 

@@ -155,7 +155,14 @@ namespace Megumin.Remote
 
             if (socket.Connected)
             {
-                throw new ArgumentException("socket已经连接");
+                if (endPoint.Equals(socket.RemoteEndPoint))
+                {
+                    return;
+                }
+                else
+                {
+                    throw new ArgumentException("socket已经连接");
+                }
             }
 
             while (retryCount >= 0)
