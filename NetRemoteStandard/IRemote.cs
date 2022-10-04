@@ -43,8 +43,9 @@ namespace Net.Remote
         /// </summary>
         /// <param name="endPoint"></param>
         /// <param name="retryCount">重试次数，失败会返回最后一次的异常</param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0);
+        Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default);
         //todo 超时API设计
         //Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, int timeoutMillonseconds = 30000);
         //Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken token = default);

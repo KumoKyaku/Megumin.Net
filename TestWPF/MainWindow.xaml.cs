@@ -62,7 +62,9 @@ namespace TestWPF
 
         public TestRemote Create()
         {
-            return new TestRemote() { log = this.Serverlog };
+            var r = new TestRemote() { log = this.Serverlog };
+            r.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
+            return r;
         }
 
         private void CreateClient(object sender, RoutedEventArgs e)

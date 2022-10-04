@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Net.Sockets.Kcp;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Megumin.Remote
@@ -174,7 +175,7 @@ namespace Megumin.Remote
             kcp.Input(sequence);
         }
 
-        public override Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
+        public override Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
         {
             InitKcp(1001);
             return base.ConnectAsync(endPoint, retryCount);

@@ -1,18 +1,12 @@
 ﻿using Megumin.Message;
-using Megumin.Remote;
 using Net.Remote;
 using System;
-using System.Buffers;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Sources;
 
 namespace Megumin.Remote
 {
@@ -60,15 +54,13 @@ namespace Megumin.Remote
         /// </summary>
         public WorkState RemoteState { get; internal protected set; } = WorkState.NotStart;
 
-        /// <summary>
-        /// Mono/IL2CPP 请使用中使用<see cref="TcpRemote(AddressFamily)"/>
-        /// </summary>
         public TcpRemote()
         {
 
         }
 
         /// <remarks>
+        /// 明确指定使用IPV4还是IPV6
         /// <para>SocketException: Protocol option not supported</para>
         /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
         /// </remarks>
@@ -90,6 +82,8 @@ namespace Megumin.Remote
             }
 
             this.Client = socket;
+            //每个socket都可以断开一次。
+            disconnector = new Disconnector();
             disconnector.tcpRemote = this;
             if (Client.Connected)
             {
@@ -105,9 +99,9 @@ namespace Megumin.Remote
             if (RemoteState == WorkState.NotStart)
             {
                 RemoteState = WorkState.Working;
-                FillRecvPipe(RecvPipe.Writer);
-                StartReadRecvPipe(RecvPipe.Reader);
-                ReadSendPipe(SendPipe);
+                StartSocketReceive();
+                StartMessageReceive();
+                StartSocketSend();
             }
         }
     }
@@ -174,19 +168,44 @@ namespace Megumin.Remote
             }
         }
 
-        public virtual Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
+        public virtual Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
         {
             ConnectIPEndPoint = endPoint;
             if (Client == null)
             {
                 SetSocket(new Socket(SocketType.Stream, ProtocolType.Tcp));
             }
-            return ConnectAsync(Client, endPoint, retryCount);
+            return ConnectAsync(Client, endPoint, retryCount, cancellationToken);
         }
 
         public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
         {
             disconnector?.Disconnect(triggerOnDisConnect, waitSendQueue);
+        }
+
+        /// <summary>
+        /// 将oldRemote的SendPipe和RpcLayer赋值给当前remote。
+        /// </summary>
+        /// <remarks>
+        /// 断线重连三种方式：
+        /// <para/> 1: 新创建一个Socket，设置到旧的remote中。
+        /// <para/> 2：新建一个remote，并使用旧的remote的rpclayer，sendpipe。
+        /// <para/> 3：新建一个remote，旧的remote使用 新remote的socket revepipe,重新激活旧的remote
+        /// <para/> 只有方法2成立。重连后需要进行验证流程，需要收发消息甚至rpc功能，需要使用remote功能，所以1不成立。
+        /// <para/> 收发消息后，socket ReceiveAsync已经挂起，socket已经和remote绑定，不能切换socket，所以方法3不成立。
+        /// </remarks>
+        public virtual void ReConnectFrom(TcpRemote oldRemote)
+        {
+            if (oldRemote == null)
+            {
+                return;
+            }
+
+            oldRemote.StopSocketSend();
+            this.StopSocketSend();
+            SendPipe = oldRemote.SendPipe;
+            RpcLayer = oldRemote.RpcLayer;
+            StartSocketSend();
         }
     }
 

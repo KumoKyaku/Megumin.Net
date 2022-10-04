@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Megumin.Remote
 {
-    public partial class UdpRemote : RpcRemote, IRemoteEndPoint, IRemote,IConnectable
+    public partial class UdpRemote : RpcRemote, IRemoteEndPoint, IRemote, IConnectable
     {
         public int ID { get; } = InterlockedID<IRemoteID>.NewID();
         public Guid GUID { get; internal set; }
@@ -237,7 +237,7 @@ namespace Megumin.Remote
         }
 
         static byte[] conn = new byte[1];
-        public virtual Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
+        public virtual Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
         {
             ConnectIPEndPoint = endPoint;
             Client.SendTo(conn, endPoint);
@@ -247,7 +247,7 @@ namespace Megumin.Remote
 
         public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
         {
-            
+
         }
     }
 }
