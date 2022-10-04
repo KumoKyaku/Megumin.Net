@@ -250,6 +250,13 @@ public class OpTest : MonoBehaviour
 
         protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isPlaying == false)
+            {
+                //防止编辑器停止播放时触发断线重连
+                return;
+            }
+#endif
             Test.OnDisconnect(error, activeOrPassive);
         }
     }
