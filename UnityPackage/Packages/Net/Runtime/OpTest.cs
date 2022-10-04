@@ -87,6 +87,7 @@ public class OpTest : MonoBehaviour
         IPAddress.TryParse(TargetIP.text, out targetIP);
 
         client = new Remote();
+        client.Logger = new MyLogger();
         client.Test = this;
         client.Post2ThreadScheduler = true;
         Connect(port, targetIP);
@@ -98,11 +99,10 @@ public class OpTest : MonoBehaviour
         {
             Log($"开始连接 {targetIP} : {port}");
             await client.ConnectAsync(new IPEndPoint(targetIP, port));
-            Console.text += $"\n 连接成功";
-            Log($"连接成功");
-            client.Logger = new MyLogger();
+            Log($"\n 连接成功");
+            await Auth(client);
+
             RTT.SetTarget(client);
-            Auth();
         }
         catch (Exception ex)
         {
@@ -115,11 +115,16 @@ public class OpTest : MonoBehaviour
         client.Disconnect();
     }
 
-    public async ValueTask<bool> Auth()
+    /// <summary>
+    /// 认证需要手动指定remote，断线重连时也要用。
+    /// </summary>
+    /// <param name="remote"></param>
+    /// <returns></returns>
+    public async ValueTask<bool> Auth(ISendCanAwaitable remote)
     {
         Authentication authentication = new Authentication();
         authentication.Token = "TestClient9527";
-        var (result,ex) = await client.Send<int>(authentication);
+        var (result,ex) = await remote.Send<int>(authentication);
         if (ex == null)
         {
             if (result == 200)
@@ -139,8 +144,9 @@ public class OpTest : MonoBehaviour
         return false;
     }
 
-    public void Log(string str)
+    public async void Log(string str)
     {
+        await MainThread.Switch();
         Console.text += $"{str}\n";
     }
 
@@ -254,8 +260,11 @@ public class OpTest : MonoBehaviour
 
         internal void ReConnectFrom(Remote client)
         {
-            //SendPipe = client.SendPipe;
+            client.SendPipe.CancelPendingRead();
+            SendPipe.CancelPendingRead();
+            SendPipe = client.SendPipe;
             RpcLayer = client.RpcLayer;
+            StartWork();
         }
     }
 
@@ -263,7 +272,7 @@ public class OpTest : MonoBehaviour
     private async void OnDisconnect(SocketError error, ActiveOrPassive activeOrPassive)
     {
         await MainThread.Switch();
-        Log($"OnDisconnect {error} : {activeOrPassive}");
+        Log($"\n OnDisconnect {error} : {activeOrPassive}");
         ReConnect();
     }
 
@@ -327,25 +336,24 @@ public class OpTest : MonoBehaviour
         client.Disconnect();
 
         var  client2 = new Remote();
+        client2.Logger = new MyLogger();
         client2.Test = this;
         client2.Post2ThreadScheduler = true;
 
         try
         {
-            Log($"断线重连 {client.ConnectIPEndPoint.Address} : {client.ConnectIPEndPoint.Port}");
+            Log($"\n 断线重连 {client.ConnectIPEndPoint.Address} : {client.ConnectIPEndPoint.Port}");
             await client2.ConnectAsync(client.ConnectIPEndPoint);
             if (!token.IsCancellationRequested)
             {
-                Console.text += $"\n 连接成功";
-                Log($"连接成功");
-                client.Logger = new MyLogger();
-                RTT.SetTarget(client);
-                var success = await Auth();
+                Log($"\n 连接成功");
+                var success = await Auth(client2);
+                RTT.SetTarget(client2);
                 if (success && !token.IsCancellationRequested)
                 {
-                    //将旧发送缓存 连接到新 remote
+                    //使用旧的remote的rpclayer，sendpipe。
                     client2.ReConnectFrom(client);
-
+                    client = client2;
                     //重连成功
                     if (AutoReConnectUI)
                     {
@@ -361,7 +369,7 @@ public class OpTest : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Log($"{ex.Message}");
+            Log($"\n {ex.Message}");
             ReConnectError();
         }
     }

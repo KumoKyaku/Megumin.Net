@@ -52,13 +52,13 @@ namespace Megumin.Remote
         public IMeguminRemoteLogger Logger { get; set; }
 
         /// <summary>
-        /// 当网络连接已经断开
+        /// 当网络连接已经断开, 发送和接受可能有一个没有完全停止。
         /// <para>todo 这个函数没有处理线程转换</para>
         /// </summary>
         /// <param name="error"></param>
         /// <param name="activeOrPassive">主动断开还是被动断开</param>
-        /// <remarks>主要用于通知外部停止继续发送，在这个函数被动调用前，允许Send，在这个函数调用后，不在允许Send</remarks>
-        protected virtual void OnDisconnect(
+        /// <remarks>主要用于通知外部停止继续发送</remarks>
+        protected virtual void PreDisconnect(
             SocketError error = SocketError.SocketError,
             ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
         {
@@ -72,9 +72,22 @@ namespace Megumin.Remote
         /// /// <param name="error"></param>
         /// <param name="activeOrPassive">主动断开还是被动断开</param>
         /// <remarks>可以用于触发重连，并将现有发送缓冲区转移到心得连接中</remarks>
-        protected virtual void PostDisconnect(
+        protected virtual void OnDisconnect(
             SocketError error = SocketError.SocketError,
             ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+
+        }
+
+        /// <summary>
+        /// 断开连接之后
+        /// <para>todo 这个函数没有处理线程转换</para>
+        /// </summary>
+        /// /// <param name="error"></param>
+        /// <param name="activeOrPassive">主动断开还是被动断开</param>
+        protected virtual void PostDisconnect(
+           SocketError error = SocketError.SocketError,
+           ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
         {
 
         }

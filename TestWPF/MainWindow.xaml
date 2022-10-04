@@ -36,6 +36,8 @@
         <Button x:Name="SendBigMessage" Content="SendBigMessage" HorizontalAlignment="Left" Margin="188,105,0,0" VerticalAlignment="Top" Width="104" Click="SendBigMessage_Click"/>
         <Button x:Name="TestTime" Content="Time" HorizontalAlignment="Left" Margin="188,129,0,0" VerticalAlignment="Top" Width="104" Click="TestTime_Click"/>
         <CheckBox x:Name="LogRecvBytes" Grid.Column="2" Content="LogRecvBytes" HorizontalAlignment="Left" Margin="34,83,0,0" VerticalAlignment="Top" Width="108" Checked="LogRecvBytes_Checked" Unchecked="LogRecvBytes_Unchecked" IsChecked="False"/>
+        <Button x:Name="StopSocketSend" Content="StopSocketSend" HorizontalAlignment="Left" Margin="365,105,0,0" VerticalAlignment="Top" Width="105" Click="StopSocketSend_Click"/>
+        <Button x:Name="StartSocketSend" Content="StartSocketSend" HorizontalAlignment="Left" Margin="365,80,0,0" VerticalAlignment="Top" Width="105" Click="StartSocketSend_Click"/>
 
     </Grid>
 </Window>

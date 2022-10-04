@@ -105,30 +105,10 @@ namespace Megumin.Remote
             if (RemoteState == WorkState.NotStart)
             {
                 RemoteState = WorkState.Working;
-                FillRecvPipe(Pipe.Writer);
-                StartReadRecvPipe(Pipe.Reader);
+                FillRecvPipe(RecvPipe.Writer);
+                StartReadRecvPipe(RecvPipe.Reader);
                 ReadSendPipe(SendPipe);
             }
-        }
-
-        public void StartSocketSend()
-        {
-
-        }
-
-        public void StopSocketSend()
-        {
-
-        }
-
-        public void StartSocketReceive()
-        {
-
-        }
-
-        public void StopSocketReceive()
-        {
-
         }
     }
 
@@ -243,7 +223,14 @@ namespace Megumin.Remote
                 writer.Discard();
             }
 
-            StartWork();
+            //StartWork(); 不主动开启SendPipe.ReadNext，改为Log。精准手动控制。
+            //开启接受和处理消息
+            FillRecvPipe(RecvPipe.Writer);
+            StartReadRecvPipe(RecvPipe.Reader);
+            if (IsSocketSending == false)
+            {
+                Logger?.Log($"允许发送消息，但底层SendPipe.ReadNext处于关闭状态。");
+            }
         }
 
         /// <summary>
@@ -252,8 +239,9 @@ namespace Megumin.Remote
         /// <remarks>发送管道没有涵盖所有案例，尽量不要给外界访问</remarks>
         protected TcpSendPipe SendPipe { get; set; } = new TcpSendPipe();
 
-        public bool IsSending { get; protected set; }
-
+        [Obsolete("Use IsSocketSending")]
+        public bool IsSending => IsSocketSending;
+        public bool IsSocketSending { get; protected set; }
         /// <summary>
         /// 开始读取发送管道，使用Socket发送消息
         /// </summary>
@@ -263,7 +251,7 @@ namespace Megumin.Remote
             {
                 lock (sendPipe)
                 {
-                    if (IsSending)
+                    if (IsSocketSending)
                     {
                         return;
                     }
@@ -274,7 +262,7 @@ namespace Megumin.Remote
                         return;
                     }
 
-                    IsSending = true;
+                    IsSocketSending = true;
                 }
 
                 try
@@ -311,15 +299,26 @@ namespace Megumin.Remote
                         //todo 如果错误码和要发送的字节恰好相等怎么办？
                     }
 
-                    IsSending = false;
+                    IsSocketSending = false;
                 }
                 catch (SocketException e)
                 {
                     disconnector?.OnSendError((SocketError)e.ErrorCode);
-                    IsSending = false;
+                    IsSocketSending = false;
                     return;
                 }
             }
+        }
+
+        public void StartSocketSend()
+        {
+            ReadSendPipe(SendPipe);
+        }
+
+        public void StopSocketSend()
+        {
+            SendPipe.CancelPendingRead();
+            IsSocketSending = false;
         }
     }
 
@@ -337,12 +336,42 @@ namespace Megumin.Remote
         /// <para/>构造 连接 StartWork调用链通常导致pipe异步后续在unity中会被锁定在主线程。
         /// <para/>https://source.dot.net/#System.IO.Pipelines/System/IO/Pipelines/PipeAwaitable.cs,115
         /// </remarks>
-        protected Pipe Pipe { get; } = new Pipe(new PipeOptions(useSynchronizationContext: false));
+        [Obsolete("Use RecvPipe")]
+        protected Pipe Pipe => RecvPipe;
+
+        /// <summary>
+        /// 不使用线程同步上下文，全部推送到线程池调用。useSynchronizationContext 用来保证await前后线程一致。
+        /// <para/>
+        /// FlushAsync后，另一头的触发是通过ThreadPoolScheduler来触发的，不是调用FlushAsync的线程，
+        /// 所以useSynchronizationContext = false时，不用担心 IOCP线程 执行pipeReader，反序列化等造成IOCP线程阻塞问题。
+        /// </summary>
+        /// <remarks>
+        /// <para/>useSynchronizationContext 如果为true的话，
+        /// <para/>那么pipe read write 异步后续只会在调用线程执行。
+        /// <para/>构造 连接 StartWork调用链通常导致pipe异步后续在unity中会被锁定在主线程。
+        /// <para/>https://source.dot.net/#System.IO.Pipelines/System/IO/Pipelines/PipeAwaitable.cs,115
+        /// </remarks>
+        protected Pipe RecvPipe { get; set; } = new Pipe(new PipeOptions(useSynchronizationContext: false));
 
         /// <summary>
         /// 当前socket是不是在接收。
         /// </summary>
-        public bool IsReceiving { get; protected set; }
+        [Obsolete("Use IsSocketReceiving")]
+        public bool IsReceiving => IsSocketReceiving;
+        /// <summary>
+        /// 当前socket是不是在接收。
+        /// </summary>
+        public bool IsSocketReceiving { get; protected set; }
+        public void StartSocketReceive()
+        {
+            FillRecvPipe(RecvPipe.Writer);
+        }
+
+        public void StopSocketReceive()
+        {
+            //Client.Shutdown
+            //没有办法停止Client.ReceiveAsync，即时停止了也会触发Recv0
+        }
 
         /// <summary>
         /// 从Socket接收
@@ -354,7 +383,7 @@ namespace Megumin.Remote
             {
                 lock (pipeWriter)
                 {
-                    if (IsReceiving)
+                    if (IsSocketReceiving)
                     {
                         return;
                     }
@@ -363,7 +392,7 @@ namespace Megumin.Remote
                     {
                         return;
                     }
-                    IsReceiving = true;
+                    IsSocketReceiving = true;
                 }
 
                 int queryCount = 8192;
@@ -404,12 +433,12 @@ namespace Megumin.Remote
                         pipeWriter.Advance(count);
                     }
 
-                    IsReceiving = false;
+                    IsSocketReceiving = false;
                 }
                 catch (SocketException e)
                 {
                     disconnector?.OnRecvError((SocketError)e.ErrorCode);
-                    IsReceiving = false;
+                    IsSocketReceiving = false;
                     return;
                 }
 
@@ -423,10 +452,29 @@ namespace Megumin.Remote
             }
         }
 
+        public void StartMessageReceive()
+        {
+            StartReadRecvPipe(RecvPipe.Reader);
+        }
+
+        /// <summary>
+        /// 此方法没有经过测试
+        /// </summary>
+        public void StopMessageReceive()
+        {
+            RecvPipe.Reader.CancelPendingRead();
+            IsMessageReceiving = false;
+        }
+
         /// <summary>
         /// 正在处理消息
         /// </summary>
-        public bool IsDealReceiving { get; protected set; }
+        [Obsolete("Use IsMessageReceiving")]
+        public bool IsDealReceiving => IsMessageReceiving;
+        /// <summary>
+        /// 正在处理消息
+        /// </summary>
+        public bool IsMessageReceiving { get; protected set; }
         /// <summary>
         /// 开始读取接收到的数据
         /// </summary>
@@ -437,11 +485,11 @@ namespace Megumin.Remote
             {
                 lock (pipeReader)//如果不使用IsDealReceiving 标记直接在lock中处理，第二个调用者会卡住。
                 {
-                    if (IsDealReceiving)
+                    if (IsMessageReceiving)
                     {
                         return;
                     }
-                    IsDealReceiving = true;
+                    IsMessageReceiving = true;
                 }
                 var result = await pipeReader.ReadAsync();
 
@@ -489,7 +537,7 @@ namespace Megumin.Remote
                 var pos = result.Buffer.GetPosition(offset);
                 pipeReader.AdvanceTo(pos);
 
-                IsDealReceiving = false;
+                IsMessageReceiving = false;
 
                 if (result.IsCompleted || result.IsCanceled)
                 {

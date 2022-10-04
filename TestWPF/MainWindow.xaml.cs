@@ -175,6 +175,16 @@ namespace TestWPF
         {
             server.LogRecvBytes = false;
         }
+
+        private void StartSocketSend_Click(object sender, RoutedEventArgs e)
+        {
+            client.StartSocketSend();   
+        }
+
+        private void StopSocketSend_Click(object sender, RoutedEventArgs e)
+        {
+            client.StopSocketSend();
+        }
     }
 }
 
@@ -249,7 +259,7 @@ public class TestRemote : TcpRemote
         base.ProcessBody(bodyBytes, options, RpcID, CMD, MessageID);
     }
 
-    protected override void PostDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+    protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
     {
         disCount++;
         log.Dispatcher.Invoke(() =>
