@@ -27,7 +27,7 @@
 - 接口分离。[[Dependency injection]](https://en.wikipedia.org/wiki/Dependency_injection) 应用程序可以仅使用NetRemoteStandard.dll编码，然后使用Megumin.Remote.dll的具体实现类注入，当需要切换协议或者序列化类库时，应用程序逻辑无需改动。
 - IOCP开销和消息调度转发延迟之间有很好的平衡。
 - 自定义MiniTask池,针对网络功能对Task重新实现，性能更高，仅初始化时alloc。
-- 支持`Span<T>`。使用[`System.IO.Pipelines`](https://www.cnblogs.com/xxfy1/p/9290235.html)作为高性能IO。
+- 支持`Span<T>`。使用[`System.IO.Pipelines`](https://www.cnblogs.com/xxfy1/p/9290235.html)作为高性能IO缓冲区。
 - 纯C#实现，这是学习网络功能一个好的起点。
 - 2.0 版本 API设计经过真实业务需求改良。
 - **`MIT许可证`**
@@ -147,14 +147,14 @@ protected virtual async ValueTask<object> OnReceive(short cmd, int messageID, ob
 Heartbeat，RTT，Timestamp Synchronization等功能都由此机制实现。  
 
 + 在某些时候，比如测试消息是否正常收发，发送端可能希望远端做出特定方式的响应，比如echo，将消息原样返回。  
-这种需求不是针对某一个特定消息类型的，也不是对于某个消息类型永远做出这样的响应，可能仅仅是针对某个时刻的某条消息。  
-对于这样的需求，在OnReceive函数中实现并不合适，没有办法根据消息类型进行抽象。   
+  这种需求不是针对某一个特定消息类型的，也不是对于某个消息类型永远做出这样的响应，可能仅仅是针对某个时刻的某条消息。  
+  对于这样的需求，在OnReceive函数中实现并不合适，没有办法根据消息类型进行抽象。   
   - 通过CmdID == 1 << 0来实现。发送时指定option参数，option实现ICmdOption，将CmdID传递到底层报头中。
   - 通过IPreReceiveable.PreReceiveType == 1来实现，发送的消息协议实现IPreReceiveable接口，并且PreReceiveType的值等于1。
   - 接收端在PreReceive函数中处理，并决定此消息是否继续传递到OnReceive函数中。
 + 在另一些时候，更通用的是，发送端发出一个消息，但是处于一些特殊原因，不希望将响应函数写在OnReceive函数中。  
-可以通过消息协议继承IAutoResponseable接口实现，并且PreReceiveType == 2。  
-接收端`PreReceive`函数中处理此类消息，并调用GetResponse返回结果到发送端。
+  可以通过消息协议继承IAutoResponseable接口实现，并且PreReceiveType == 2。  
+  接收端`PreReceive`函数中处理此类消息，并调用GetResponse返回结果到发送端。
     ```cs
     public interface IAutoResponseable : IPreReceiveable
     {
@@ -192,6 +192,21 @@ Heartbeat，RTT，Timestamp Synchronization等功能都由此机制实现。
         <linker>
             <assembly fullname="Message" preserve="all"/>
         </linker>
+  
+# 报头  
+  + Udp,Kcp 不用处理粘包，所以报头不含有TotalLength。   
+  + 使用小端字节序写入报头。BinaryPrimitives.WriteInt32LittleEndian。  
+  + TotalLength = 4 + 4 + 2 + 4 + bodyLength。  
+
+  | TotalLength（value including total length 4 byte） | RpcID        | CMD          | MSGID        | Body          |
+  | -------------------------------------------------- | ------------ | ------------ | ------------ | ------------- |
+  | 总长度(值包含总长度自身的4个字节)                  |              |              | 消息ID       | 消息正文      |
+  | Int32（int）                                       | Int32（int） | Int16(short) | Int32（int） | byte[]        |
+  | 4byte                                              | 4byte        | 2byte        | 4byte        | byte[].Lenght |
+
+- **与其他语言或者网络库对接**  
+**`当服务器不使用本库，或者不是C#语言时。满足报头格式，即可支持本库所有特性。`**   
+请求时RpcID大于0，响应消息时RpcID小于0，并且等于请求RpcID*-1。0和int.MinValue表示非Rpc消息，为无效RpcID。  
 
 # ~~MessagePipeline是什么？~~
 ~~MessagePipeline 是 Megumin.Remote 分离出来的一部分功能。   
@@ -255,7 +270,7 @@ namespace Message
                 ThreadScheduler.Update(0);
                 Thread.Yield();
             }
-
+    
         });
     }
     ```
@@ -305,19 +320,18 @@ namespace Message
 - `内存池`：标准库内存池，`ArrayPool<byte>.Shared`。
 - `序列化`：使用type做Key查找函数。
 - `反序列化`：使用MSGID(int)做Key查找函数。
-- ~~内置了string,int,long,float,double 5个内置类型，即使不使用序列化类库，也可以直接发送它们。你也可以使用~~
-  新版本暂时没有这几个实现。
+- 内置了string,int,long,float,double,DateTimeOffset等类型序列化支持，即使不使用序列化类库，也可以直接发送它们。
 - `MessageLUT.Regist<T>`函数手动添加其他类型。  
   如果不想用序列化库，也可以使用Json通过string发送。
-- `消息类型`：尽量不要是大的自定义的struct，整个序列化过程**有可能**导致多次装箱拆箱。在参数传递过程中还会多次复制，性能比class低。
-- ~~我还没有弄清楚2.0和2.1意味着什么。如果未来unity支持2.1，那么很可能框架将切换为2.1，或者同时支持两个框架。~~ 同时支持 .NET Standard 2.0 和.net5 。
+- `消息类型`：尽量不要使用大的自定义的struct，整个序列化过程`有可能`导致多次装箱拆箱。在参数传递过程中还会多次复制，性能比class低。
+- 多目标框架支持 `<TargetFrameworks>netstandard2.0;netstandard2.1;net5;net6</TargetFrameworks>`。
 
 
 # 2.0版本
 
 原则： 协议无关的定义在基类。
 
-目前将TcpRemote 拆为3层， RemoteBase定了必要消息处理流程的函数和抽象函数。是原MessagePipeline的体现。
+目前将TcpRemote 拆为3层， RemoteBase定义了必要消息处理流程的函数和抽象函数。是原MessagePipeline的体现。
 RpcRemote 是 实现Rpc功能的必要实现，主要处理收到消息Rpc分流问题。
 
 前两层不涉及到数据保存。不涉及数据清理逻辑，基本与协议无关。
@@ -369,7 +383,6 @@ UDP,KCP已经完成,但还没有实际工程测试。
 # 参考
 - [介绍 KCP：新的低延迟、安全网络堆栈](https://www.improbable.io/blog/kcp-a-new-low-latency-secure-network-stack) SpatialOS 的官网有几个协议的详细评测
 - [MessagePack for C# v2, new era of .NET Core(Unity) I/O Pipelines](https://neuecc.medium.com/messagepack-for-c-v2-new-era-of-net-core-unity-i-o-pipelines-6950643c1053)  优化中的一些技巧和问题.
-
 
 
 

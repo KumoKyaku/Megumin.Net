@@ -331,6 +331,9 @@ namespace Megumin.Remote
         /// <summary>
         /// 处理一个完整的消息包，未解析报头
         /// </summary>
+        /// <remarks>
+        /// 如果想要实现反序列化前转发，重写此方法。
+        /// </remarks>
         protected virtual void ProcessBody(in ReadOnlySequence<byte> byteSequence,
                                            object options = null)
         {

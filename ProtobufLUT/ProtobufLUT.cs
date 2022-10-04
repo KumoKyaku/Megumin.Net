@@ -87,6 +87,9 @@ namespace Megumin.Remote
             //Regist(new DefaultFormater<long>(MSGID.Int64), key);
             //Regist(new DefaultFormater<float>(MSGID.Single), key);
             //Regist(new DefaultFormater<double>(MSGID.Double), key);
+            //Regist(new DefaultFormater<DateTime>(MSGID.DateTime), key);
+            //Regist(new DefaultFormater<DateTimeOffset>(MSGID.DateTimeOffset), key);
+            //Regist(new DefaultFormater<byte[]>(MSGID.ByteArray), key);
         }
     }
 

@@ -5,6 +5,9 @@
     <AssemblyName>MMONET.DCSContainer</AssemblyName>
     <RootNamespace>MMONET.DCS</RootNamespace>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <NoWarn>
+      1701;1702;1591;1587
+    </NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

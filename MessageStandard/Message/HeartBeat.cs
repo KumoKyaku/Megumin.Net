@@ -13,6 +13,8 @@ namespace Megumin.Message
     {
         public static Heartbeat Default { get; } = new Heartbeat();
 
+        internal Heartbeat() { }
+
         public void Serialize(IBufferWriter<byte> writer, Heartbeat value, object options = null)
         {
             return;
@@ -28,7 +30,7 @@ namespace Megumin.Message
 
         public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
         {
-            return new Heartbeat();
+            return Default;
         }
     }
 }
