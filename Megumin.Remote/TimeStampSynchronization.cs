@@ -31,6 +31,7 @@ namespace Megumin.Remote
 
         public struct OffsetValue
         {
+            public bool Valid;
             public int OffsetMilliseconds;
             public int RttMilliseconds;
             public int Index;
@@ -63,7 +64,7 @@ namespace Megumin.Remote
             List<OffsetValue> offsets = new List<OffsetValue>();
             foreach (var item in tasks)
             {
-                if (item.Result.OffsetMilliseconds >= 0)
+                if (item.Result.Valid)
                 {
                     offsets.Add(item.Result);
                 }
@@ -117,7 +118,8 @@ namespace Megumin.Remote
             var rttSpan = loacalUtcNow - sendTime;
             var rtt = (int)rttSpan.TotalMilliseconds;
             OffsetValue result = new OffsetValue();
-            result.OffsetMilliseconds = -1;
+            result.Valid = false;
+            result.OffsetMilliseconds = 0;
             result.RttMilliseconds = rtt;
             result.Index = index;
 
@@ -133,11 +135,12 @@ namespace Megumin.Remote
                 // LoacalUtcNow + Offset = RemoteUtcNow
                 var offsetSpan = calRemoteUtcNow - loacalUtcNow;
                 result.OffsetMilliseconds = (int)offsetSpan.TotalMilliseconds;
+                result.Valid = true;
             }
 
             if (DebugLog)
             {
-                Log($"测试UtcNow index:{result.Index} offset:{result.OffsetMilliseconds} rtt:{result.RttMilliseconds}");
+                Log($"测试UtcNow index:{result.Index} valid:{result.Valid} offset:{result.OffsetMilliseconds} rtt:{result.RttMilliseconds}");
             }
             return result;
         }
