@@ -40,6 +40,7 @@ namespace Megumin.Remote
         public const int TestPacket1 = -101;
         public const int TestPacket2 = -102;
         public const int TestPacket3 = -103;
+        public const int TestPacket4 = -104;
         /// <summary>
         /// 错误的类型，表示框架未记录的类型。不是void，也不是任何异常ErrorType。
         /// </summary>

@@ -29,6 +29,7 @@ namespace Megumin.Remote
         protected readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
         protected readonly Dictionary<IPEndPoint, TaskCompletionSource<UdpAuthResponse>> authing
             = new Dictionary<IPEndPoint, TaskCompletionSource<UdpAuthResponse>>();
+        protected readonly UdpAuthHelper authHelper = new UdpAuthHelper();
         /// <remarks>
         /// Q:要不要用同步队列，预计有多个线程入队，只有一个线程出队，会不会有线程安全问题？
         /// </remarks>
@@ -106,6 +107,12 @@ namespace Megumin.Remote
 
         protected virtual async void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer)
         {
+            if (recvbuffer.Length == 0)
+            {
+                //Todo Recv0
+                return;
+            }
+
             byte messageType = recvbuffer[0];
             switch (messageType)
             {
@@ -113,10 +120,11 @@ namespace Megumin.Remote
                     //被动侧不处理主动侧提出的验证。
                     break;
                 case UdpRemoteMessageDefine.UdpAuthResponse:
-                    DealAnswerBuffer(endPoint, recvbuffer);
+                    authHelper.DealAnswerBuffer(endPoint, recvbuffer);
                     break;
-                case UdpRemoteMessageDefine.LLMsg:
-                case UdpRemoteMessageDefine.Common:
+                case UdpRemoteMessageDefine.LLData:
+                    break;
+                case UdpRemoteMessageDefine.UdpData:
                     var remote = await FindRemote(endPoint).ConfigureAwait(false);
                     if (remote != null)
                     {
@@ -136,7 +144,7 @@ namespace Megumin.Remote
             }
             else
             {
-                var answer = await BaginNewAuth(endPoint).ConfigureAwait(false);
+                var answer = await authHelper.Auth(endPoint, this).ConfigureAwait(false);
                 lock (lut)
                 {
                     if (lut.TryGetValue(answer.Guid, out var udpRemote))
@@ -187,7 +195,7 @@ namespace Megumin.Remote
                     udp.Password = answer.Password;
                     //todo add listenUdpclient.
                     udp.Client = SendSockets[connected.Count % SendSockets.Length];
-                    lut.Add(udp.GUID, udp);
+                    lut.Add(udp.GUID.Value, udp);
                     connected.Add(endPoint, udp);
                 }
 
@@ -198,34 +206,6 @@ namespace Megumin.Remote
             return null;
         }
 
-        Random random = new Random();
-        ValueTask<UdpAuthResponse> BaginNewAuth(IPEndPoint endPoint)
-        {
-            UdpAuthRequest session = new UdpAuthRequest();
-            session.Guid = Guid.NewGuid();
-            session.Password = random.Next();
-            //创建认证消息
-            byte[] buffer = new byte[UdpAuthRequest.Length];
-            session.Serialize(buffer);
-            Send(buffer, buffer.Length, endPoint);
-            if (!authing.TryGetValue(endPoint, out var source))
-            {
-                source = new TaskCompletionSource<UdpAuthResponse>();
-                authing.Add(endPoint, source);
-            }
-            return new ValueTask<UdpAuthResponse>(source.Task);
-        }
-
-
-        public void DealAnswerBuffer(IPEndPoint endPoint, Span<byte> buffer)
-        {
-            if (authing.TryGetValue(endPoint, out var source))
-            {
-                authing.Remove(endPoint);
-                var answer = UdpAuthResponse.Deserialize(buffer);
-                source.TrySetResult(answer);
-            }
-        }
 
         public void Stop()
         {

@@ -29,9 +29,9 @@ namespace Megumin.Remote
                     //被动侧不处理主动侧提出的验证。
                     break;
                 case UdpRemoteMessageDefine.UdpAuthResponse:
-                    DealAnswerBuffer(endPoint, recvbuffer);
+                    authHelper.DealAnswerBuffer(endPoint, recvbuffer);
                     break;
-                case UdpRemoteMessageDefine.LLMsg:
+                case UdpRemoteMessageDefine.LLData:
                     {
                         //不通过Kcp协议处理
                         var remote = await FindRemote(endPoint).ConfigureAwait(false);
@@ -41,7 +41,7 @@ namespace Megumin.Remote
                         }
                     }
                     break;
-                case UdpRemoteMessageDefine.Common:
+                case UdpRemoteMessageDefine.UdpData:
                     {
                         var remote = await FindRemote(endPoint).ConfigureAwait(false);
                         if (remote != null)
@@ -70,7 +70,7 @@ namespace Megumin.Remote
                     remote.GUID = answer.Guid;
                     remote.Password = answer.Password;
                     udp.Client = SendSockets[connected.Count % SendSockets.Length];
-                    lut.Add(remote.GUID, remote);
+                    lut.Add(answer.Guid, remote);
                     connected.Add(endPoint, remote);
                 }
 

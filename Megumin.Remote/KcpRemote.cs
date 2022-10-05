@@ -18,7 +18,6 @@ namespace Megumin.Remote
     {
         IKcpIO kcp = null;
         IKcpUpdate kcpUpdate = null;
-        protected int KcpIOChannel { get; set; }
         const int BufferSizer = 1024 * 4;
         public void InitKcp(int kcpChannel)
         {
@@ -70,35 +69,14 @@ namespace Megumin.Remote
                 await Task.Delay(5);
             }
         }
-
-        // 认证===================================================================
-        protected override void DealAuthBuffer(IPEndPoint endPoint, byte[] recvbuffer)
-        {
-            var auth = UdpAuthRequest.Deserialize(recvbuffer);
-            //创建认证回复消息
-            UdpAuthResponse answer = new UdpAuthResponse();
-
-            if (Password == -1)
-            {
-                this.GUID = auth.Guid;
-                this.Password = auth.Password;
-                answer.IsNew = true;
-            }
-
-            answer.Guid = this.GUID;
-            answer.Password = Password;
-            answer.KcpChannel = KcpIOChannel;
-            byte[] buffer = new byte[UdpAuthResponse.Length];
-            answer.Serialize(buffer);
-            Client.SendTo(buffer, 0, UdpAuthResponse.Length, SocketFlags.None, endPoint);
-        }
+    
         // 发送===================================================================
-        protected Writer kcpout = new Writer(BufferSizer);
+        protected UdpSendWriter kcpout = new UdpSendWriter(BufferSizer);
         async void KcpOutput()
         {
             while (true)
             {
-                kcpout.WriteHeader(UdpRemoteMessageDefine.Common);
+                kcpout.WriteHeader(UdpRemoteMessageDefine.UdpData);
                 await kcp.Output(kcpout).ConfigureAwait(false);
                 var (buffer, lenght) = kcpout.Pop();
                 SocketSend(buffer, lenght);
@@ -122,7 +100,7 @@ namespace Megumin.Remote
 
         ///接收===================================================================
 
-        protected Writer kcprecv = new Writer(BufferSizer);
+        protected UdpSendWriter kcprecv = new UdpSendWriter(BufferSizer);
         async void KCPRecv()
         {
             while (true)
@@ -148,11 +126,11 @@ namespace Megumin.Remote
                 case UdpRemoteMessageDefine.UdpAuthResponse:
                     //主动侧不处理验证应答。
                     break;
-                case UdpRemoteMessageDefine.LLMsg:
+                case UdpRemoteMessageDefine.LLData:
                     ///Test消息不通过Kcp处理
                     RecvLLMsg(recvbuffer, start + 1, count - 1);
                     break;
-                case UdpRemoteMessageDefine.Common:
+                case UdpRemoteMessageDefine.UdpData:
                     RecvPureBuffer(recvbuffer, start + 1, count - 1);
                     break;
                 default:

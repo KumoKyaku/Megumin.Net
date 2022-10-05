@@ -178,6 +178,7 @@ namespace TestServer
                     Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
                     return packet2;
                 default:
+                    Console.WriteLine($"Remote{UID}:接收消息{message.GetType().Name}");
                     break;
             }
             return null;
@@ -204,6 +205,7 @@ namespace TestServer
                     Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
                     return packet2;
                 default:
+                    Console.WriteLine($"Remote{UID}:接收消息{message.GetType().Name}");
                     break;
             }
             return null;
@@ -230,6 +232,7 @@ namespace TestServer
                     Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
                     return packet2;
                 default:
+                    Console.WriteLine($"Remote{UID}:接收消息{message.GetType().Name}");
                     break;
             }
             return null;

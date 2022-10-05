@@ -108,6 +108,7 @@ namespace Megumin.Remote
             Regist(new TestPacket1());
             Regist(new TestPacket2());
             Regist(new TestPacket3());
+            Regist(new TestPacket4());
             Regist(new Heartbeat());
             Regist(new GetTime());
             Regist(new Authentication());

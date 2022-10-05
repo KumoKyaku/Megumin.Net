@@ -1,6 +1,4 @@
 ﻿using Megumin.Remote;
-using Megumin.Remote.Test;
-using Megumin.Remote;
 using Net.Remote;
 using System;
 using System.Diagnostics;
@@ -9,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using static TestConfig;
 using Megumin.Message;
+using System.Collections.Generic;
 
 public static class TestConfig
 {
@@ -16,9 +15,9 @@ public static class TestConfig
     {
         TCP, UDP, KCP
     }
-    public static Mode PMode = TestConfig.Mode.KCP;
-    public static int MessageCount = 1;
-    public static int RemoteCount = 1;
+    public static Mode PMode = TestConfig.Mode.UDP;
+    public static int MessageCount = 100;
+    public static int RemoteCount = 10;
 }
 
 namespace TestClient
@@ -29,7 +28,11 @@ namespace TestClient
         {
             Console.WriteLine("客户端/Client");
             ConAsync();
-            Console.ReadLine();
+            while (true)
+            {
+                var key = Console.ReadKey();
+                OnKey(key);
+            }
         }
 
         private static async void ConAsync()
@@ -53,6 +56,40 @@ namespace TestClient
 
         #region 性能测试
 
+        static Dictionary<int, IRemote> clients = new Dictionary<int, IRemote>();
+
+        private static void OnKey(ConsoleKeyInfo key)
+        {
+            switch (key.Key)
+            {
+                case ConsoleKey.F1:
+                    SendAMessage();
+                    break;
+                case ConsoleKey.F2:
+                    SendAMessage2();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private static void SendAMessage2()
+        {
+            var msg = new TestPacket3();
+            foreach (var item in clients)
+            {
+                item.Value.Send(msg);
+            }
+        }
+
+        private static void SendAMessage()
+        {
+            var msg = new TestPacket4();
+            foreach (var item in clients)
+            {
+                item.Value.Send(msg, SendOption.Echo);
+            }
+        }
 
         /// <summary>
         /// //峰值 12000 0000 字节每秒，平均 4~7千万字节每秒
@@ -136,6 +173,7 @@ namespace TestClient
 
             //var (Result, Excption) = await remote.SendAsync<Packet2>(new Packet1 { Value = 100 });
             //Console.WriteLine($"RPC接收消息{nameof(Packet2)}--{Result.Value}");
+            clients[clientIndex] = remote;
         }
 
         private static async Task TestRpc(int clientIndex, IRemote remote)
@@ -212,6 +250,7 @@ namespace TestClient
                     }
                     return null;
                 default:
+                    Console.WriteLine($"Remote{Index}:接收消息{message.GetType().Name}");
                     break;
             }
             return null;

@@ -120,4 +120,28 @@ namespace Megumin.Message
             return result;
         }
     }
+
+    public class TestPacket4 : IMeguminFormater, IMeguminFormater<TestPacket4>
+    {
+        public string Value { get; set; } = "Test String!!";
+        ///<inheritdoc/>
+        public int MessageID => MSGID.TestPacket4;
+        public Type BindType => this.GetType();
+
+        public void Serialize(IBufferWriter<byte> writer, TestPacket4 value, object options = null)
+        {
+            MessageLUT.Serialize(writer, value.Value, options);
+        }
+
+        public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
+        {
+            Serialize(writer, (TestPacket4)value, options);
+        }
+
+        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        {
+            var str = MessageLUT.Deserialize<string>(byteSequence, options);
+            return new TestPacket4() { Value = str };
+        }
+    }
 }

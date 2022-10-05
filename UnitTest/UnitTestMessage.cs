@@ -76,7 +76,6 @@ namespace UnitTest
         {
             UdpAuthRequest auth = new UdpAuthRequest();
             auth.Guid = new Guid();
-            auth.Password = new Random().Next();
             var buffer = new byte[50];
             auth.Serialize(buffer);
             var ret = UdpAuthRequest.Deserialize(buffer);
