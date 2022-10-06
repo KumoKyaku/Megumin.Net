@@ -17,7 +17,7 @@ namespace Megumin.Remote
         /// </summary>
         public const byte LLData = 30;
         public const byte UdpData = 40;
-        public const byte KcpSegment = 50;
+        public const byte KcpData = 50;
     }
 
     /// <summary>

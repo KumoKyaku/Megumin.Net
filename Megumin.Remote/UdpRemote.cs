@@ -138,36 +138,32 @@ namespace Megumin.Remote
                     //主动侧不处理验证应答。
                     break;
                 case UdpRemoteMessageDefine.LLData:
+                    RecvLLData(endPoint, recvbuffer, start + 1, count - 1);
                     break;
                 case UdpRemoteMessageDefine.UdpData:
-                    RecvPureBuffer(recvbuffer, start + 1, count - 1);
+                    RecvUdpData(endPoint, recvbuffer, start + 1, count - 1);
+                    break;
+                case UdpRemoteMessageDefine.KcpData:
+                    RecvKcpData(endPoint, recvbuffer, start + 1, count - 1);
                     break;
                 default:
                     break;
             }
         }
 
-        /// <summary>
-        /// 主动侧需要手动开启接收，被动侧由listener接收然后分发
-        /// </summary>
-        /// <param name="endPoint"></param>
-        /// <param name="buffer"></param>
-        /// <param name="offset"></param>
-        /// <param name="count"></param>
-        internal protected virtual void ServerSideRecv(IPEndPoint endPoint, byte[] buffer, int offset, int count)
-        {
-            ConnectIPEndPoint = endPoint;
-            RecvPureBuffer(buffer, offset + 1, count - 1);
-        }
-
-        protected virtual void RecvPureBuffer(byte[] buffer, int start, int count)
+        internal protected virtual void RecvLLData(IPEndPoint endPoint, byte[] buffer, int start, int count)
         {
             ProcessBody(new ReadOnlySequence<byte>(buffer, start, count));
         }
 
-        protected virtual void RecvPureBuffer(ReadOnlySequence<byte> sequence)
+        internal protected virtual void RecvUdpData(IPEndPoint endPoint, byte[] buffer, int start, int count)
         {
-            ProcessBody(sequence);
+            ProcessBody(new ReadOnlySequence<byte>(buffer, start, count));
+        }
+
+        internal protected virtual void RecvKcpData(IPEndPoint endPoint, byte[] buffer, int start, int count)
+        {
+
         }
 
         int MissHearCount = 0;
@@ -210,6 +206,11 @@ namespace Megumin.Remote
         public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
         {
 
+        }
+
+        internal protected virtual void Recv0(IPEndPoint endPoint)
+        {
+            
         }
     }
 }

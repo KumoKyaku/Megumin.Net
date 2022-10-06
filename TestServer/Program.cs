@@ -191,7 +191,7 @@ namespace TestServer
         int myRecvCount = 0;
         protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
-            totalCount++;
+            Interlocked.Increment(ref totalCount);
             myRecvCount++;
             switch (message)
             {

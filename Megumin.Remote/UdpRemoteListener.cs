@@ -27,8 +27,6 @@ namespace Megumin.Remote
 
         protected readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
         protected readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
-        protected readonly Dictionary<IPEndPoint, TaskCompletionSource<UdpAuthResponse>> authing
-            = new Dictionary<IPEndPoint, TaskCompletionSource<UdpAuthResponse>>();
         protected readonly UdpAuthHelper authHelper = new UdpAuthHelper();
         /// <remarks>
         /// Q:要不要用同步队列，预计有多个线程入队，只有一个线程出队，会不会有线程安全问题？
@@ -109,7 +107,10 @@ namespace Megumin.Remote
         {
             if (recvbuffer.Length == 0)
             {
-                //Todo Recv0
+                if (connected.TryGetValue(endPoint, out var remote))
+                {
+                    remote.Recv0(endPoint);
+                }
                 return;
             }
 
@@ -123,12 +124,31 @@ namespace Megumin.Remote
                     authHelper.DealAnswerBuffer(endPoint, recvbuffer);
                     break;
                 case UdpRemoteMessageDefine.LLData:
+                    {
+                        var remote = await FindRemote(endPoint).ConfigureAwait(false);
+                        if (remote != null)
+                        {
+                            remote.RecvLLData(endPoint, recvbuffer, 1, recvbuffer.Length -1);
+                        }
+                    }
                     break;
                 case UdpRemoteMessageDefine.UdpData:
-                    var remote = await FindRemote(endPoint).ConfigureAwait(false);
-                    if (remote != null)
                     {
-                        remote.ServerSideRecv(endPoint, recvbuffer, 0, recvbuffer.Length);
+                        var remote = await FindRemote(endPoint).ConfigureAwait(false);
+                        if (remote != null)
+                        {
+                            remote.RecvUdpData(endPoint, recvbuffer, 1, recvbuffer.Length -1);
+                        }
+                    }
+                    
+                    break;
+                case UdpRemoteMessageDefine.KcpData:
+                    {
+                        var remote = await FindRemote(endPoint).ConfigureAwait(false);
+                        if (remote != null)
+                        {
+                            remote.RecvKcpData(endPoint, recvbuffer, 1, recvbuffer.Length -1);
+                        }
                     }
                     break;
                 default:

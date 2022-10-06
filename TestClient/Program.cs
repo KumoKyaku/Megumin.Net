@@ -16,8 +16,8 @@ public static class TestConfig
         TCP, UDP, KCP
     }
     public static Mode PMode = TestConfig.Mode.UDP;
-    public static int MessageCount = 100;
-    public static int RemoteCount = 10;
+    public static int MessageCount = 0;
+    public static int RemoteCount = 1;
 }
 
 namespace TestClient
@@ -78,7 +78,7 @@ namespace TestClient
             var msg = new TestPacket3();
             foreach (var item in clients)
             {
-                item.Value.Send(msg);
+                item.Value?.Send(msg);
             }
         }
 
@@ -87,7 +87,7 @@ namespace TestClient
             var msg = new TestPacket4();
             foreach (var item in clients)
             {
-                item.Value.Send(msg, SendOption.Echo);
+                item.Value?.Send(msg, SendOption.Echo);
             }
         }
 

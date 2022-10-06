@@ -373,6 +373,12 @@ UDP,KCP已经完成,但还没有实际工程测试。
 
 **Megumin.Remote是以MMORPG为目标实现的。对于非MMORPG游戏可能不是最佳选择。** 在遥远的未来也许会针对不同游戏类型写出NetRemoteStandard的不同实现。
 
+# 工程实现需要，但本库没有实现的功能
+- 同时监听IPV4,IPV6。
+- 同时监听Tcp,Udp。
+- 同时监听多个端口，用于实现负载均衡。
+- WebGL Networking
+
 # 友情链接
 - [Megumin.Explosion](https://github.com/KumoKyaku/Megumin.Explosion) Megumin系列类库的最底层基础库，Megumin的其他库都有可能需要引用它。
 - [Megumin.GameFramework](https://github.com/KumoKyaku/Megumin.GameFramework) Megumin系列的业务逻辑类库。

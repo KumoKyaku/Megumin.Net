@@ -115,42 +115,9 @@ namespace Megumin.Remote
             }
         }
 
-        protected override void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer, int start, int count)
-        {
-            byte messageType = recvbuffer[start];
-            switch (messageType)
-            {
-                case UdpRemoteMessageDefine.UdpAuthRequest:
-                    DealAuthBuffer(endPoint, recvbuffer);
-                    break;
-                case UdpRemoteMessageDefine.UdpAuthResponse:
-                    //主动侧不处理验证应答。
-                    break;
-                case UdpRemoteMessageDefine.LLData:
-                    ///Test消息不通过Kcp处理
-                    RecvLLMsg(recvbuffer, start + 1, count - 1);
-                    break;
-                case UdpRemoteMessageDefine.UdpData:
-                    RecvPureBuffer(recvbuffer, start + 1, count - 1);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        public void RecvLLMsg(byte[] buffer, int start, int count)
-        {
-            ProcessBody(new ReadOnlySequence<byte>(buffer, start, count));
-        }
-
-        protected override void RecvPureBuffer(byte[] buffer, int start, int count)
+        internal protected override void RecvKcpData(IPEndPoint endPoint, byte[] buffer, int start, int count)
         {
             kcp.Input(new ReadOnlySpan<byte>(buffer, start, count));
-        }
-
-        protected override void RecvPureBuffer(ReadOnlySequence<byte> sequence)
-        {
-            kcp.Input(sequence);
         }
 
         public override Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
