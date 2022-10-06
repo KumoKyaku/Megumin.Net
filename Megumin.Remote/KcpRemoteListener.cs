@@ -34,7 +34,9 @@ namespace Megumin.Remote
                     remote.ConnectIPEndPoint = endPoint;
                     remote.GUID = answer.Guid;
                     remote.Password = answer.Password;
-                    udp.Client = SendSockets[connected.Count % SendSockets.Length];
+                    //todo add listenUdpclient.
+                    var sendSocket = SendSockets[connected.Count % SendSockets.Length];
+                    udp.SetSocket(sendSocket);
                     lut.Add(answer.Guid, remote);
                     connected.Add(endPoint, remote);
                 }

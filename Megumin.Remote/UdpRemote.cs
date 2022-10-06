@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using static Megumin.Remote.TcpRemote;
 
 namespace Megumin.Remote
 {
@@ -18,7 +19,7 @@ namespace Megumin.Remote
         public int? Password { get; set; } = null;
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public virtual EndPoint RemappedEndPoint => ConnectIPEndPoint;
-        public Socket Client { get; internal protected set; }
+        public Socket Client { get; protected set; }
         public bool IsVaild { get; internal protected set; }
         public float LastReceiveTimeFloat { get; }
         public UdpRemoteListener Listener { get; internal set; }
@@ -26,9 +27,58 @@ namespace Megumin.Remote
         /// 为kcp预留
         /// </summary>
         protected int KcpIOChannel { get; set; }
+
         public UdpRemote()
         {
-            Client = new Socket(SocketType.Dgram, ProtocolType.Udp);
+
+        }
+
+        /// <remarks>
+        /// 明确指定使用IPV4还是IPV6
+        /// <para>SocketException: Protocol option not supported</para>
+        /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
+        /// </remarks>
+        public UdpRemote(AddressFamily addressFamily)
+        {
+            SetSocket(new Socket(addressFamily, SocketType.Stream, ProtocolType.Udp));
+        }
+
+        /// <summary>
+        /// 设置Client Socket
+        /// </summary>
+        /// <param name="socket"></param>
+        /// <param name="reconnectForce"></param>
+        public virtual void SetSocket(Socket socket, bool reconnectForce = false)
+        {
+            if (Client != null)
+            {
+                throw new InvalidOperationException("当前已经有Socket了，不允许重设");
+            }
+
+            this.Client = socket;
+        }
+    }
+
+    public partial class UdpRemote
+    {
+        //连接相关功能
+
+        static byte[] conn = new byte[1];
+        public virtual Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
+        {
+            if (!Password.HasValue)
+            {
+                Password = new Random().Next(1000, 10000);
+            }
+            ConnectIPEndPoint = endPoint;
+            if (Client == null)
+            {
+                Client = new Socket(SocketType.Dgram, ProtocolType.Udp);
+            }
+            Client.Bind(new IPEndPoint(IPAddress.Any, 0));
+            //Client.SendTo(conn, endPoint);//承担bind作用，不然不能recv。
+            ClientSideRecv();
+            return Task.CompletedTask;
         }
 
         //连接认证部分================================================
@@ -57,6 +107,54 @@ namespace Megumin.Remote
             Client.SendTo(buffer, 0, UdpAuthResponse.Length, SocketFlags.None, endPoint);
         }
 
+        public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
+        {
+
+        }
+
+        internal protected virtual void Recv0(IPEndPoint endPoint)
+        {
+
+        }
+
+        public async void SendBeat(int intervalMS = 2000, CancellationToken token = default)
+        {
+            SendOption HeartbeatSendOption = new SendOption()
+            {
+                MillisecondsDelay = 5000,
+                Cmd = 1,
+                RpcComplatePost2ThreadScheduler = true,
+            };
+            int MissHearCount = 0;
+            while (true)
+            {
+                MissHearCount += 1;
+                var (_, exception) = await Send<Heartbeat>(Heartbeat.Default, HeartbeatSendOption);
+                if (exception == null)
+                {
+                    MissHearCount = 0;
+                }
+
+                if (MissHearCount >= 5)
+                {
+                    MissHearCount = 0;
+                    //触发断开。TODO
+                    PreDisconnect(SocketError.TimedOut, ActiveOrPassive.Passive);
+                    OnDisconnect(SocketError.TimedOut, ActiveOrPassive.Passive);
+                    PostDisconnect(SocketError.TimedOut, ActiveOrPassive.Passive);
+                    break;
+                }
+                await Task.Delay(intervalMS);
+                if (token.IsCancellationRequested)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    public partial class UdpRemote
+    {
         //发送==========================================================
 
         protected virtual UdpSendWriter SendWriter { get; } = new UdpSendWriter(8192 * 4);
@@ -92,7 +190,10 @@ namespace Megumin.Remote
 
             buffer.Dispose();
         }
+    }
 
+    public partial class UdpRemote
+    {
         //接收============================================================
 
         /// <summary>
@@ -164,53 +265,6 @@ namespace Megumin.Remote
         internal protected virtual void RecvKcpData(IPEndPoint endPoint, byte[] buffer, int start, int count)
         {
 
-        }
-
-        int MissHearCount = 0;
-        async void SendBeat()
-        {
-            MessageLUT.Regist(Heartbeat.Default);
-            while (true)
-            {
-                MissHearCount += 1;
-                var (_, exception) = await Send<Heartbeat>(Heartbeat.Default);
-                if (exception == null)
-                {
-                    MissHearCount = 0;
-                }
-
-                if (MissHearCount >= 5)
-                {
-                    MissHearCount = 0;
-                    break;
-                    //触发断开。TODO
-                }
-                await Task.Delay(2000);
-            }
-        }
-
-        static byte[] conn = new byte[1];
-        public virtual Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
-        {
-            if (!Password.HasValue)
-            {
-                Password = new Random().Next(1000, 10000);
-            }
-            ConnectIPEndPoint = endPoint;
-            Client.Bind(new IPEndPoint(IPAddress.Any, 0));
-            //Client.SendTo(conn, endPoint);//承担bind作用，不然不能recv。
-            ClientSideRecv();
-            return Task.CompletedTask;
-        }
-
-        public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
-        {
-
-        }
-
-        internal protected virtual void Recv0(IPEndPoint endPoint)
-        {
-            
         }
     }
 }

@@ -128,7 +128,7 @@ namespace Megumin.Remote
                         var remote = await FindRemote(endPoint).ConfigureAwait(false);
                         if (remote != null)
                         {
-                            remote.RecvLLData(endPoint, recvbuffer, 1, recvbuffer.Length -1);
+                            remote.RecvLLData(endPoint, recvbuffer, 1, recvbuffer.Length - 1);
                         }
                     }
                     break;
@@ -137,17 +137,17 @@ namespace Megumin.Remote
                         var remote = await FindRemote(endPoint).ConfigureAwait(false);
                         if (remote != null)
                         {
-                            remote.RecvUdpData(endPoint, recvbuffer, 1, recvbuffer.Length -1);
+                            remote.RecvUdpData(endPoint, recvbuffer, 1, recvbuffer.Length - 1);
                         }
                     }
-                    
+
                     break;
                 case UdpRemoteMessageDefine.KcpData:
                     {
                         var remote = await FindRemote(endPoint).ConfigureAwait(false);
                         if (remote != null)
                         {
-                            remote.RecvKcpData(endPoint, recvbuffer, 1, recvbuffer.Length -1);
+                            remote.RecvKcpData(endPoint, recvbuffer, 1, recvbuffer.Length - 1);
                         }
                     }
                     break;
@@ -214,7 +214,8 @@ namespace Megumin.Remote
                     udp.GUID = answer.Guid;
                     udp.Password = answer.Password;
                     //todo add listenUdpclient.
-                    udp.Client = SendSockets[connected.Count % SendSockets.Length];
+                    var sendSocket = SendSockets[connected.Count % SendSockets.Length];
+                    udp.SetSocket(sendSocket);
                     lut.Add(udp.GUID.Value, udp);
                     connected.Add(endPoint, udp);
                 }
