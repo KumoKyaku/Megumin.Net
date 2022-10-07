@@ -101,7 +101,7 @@ namespace TestServer
                 case Mode.KCP:
                     {
                         KcpRemoteListener remote = new KcpRemoteListener(54321);
-                        Listen(remote);
+                        ListenKcp(remote);
                     }
                     break;
                 default:
@@ -142,7 +142,7 @@ namespace TestServer
             Console.WriteLine($"总接收到连接{connectCount++}");
         }
 
-        private static async void Listen(IListener<KcpRemote> remote)
+        private static async void ListenKcp(IListener<KcpRemote> remote)
         {
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
             var re = await remote.ListenAsync(static () =>
@@ -153,7 +153,7 @@ namespace TestServer
                     UID = connectCount
                 };
             });
-            Listen(remote);
+            ListenKcp(remote);
             Console.WriteLine($"总接收到连接{connectCount++}");
         }
     }
@@ -164,7 +164,7 @@ namespace TestServer
         int myRecvCount = 0;
         protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
-            totalCount++;
+            Interlocked.Increment(ref totalCount);
             myRecvCount++;
             switch (message)
             {
@@ -218,7 +218,7 @@ namespace TestServer
         int myRecvCount = 0;
         protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
-            totalCount++;
+            Interlocked.Increment(ref totalCount);
             myRecvCount++;
             switch (message)
             {

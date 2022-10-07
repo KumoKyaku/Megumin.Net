@@ -27,7 +27,7 @@ namespace Megumin.Remote
                 KcpIO kcpIO = new KcpIO((uint)KcpIOChannel);
                 kcp = kcpIO;
                 kcpUpdate = kcpIO;
-                allkcp.Add(new WeakReference<IKcpUpdate>(kcpUpdate));
+                allkcp.Add(kcpUpdate);
                 KCPUpdate();
                 KcpOutput();
                 KCPRecv();
@@ -35,8 +35,7 @@ namespace Megumin.Remote
         }
 
         //循环Tick================================================================
-        static List<WeakReference<IKcpUpdate>>
-            allkcp = new List<WeakReference<IKcpUpdate>>();
+        static List<IKcpUpdate> allkcp = new List<IKcpUpdate>();
         static bool IsGlobalUpdate = false;
         protected async void KCPUpdate()
         {
@@ -51,22 +50,20 @@ namespace Megumin.Remote
 
             while (true)
             {
-                var time = DateTime.UtcNow;
-                allkcp.RemoveAll(
-                    item =>
+                await Task.Delay(1);
+                var time = DateTimeOffset.UtcNow;
+                if (allkcp.Count == 0)
+                {
+                    break;
+                }
+
+                lock (allkcp)
+                {
+                    foreach (var item in allkcp)
                     {
-                        if (item.TryGetTarget(out var update))
-                        {
-                            update?.Update(time);
-                            return false;
-                        }
-                        else
-                        {
-                            return true;
-                        }
+                        item?.Update(time);
                     }
-                );
-                await Task.Delay(5);
+                }
             }
         }
     
@@ -76,7 +73,7 @@ namespace Megumin.Remote
         {
             while (true)
             {
-                kcpout.WriteHeader(UdpRemoteMessageDefine.UdpData);
+                kcpout.WriteHeader(UdpRemoteMessageDefine.KcpData);
                 await kcp.Output(kcpout).ConfigureAwait(false);
                 var (buffer, lenght) = kcpout.Pop();
                 SocketSend(buffer, lenght);
