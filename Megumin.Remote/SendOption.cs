@@ -20,13 +20,24 @@ namespace Megumin.Remote
         bool? RpcComplatePost2ThreadScheduler { get; }
     }
 
-    public class SendOption : IRpcTimeoutOption, ICmdOption, IRpcThreadOption
+    public interface IForceUdpDataOnKcpRemote
     {
-        public static readonly SendOption Never = new SendOption() { MillisecondsDelay = -1 };
-        public static readonly SendOption Echo = new SendOption() { MillisecondsDelay = 30000, Cmd = 1 };
+        /// <summary>
+        /// rpc时只能自己这面能UDP，对面返回时还是Kcp
+        /// </summary>
+        bool ForceUdp { get; }
+    }
+
+    public class SendOption : IRpcTimeoutOption, ICmdOption, IRpcThreadOption, IForceUdpDataOnKcpRemote
+    {
+        public static readonly SendOption Never = new SendOption() { MillisecondsDelay = -1, MillisecondsTimeout = -1 };
+        public static readonly SendOption Echo = new SendOption() { MillisecondsDelay = 30000, MillisecondsTimeout = 30000, Cmd = 1 };
         public int MillisecondsDelay { get; set; } = 30000;
+        public int MillisecondsTimeout { get; set; } = 30000;
         public short Cmd { get; set; } = 0;
         public bool? RpcComplatePost2ThreadScheduler { get; set; } = null;
+        public bool ForceUdp { get; set; } = false;
+
     }
 }
 

@@ -436,7 +436,7 @@ namespace Megumin.Remote.Rpc
             int timeout = DefaultTimeout;
             if (options is IRpcTimeoutOption option)
             {
-                timeout = option.MillisecondsDelay;
+                timeout = option.MillisecondsTimeout;
             }
 
             if (timeout >= 0)

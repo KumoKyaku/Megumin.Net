@@ -27,9 +27,18 @@ namespace Megumin.Remote
                 var kcpIO = new PoolSegManager.KcpIO((uint)KcpIOChannel);
 
                 //具体设置参数要根据项目调整。测试数据量一大有打嗝和假死现象。还没搞清楚原因。
+                /**
+                 * 测试发送消息 1000个 1024*10消息，多次发送，有几率假死。
+                 * debug发现发送的Kcpdata和接收的Kcpdata对不上。发送一个data，接收到的是旧的数据。
+                 * 新的数据不知道去了那里。感觉像卡在系统的接收数据缓冲里。可能是UDP底层出了问题。
+                 * 有可能是数据量过大IOCP出现了假死，UdpClient.ReceiveAsync异步触发出了问题。
+                 * 实在找不到问题所在。暂时搁置。
+                 * 目前处理方法是使用发送心跳包方式保活。收不到直接就进入断线流程。
+                 */
                 kcpIO.NoDelay(2, 5, 2, 1);
                 kcpIO.WndSize(64, 128);
                 kcpIO.fastlimit = -1;
+
                 KcpCore = kcpIO;
                 kcpUpdate = kcpIO;
 
@@ -122,16 +131,23 @@ namespace Megumin.Remote
 
         public override void Send(int rpcID, object message, object options = null)
         {
-            if (TrySerialize(SendWriter, rpcID, message, options))
+            if (options is IForceUdpDataOnKcpRemote force && force.ForceUdp)
             {
-                var (buffer, lenght) = SendWriter.Pop();
-                KcpCore.Send(buffer.Memory.Span.Slice(0, lenght));
-                buffer.Dispose();
+                base.Send(rpcID, message, options);
             }
             else
             {
-                var (buffer, lenght) = SendWriter.Pop();
-                buffer.Dispose();
+                if (TrySerialize(SendWriter, rpcID, message, options))
+                {
+                    var (buffer, lenght) = SendWriter.Pop();
+                    KcpCore.Send(buffer.Memory.Span.Slice(0, lenght));
+                    buffer.Dispose();
+                }
+                else
+                {
+                    var (buffer, lenght) = SendWriter.Pop();
+                    buffer.Dispose();
+                }
             }
         }
 

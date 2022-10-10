@@ -117,14 +117,16 @@ namespace Megumin.Remote
 
         }
 
+        protected static readonly SendOption HeartbeatSendOption = new SendOption()
+        {
+            MillisecondsTimeout = 5000,
+            Cmd = 1,
+            RpcComplatePost2ThreadScheduler = true,
+            ForceUdp = true,
+        };
+
         public async void SendBeat(int intervalMS = 2000, CancellationToken token = default)
         {
-            SendOption HeartbeatSendOption = new SendOption()
-            {
-                MillisecondsDelay = 5000,
-                Cmd = 1,
-                RpcComplatePost2ThreadScheduler = true,
-            };
             int MissHearCount = 0;
             while (true)
             {

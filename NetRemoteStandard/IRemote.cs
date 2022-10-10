@@ -225,7 +225,12 @@ namespace Net.Remote
         /// <summary>
         /// 指定毫秒后超时，-1表示永不超时。
         /// </summary>
+        [Obsolete("Use MillisecondsTimeout instead.", true)]
         int MillisecondsDelay { get; }
+        /// <summary>
+        /// 指定毫秒后超时，-1表示永不超时。
+        /// </summary>
+        int MillisecondsTimeout { get; }
     }
 
     public interface ICmdOption

@@ -32,7 +32,7 @@ namespace Megumin.Remote
         /// Q:要不要用同步队列，预计有多个线程入队，只有一个线程出队，会不会有线程安全问题？
         /// </remarks>
         protected Queue<UdpReceiveResult> UdpReceives = new Queue<UdpReceiveResult>();
-
+        public System.Diagnostics.TraceListener TraceListener { get; set; }
         /// <summary>
         /// 服务端使用20个Socket向客户端发送.
         /// <para/> TODO NAT情况复杂，可能无法发送 https://www.cnblogs.com/mq0036/p/4644776.html
@@ -199,7 +199,7 @@ namespace Megumin.Remote
                         UdpRemote udp = CreateNew(endPoint, answer);
                         if (udp == null)
                         {
-                            DebugLogger.LogWarning($"Listner 无法创建 remote");
+                            TraceListener?.Fail($"Listner 无法创建 remote");
                         }
                         return udp;
                     }

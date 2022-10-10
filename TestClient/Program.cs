@@ -16,7 +16,7 @@ public static class TestConfig
         TCP, UDP, KCP
     }
     public static Mode PMode = TestConfig.Mode.KCP;
-    public static int MessageCount = 1000;
+    public static int MessageCount = 0;
     public static int RemoteCount = 1;
 }
 
@@ -165,6 +165,7 @@ namespace TestClient
                     if (remote is KcpRemote kcp)
                     {
                         kcp.KcpCore.TraceListener = new ConsoleTraceListener();
+                        kcp.SendBeat();
                     }
                 }
             }

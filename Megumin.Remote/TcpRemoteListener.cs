@@ -13,6 +13,7 @@ namespace Megumin.Remote
     {
         private TcpListener tcpListener;
         public IPEndPoint ConnectIPEndPoint { get; set; }
+        public System.Diagnostics.TraceListener TraceListener { get; set; }
 
         public TcpRemoteListener(int port)
         {

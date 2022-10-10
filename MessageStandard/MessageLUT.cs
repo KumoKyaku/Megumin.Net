@@ -382,7 +382,7 @@ namespace Megumin.Remote
     }
 
 
-
+    [Obsolete("Use TraceListener instead.", true)]
     public interface ILogger
     {
         void Log(object message, object state = null);
@@ -393,6 +393,7 @@ namespace Megumin.Remote
     /// <summary>
     /// 
     /// </summary>
+    [Obsolete("Use TraceListener instead.", true)]
     public static class DebugLogger
     {
         public static ILogger Logger { get; set; }
