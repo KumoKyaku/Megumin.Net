@@ -93,7 +93,14 @@ namespace Megumin.Remote
                     var res = UdpReceives.Dequeue();
                     IPEndPoint endPoint = res.RemoteEndPoint;
                     byte[] recvbuffer = res.Buffer;
-                    InnerDeal(endPoint, recvbuffer);
+                    if (endPoint == null || recvbuffer == null)
+                    {
+                        //可能是多线程问题，结果是null，暂时没找到原因
+                    }
+                    else
+                    {
+                        InnerDeal(endPoint, recvbuffer);
+                    }
                 }
                 else
                 {

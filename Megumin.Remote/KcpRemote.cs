@@ -16,18 +16,28 @@ namespace Megumin.Remote
     /// </summary>
     public partial class KcpRemote : UdpRemote
     {
-        IKcpIO kcp = null;
+        public PoolSegManager.KcpIO KcpCore { get; internal protected set; } = null;
         IKcpUpdate kcpUpdate = null;
         const int BufferSizer = 1024 * 4;
         public void InitKcp(int kcpChannel)
         {
-            if (kcp == null)
+            if (KcpCore == null)
             {
                 KcpIOChannel = kcpChannel;
-                KcpIO kcpIO = new KcpIO((uint)KcpIOChannel);
-                kcp = kcpIO;
+                var kcpIO = new PoolSegManager.KcpIO((uint)KcpIOChannel);
+
+                //具体设置参数要根据项目调整。测试数据量一大有打嗝和假死现象。还没搞清楚原因。
+                kcpIO.NoDelay(1, 4, 2, 1);//fast
+                //kcpIO.WndSize(32, 128);
+
+                KcpCore = kcpIO;
                 kcpUpdate = kcpIO;
-                allkcp.Add(kcpUpdate);
+
+                lock (allkcp)
+                {
+                    allkcp.Add(kcpUpdate);
+                }
+
                 KCPUpdate();
                 KcpOutput();
                 KCPRecv();
@@ -51,6 +61,7 @@ namespace Megumin.Remote
             while (true)
             {
                 await Task.Delay(1);
+                //await Task.Yield();  //会吃满所有CPU？
                 var time = DateTimeOffset.UtcNow;
                 if (allkcp.Count == 0)
                 {
@@ -66,7 +77,7 @@ namespace Megumin.Remote
                 }
             }
         }
-    
+
         // 发送===================================================================
         protected UdpSendWriter kcpout = new UdpSendWriter(BufferSizer);
         async void KcpOutput()
@@ -74,7 +85,7 @@ namespace Megumin.Remote
             while (true)
             {
                 kcpout.WriteHeader(UdpRemoteMessageDefine.KcpData);
-                await kcp.Output(kcpout).ConfigureAwait(false);
+                await KcpCore.Output(kcpout).ConfigureAwait(false);
                 var (buffer, lenght) = kcpout.Pop();
                 SocketSend(buffer, lenght);
             }
@@ -85,7 +96,7 @@ namespace Megumin.Remote
             if (TrySerialize(SendWriter, rpcID, message, options))
             {
                 var (buffer, lenght) = SendWriter.Pop();
-                kcp.Send(buffer.Memory.Span.Slice(0, lenght));
+                KcpCore.Send(buffer.Memory.Span.Slice(0, lenght));
                 buffer.Dispose();
             }
             else
@@ -102,7 +113,7 @@ namespace Megumin.Remote
         {
             while (true)
             {
-                await kcp.Recv(kcprecv).ConfigureAwait(false);
+                await KcpCore.Recv(kcprecv).ConfigureAwait(false);
                 var (buffer, lenght) = kcprecv.Pop();
                 if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
                 {
@@ -112,14 +123,19 @@ namespace Megumin.Remote
             }
         }
 
+        //readonly object lockobj = new object();
         internal protected override void RecvKcpData(IPEndPoint endPoint, byte[] buffer, int start, int count)
         {
-            kcp.Input(new ReadOnlySpan<byte>(buffer, start, count));
+            //lock (lockobj)
+            {
+                //由于FindRemote 是异步，可能挂起多个RecvKcpData，当异步恢复时，可能导致多线程同时调用此处。
+                KcpCore.Input(new ReadOnlySpan<byte>(buffer, start, count));
+            }
         }
-
+        static readonly Random convRandom = new Random();
         public override Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
         {
-            InitKcp(1001);
+            InitKcp(convRandom.Next(1000, 10000));
             return base.ConnectAsync(endPoint, retryCount);
         }
     }

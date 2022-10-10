@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using static TestConfig;
 using System.Security.Cryptography;
 using Megumin.Message;
+using System.Diagnostics;
 
 namespace TestServer
 {
@@ -153,6 +154,7 @@ namespace TestServer
                     UID = connectCount
                 };
             });
+            //re.KcpCore.TraceListener = new ConsoleTraceListener();
             ListenKcp(remote);
             Console.WriteLine($"总接收到连接{connectCount++}");
         }

@@ -16,8 +16,8 @@ public static class TestConfig
         TCP, UDP, KCP
     }
     public static Mode PMode = TestConfig.Mode.KCP;
-    public static int MessageCount = 0;
-    public static int RemoteCount = 1;
+    public static int MessageCount = 1000;
+    public static int RemoteCount = 10;
 }
 
 namespace TestClient
@@ -68,9 +68,28 @@ namespace TestClient
                 case ConsoleKey.F2:
                     SendAMessage2();
                     break;
+                case ConsoleKey.F4:
+                    SendAMessage4();
+                    break;
                 default:
                     break;
             }
+        }
+
+        private static async void SendAMessage4()
+        {
+            var msg = new TestPacket1 { Value = 0 };
+            await Task.Run(() =>
+            {
+                foreach (var remote in clients)
+                {
+                    for (int i = 0; i < MessageCount; i++)
+                    {
+                        msg.Value = i;
+                        remote.Value?.Send(msg);
+                    }
+                }
+            });
         }
 
         private static void SendAMessage2()
@@ -143,6 +162,10 @@ namespace TestClient
                 if (remote is IConnectable conn)
                 {
                     await conn.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
+                    if (remote is KcpRemote kcp)
+                    {
+                        //kcp.KcpCore.TraceListener = new ConsoleTraceListener();
+                    }
                 }
             }
             catch (Exception)
