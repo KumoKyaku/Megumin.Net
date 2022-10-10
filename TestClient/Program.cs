@@ -17,7 +17,7 @@ public static class TestConfig
     }
     public static Mode PMode = TestConfig.Mode.KCP;
     public static int MessageCount = 1000;
-    public static int RemoteCount = 10;
+    public static int RemoteCount = 1;
 }
 
 namespace TestClient
@@ -164,7 +164,7 @@ namespace TestClient
                     await conn.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
                     if (remote is KcpRemote kcp)
                     {
-                        //kcp.KcpCore.TraceListener = new ConsoleTraceListener();
+                        kcp.KcpCore.TraceListener = new ConsoleTraceListener();
                     }
                 }
             }

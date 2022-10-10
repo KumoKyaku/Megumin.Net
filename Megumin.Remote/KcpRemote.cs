@@ -27,15 +27,15 @@ namespace Megumin.Remote
                 var kcpIO = new PoolSegManager.KcpIO((uint)KcpIOChannel);
 
                 //具体设置参数要根据项目调整。测试数据量一大有打嗝和假死现象。还没搞清楚原因。
-                kcpIO.NoDelay(1, 4, 2, 1);//fast
-                //kcpIO.WndSize(32, 128);
-
+                kcpIO.NoDelay(2, 5, 2, 1);
+                kcpIO.WndSize(64, 128);
+                kcpIO.fastlimit = -1;
                 KcpCore = kcpIO;
                 kcpUpdate = kcpIO;
 
-                lock (allkcp)
+                lock (AllKcp)
                 {
-                    allkcp.Add(kcpUpdate);
+                    AllKcp.Add(kcpUpdate);
                 }
 
                 KCPUpdate();
@@ -45,11 +45,13 @@ namespace Megumin.Remote
         }
 
         //循环Tick================================================================
-        static List<IKcpUpdate> allkcp = new List<IKcpUpdate>();
+        internal protected static readonly List<IKcpUpdate> AllKcp = new List<IKcpUpdate>();
+        internal protected static readonly List<IKcpUpdate> DisposedKcp = new List<IKcpUpdate>();
         static bool IsGlobalUpdate = false;
+        static readonly object kcpUpdateLock = new object();
         protected async void KCPUpdate()
         {
-            lock (allkcp)
+            lock (kcpUpdateLock)
             {
                 if (IsGlobalUpdate)
                 {
@@ -58,23 +60,50 @@ namespace Megumin.Remote
                 IsGlobalUpdate = true;
             }
 
-            while (true)
+            try
             {
-                await Task.Delay(1);
-                //await Task.Yield();  //会吃满所有CPU？
-                var time = DateTimeOffset.UtcNow;
-                if (allkcp.Count == 0)
+                while (true)
                 {
-                    break;
-                }
-
-                lock (allkcp)
-                {
-                    foreach (var item in allkcp)
+                    await Task.Delay(1);
+                    //await Task.Yield();  //会吃满所有CPU？
+                    var time = DateTimeOffset.UtcNow;
+                    if (AllKcp.Count == 0)
                     {
-                        item?.Update(time);
+                        break;
+                    }
+
+                    lock (kcpUpdateLock)
+                    {
+                        foreach (var item in AllKcp)
+                        {
+                            try
+                            {
+                                item?.Update(time);
+                            }
+                            catch (ObjectDisposedException)
+                            {
+                                DisposedKcp.Add(item);
+                            }
+                        }
+
+                        foreach (var item in DisposedKcp)
+                        {
+                            if (item != null)
+                            {
+                                AllKcp.Remove(item);
+                            }
+                        }
+                        DisposedKcp.Clear();
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                TraceListener?.WriteLine(e.ToString());
+            }
+            finally
+            {
+                IsGlobalUpdate = false;
             }
         }
 

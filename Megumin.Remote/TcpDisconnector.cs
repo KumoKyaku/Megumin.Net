@@ -53,7 +53,7 @@ namespace Megumin.Remote
                 catch (Exception e)
                 {
                     //忽略  
-                    tcpRemote.Logger?.Log(e.ToString());
+                    tcpRemote.TraceListener?.WriteLine(e.ToString());
                 }
                 finally
                 {
@@ -69,7 +69,7 @@ namespace Megumin.Remote
                     catch (Exception e)
                     {
                         //忽略  
-                        tcpRemote.Logger?.Log(e.ToString());
+                        tcpRemote.TraceListener?.WriteLine(e.ToString());
                     }
                     finally
                     {
@@ -84,7 +84,7 @@ namespace Megumin.Remote
                         catch (Exception e)
                         {
                             //忽略  
-                            tcpRemote.Logger?.Log(e.ToString());
+                            tcpRemote.TraceListener?.WriteLine(e.ToString());
                         }
                         finally
                         {
@@ -156,7 +156,7 @@ namespace Megumin.Remote
                 catch (Exception e)
                 {
                     //忽略  
-                    tcpRemote.Logger?.Log(e.ToString());
+                    tcpRemote.TraceListener?.WriteLine(e.ToString());
                 }
                 finally
                 {
@@ -167,7 +167,7 @@ namespace Megumin.Remote
                     catch (Exception e)
                     {
                         //忽略  
-                        tcpRemote.Logger?.Log(e.ToString());
+                        tcpRemote.TraceListener?.WriteLine(e.ToString());
                     }
                     finally
                     {
@@ -187,7 +187,7 @@ namespace Megumin.Remote
                         catch (Exception e)
                         {
                             //忽略  
-                            tcpRemote.Logger?.Log(e.ToString());
+                            tcpRemote.TraceListener?.WriteLine(e.ToString());
                         }
                         finally
                         {

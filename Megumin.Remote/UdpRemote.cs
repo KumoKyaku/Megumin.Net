@@ -218,7 +218,7 @@ namespace Megumin.Remote
                 }
                 catch (Exception e)
                 {
-                    Logger?.Log(e.ToString());
+                    TraceListener?.WriteLine(e.ToString());
                 }
                 finally
                 {

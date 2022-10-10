@@ -49,7 +49,9 @@ namespace Megumin.Remote
         /// <summary>
         /// 记录器
         /// </summary>
+        [Obsolete("Use TraceListener instead.", true)]
         public IMeguminRemoteLogger Logger { get; set; }
+        public System.Diagnostics.TraceListener TraceListener { get; set; }
 
         /// <summary>
         /// 当网络连接已经断开, 发送和接受可能有一个没有完全停止。
@@ -128,7 +130,7 @@ namespace Megumin.Remote
                 }
                 catch (Exception e)
                 {
-                    Logger?.Log($"序列化过程出现异常。Message:{message}。\n {e}");
+                    TraceListener?.WriteLine($"序列化过程出现异常。Message:{message}。\n {e}");
                     return false;
                 }
 
@@ -136,8 +138,7 @@ namespace Megumin.Remote
             }
             else
             {
-
-                Logger?.Log($"没有找到Formater。Message:{message}。");
+                TraceListener?.WriteLine($"没有找到Formater。Message:{message}。");
                 return false;
             }
         }
@@ -166,7 +167,7 @@ namespace Megumin.Remote
             }
             catch (Exception e)
             {
-                Logger?.Log($"转发用序列化过程出现异常。Lenght:{sequence.Length}。\n {e}");
+                TraceListener?.WriteLine($"转发用序列化过程出现异常。Lenght:{sequence.Length}。\n {e}");
                 return false;
             }
         }
@@ -211,7 +212,7 @@ namespace Megumin.Remote
             }
             catch (Exception e)
             {
-                Logger?.Log($"反序列化过程出现异常。MessageID:{messageID}--Lenght:{byteSequence.Length}。\n {e}");
+                TraceListener?.WriteLine($"反序列化过程出现异常。MessageID:{messageID}--Lenght:{byteSequence.Length}。\n {e}");
                 message = default;
                 return false;
             }

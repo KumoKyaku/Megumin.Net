@@ -154,7 +154,7 @@ namespace TestServer
                     UID = connectCount
                 };
             });
-            //re.KcpCore.TraceListener = new ConsoleTraceListener();
+            re.KcpCore.TraceListener = new ConsoleTraceListener();
             ListenKcp(remote);
             Console.WriteLine($"总接收到连接{connectCount++}");
         }

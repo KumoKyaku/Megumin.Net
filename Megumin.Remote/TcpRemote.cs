@@ -248,7 +248,7 @@ namespace Megumin.Remote
             StartReadRecvPipe(RecvPipe.Reader);
             if (IsSocketSending == false)
             {
-                Logger?.Log($"允许发送消息，但底层SendPipe.ReadNext处于关闭状态。");
+                TraceListener?.WriteLine($"允许发送消息，但底层SendPipe.ReadNext处于关闭状态。");
             }
         }
 
@@ -541,7 +541,7 @@ namespace Megumin.Remote
                             if (nextSegmentLength > 1024 * 256)
                             {
                                 //todo，长度非常大可能是一个未知错误。
-                                Logger?.Log($"nextSegmentLength > 1024 * 256,长度非常大可能是一个未知错误。");
+                                TraceListener?.WriteLine($"nextSegmentLength > 1024 * 256,长度非常大可能是一个未知错误。");
                             }
                             break;
                         }
@@ -549,7 +549,7 @@ namespace Megumin.Remote
                 }
                 catch (Exception e)
                 {
-                    Logger?.Log(e.ToString());
+                    TraceListener?.WriteLine(e.ToString());
                 }
 
                 //标记已使用数据，要先使用在标记，不然数据可能就被释放了
