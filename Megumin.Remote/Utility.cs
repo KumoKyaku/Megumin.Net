@@ -81,7 +81,9 @@ namespace Megumin.Remote
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <remarks>
-    /// 如果能用 while(true),就不要用递归。while(true)在捕捉上下文时，堆栈更清晰，逻辑上复合直觉，不容易爆栈。
+    /// <para/> 如果能用 while(true),就不要用递归。
+    /// <para/> 在捕捉上下文时，while(true)堆栈更少更清晰，逻辑上复合直觉，不容易爆栈。
+    /// <para/> 递归还会导致方法引用计数增加，阅读代码时制造混乱。
     /// </remarks>
     public class QueuePipe<T> : Queue<T>
     {

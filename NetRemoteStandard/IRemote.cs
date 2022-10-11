@@ -267,4 +267,26 @@ namespace Net.Remote
         /// </summary>
         int ReTryTimes { get; }
     }
+
+    /// <summary>
+    /// 对Socket进行控制。
+    /// 不一定所有remote都支持。大多时候用于调试
+    /// </summary>
+    public interface ISocketSendable
+    {
+        bool IsSocketSending { get; }
+        void StartSocketSend();
+        void StopSocketSend();
+    }
+
+    /// <summary>
+    /// 对Socket进行控制。
+    /// 不一定所有remote都支持。大多时候用于调试
+    /// </summary>
+    public interface ISocketReceiveable
+    {
+        bool IsSocketReceiving { get; }
+        void StartSocketReceive();
+        void StopSocketReceive();
+    }
 }

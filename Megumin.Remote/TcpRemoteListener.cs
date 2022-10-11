@@ -109,15 +109,14 @@ namespace Megumin.Remote
             {
                 ///同时支持IPv4和IPv6
                 tcpListener = TcpListener.Create(ConnectIPEndPoint.Port);
+                tcpListener.Start();
+                //tcpListener.AllowNatTraversal(true);
+                Accept();
             }
             else
             {
                 return;
             }
-
-            tcpListener.Start();
-            //tcpListener.AllowNatTraversal(true);
-            Accept();
         }
 
         public void Stop()

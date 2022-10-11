@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using TestWPF;
 using System.Collections.Generic;
+using Net.Remote;
 
 namespace TestWPF
 {
@@ -19,9 +20,12 @@ namespace TestWPF
     /// </summary>
     public partial class MainWindow : Window
     {
-        private TestRemote client;
-        private TestRemote server;
-        private TcpRemoteListenerOld listener;
+        private ITestRemote client;
+        private ITestRemote server;
+        private TcpRemoteListener listener;
+        private KcpRemoteListener KcpRemoteListener;
+
+        static bool tcpOrkcp = false;
 
         public MainWindow()
         {
@@ -35,72 +39,68 @@ namespace TestWPF
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            int port = 54321;
-            int.TryParse(ListenPort.Text, out port);
-            listener?.Stop();
-            listener = new TcpRemoteListenerOld(port);
-            Listen(listener);
-            this.Serverlog.Content += $"\n 开始监听";
+            if (tcpOrkcp)
+            {
+                ListenTcp();
+            }
+            else
+            {
+                ListenKcp();
+            }
         }
 
         async void ListenTcp()
         {
             int port = 54321;
             int.TryParse(ListenPort.Text, out port);
-            var listener = new TcpRemoteListener(port);
+            listener = new TcpRemoteListener(port);
             listener.Start();
             this.Serverlog.Content += $"\n 开始监听";
             while (true)
             {
-                var accept = await listener.ReadAsync(Create);
+                var accept = await listener.ReadAsync(() =>
+                {
+                    var r = new TestRemote() { log = this.Serverlog };
+                    return r;
+                });
+
                 if (accept != null)
                 {
+                    accept.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
                     this.Serverlog.Content += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
                     server = accept;
                 }
             }
         }
 
-        async void ListenUdp()
+        async void ListenKcp()
         {
             int port = 54321;
             int.TryParse(ListenPort.Text, out port);
-            var listener = new TcpRemoteListener(port);
-            listener.Start();
+            KcpRemoteListener = new KcpRemoteListener(port);
+            KcpRemoteListener.Start();
             this.Serverlog.Content += $"\n 开始监听";
             while (true)
             {
-                var accept = await listener.ReadAsync(Create);
+                var accept = await KcpRemoteListener.ReadAsync(() =>
+                {
+                    var r = new TestKcpRemote() { log = this.Serverlog };
+                    return r;
+                });
+
                 if (accept != null)
                 {
+                    accept.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
                     this.Serverlog.Content += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
                     server = accept;
                 }
-            }
-        }
-
-        private async void Listen(TcpRemoteListenerOld remote)
-        {
-            /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-            var accept = await remote.ListenAsync(Create);
-            Listen(remote);
-            if (accept != null)
-            {
-                this.Serverlog.Content += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
-                server = accept;
             }
         }
 
         private void StopListen_Click(object sender, RoutedEventArgs e)
         {
             listener?.Stop();
-        }
-
-        public TestRemote Create()
-        {
-            var r = new TestRemote() { log = this.Serverlog };
-            r.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
-            return r;
+            KcpRemoteListener?.Stop();
         }
 
         private void CreateClient(object sender, RoutedEventArgs e)
@@ -110,7 +110,15 @@ namespace TestWPF
             IPAddress targetIP = IPAddress.Loopback;
             IPAddress.TryParse(TargetIP.Text, out targetIP);
 
-            client = new TestRemote();
+            if (tcpOrkcp)
+            {
+                client = new TestRemote();
+            }
+            else
+            {
+                client = new TestKcpRemote();
+            }
+
             client.log = this.ClientLog;
 
             Connect(port, targetIP);
@@ -216,7 +224,7 @@ namespace TestWPF
 
         private void StartSocketSend_Click(object sender, RoutedEventArgs e)
         {
-            client.StartSocketSend();   
+            client.StartSocketSend();
         }
 
         private void StopSocketSend_Click(object sender, RoutedEventArgs e)
@@ -226,11 +234,17 @@ namespace TestWPF
     }
 }
 
-public class TestRemote : TcpRemote
+public interface ITestRemote : IRemote, IConnectable, ISocketSendable
+{
+    Label log { get; set; }
+    bool LogRecvBytes { get; set; }
+}
+
+public class TestRemote : TcpRemote, ITestRemote
 {
     static Dictionary<string, TestRemote> AllClient = new Dictionary<string, TestRemote>();
     public Label log { get; set; }
-    public bool LogRecvBytes { get; internal set; }
+    public bool LogRecvBytes { get; set; }
 
     int disCount = 0;
     protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
@@ -304,5 +318,98 @@ public class TestRemote : TcpRemote
         {
             log.Content += $"\n 网络已断开。调用次数{disCount} \n {error} -- {activeOrPassive}";
         });
+    }
+}
+
+public class TestKcpRemote : KcpRemote, ITestRemote
+{
+    static Dictionary<string, TestKcpRemote> AllClient = new Dictionary<string, TestKcpRemote>();
+    public Label log { get; set; }
+    public bool LogRecvBytes { get; set; }
+
+    int disCount = 0;
+    protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+    {
+        log.Dispatcher.Invoke(() =>
+        {
+            switch (message)
+            {
+                case TestPacket1 packet1:
+                    log.Content += $"\n 收到{nameof(TestPacket1)} value:{packet1.Value}";
+                    break;
+                case TestPacket2 packet2:
+                    log.Content += $"\n 收到{nameof(TestPacket2)} value:{packet2.Value}";
+                    break;
+                case TestPacket3 packet3:
+                    log.Content += $"\n 收到{nameof(TestPacket3)} value:{packet3.Value}";
+                    break;
+                case Authentication auth:
+                    log.Content += $"\n 收到{nameof(Authentication)} Token:{auth.Token}";
+                    break;
+                default:
+                    log.Content += $"\n 收到{message.GetType().Name} value:{message}";
+                    break;
+            }
+        });
+
+        switch (message)
+        {
+            case TestPacket2 packet2:
+                return new ValueTask<object>(message);
+            case Authentication auth2:
+                if (AllClient.ContainsKey(auth2.Token))
+                {
+                    return new ValueTask<object>(200);
+                }
+                if (auth2.Token.StartsWith("TestClient"))
+                {
+                    AllClient.Add(auth2.Token, this);
+                    return new ValueTask<object>(200);
+                }
+                else
+                {
+                    return new ValueTask<object>(404);
+                }
+            case string str:
+                return new ValueTask<object>(str);
+            default:
+                break;
+        }
+        return NullResult;
+    }
+
+    protected override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, object options, int RpcID, short CMD, int MessageID)
+    {
+        if (LogRecvBytes)
+        {
+            var len = bodyBytes.Length;
+            log.Dispatcher.Invoke(() =>
+            {
+                log.Content += $"\n 收到bodyBytes len:{len} rpcID：{RpcID} CMD:{CMD}  MessageID:{MessageID}";
+            });
+        }
+
+        base.ProcessBody(bodyBytes, options, RpcID, CMD, MessageID);
+    }
+
+    protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+    {
+        disCount++;
+        log.Dispatcher.Invoke(() =>
+        {
+            log.Content += $"\n 网络已断开。调用次数{disCount} \n {error} -- {activeOrPassive}";
+        });
+    }
+
+    public bool IsSocketSending { get; }
+
+    public void StartSocketSend()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void StopSocketSend()
+    {
+        throw new NotImplementedException();
     }
 }
