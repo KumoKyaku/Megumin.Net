@@ -70,4 +70,88 @@ namespace Megumin.Remote
     public class Utility
     {
     }
+
+    /// <summary>
+    /// <inheritdoc cref="IPipe{T}"/>
+    /// <para></para>这是个简单的实现,更复杂使用微软官方实现<see cref="System.Threading.Channels.Channel.CreateBounded{T}(int)"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <remarks>
+    /// 如果能用 while(true),就不要用递归。while(true)在捕捉上下文时，堆栈更清晰，逻辑上复合直觉，不容易爆栈。
+    /// </remarks>
+    public class QueuePipe<T> : Queue<T>
+    {
+        readonly object _innerLock = new object();
+        private TaskCompletionSource<T> source;
+
+        //线程同步上下文由Task机制保证，无需额外处理
+        //SynchronizationContext callbackContext;
+        //public bool UseSynchronizationContext { get; set; } = true;
+
+        public virtual void Write(T item)
+        {
+            lock (_innerLock)
+            {
+                if (source == null)
+                {
+                    Enqueue(item);
+                }
+                else
+                {
+                    if (Count > 0)
+                    {
+                        throw new Exception("内部顺序错误，不应该出现，请联系作者");
+                    }
+
+                    var next = source;
+                    source = null;
+                    next.TrySetResult(item);
+                }
+            }
+        }
+
+        public new void Enqueue(T item)
+        {
+            lock (_innerLock)
+            {
+                base.Enqueue(item);
+            }
+        }
+
+        public void Flush()
+        {
+            lock (_innerLock)
+            {
+                if (Count > 0)
+                {
+                    var res = Dequeue();
+                    var next = source;
+                    source = null;
+                    next?.TrySetResult(res);
+                }
+            }
+        }
+
+        public virtual Task<T> ReadAsync()
+        {
+            lock (_innerLock)
+            {
+                if (this.Count > 0)
+                {
+                    var next = Dequeue();
+                    return Task.FromResult(next);
+                }
+                else
+                {
+                    source = new TaskCompletionSource<T>();
+                    return source.Task;
+                }
+            }
+        }
+
+        public ValueTask<T> ReadValueTaskAsync()
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

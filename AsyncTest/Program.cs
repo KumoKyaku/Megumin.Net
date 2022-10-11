@@ -18,16 +18,19 @@ namespace AsyncTest
 
             NewMethod2();
 
-            TaskCompletionSource<int > source = new TaskCompletionSource<int>();    
+            TaskCompletionSource<int > source = new TaskCompletionSource<int>();
+            CancellationTokenSource tokenSource = new CancellationTokenSource();
             var state = source.Task.Status;
             Beginawait(source);
-            var state2 = source.Task.Status;    
+            var state2 = source.Task.Status;
+            tokenSource.Cancel();
             Console.ReadLine();
         }
 
         private static async void Beginawait(TaskCompletionSource<int> source)
         {
             await source.Task;
+            Console.WriteLine($"Task 触发取消");
         }
 
         private static void NewMethod2()

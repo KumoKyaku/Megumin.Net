@@ -69,7 +69,6 @@ namespace Megumin.Remote
                     //创建认证消息
                     byte[] buffer = new byte[UdpAuthRequest.Length];
                     reqest.Serialize(buffer);
-                    client.Send(buffer, buffer.Length, endPoint);
 
                     Task.Run(async () =>
                     {
@@ -77,6 +76,53 @@ namespace Megumin.Remote
                         await Task.Delay(1000 * 120);
                         authing.Remove(endPoint);
                     });
+
+                    try
+                    {
+                        client.Send(buffer, buffer.Length, endPoint);
+                    }
+                    catch (Exception e)
+                    {
+                        //忽略所有异常
+                        Console.WriteLine(e);
+                    }
+                }
+
+                return source.Task;
+            }
+        }
+
+        public Task<UdpAuthResponse> Auth(IPEndPoint endPoint, Socket client)
+        {
+            lock (authingLock)
+            {
+                if (!authing.TryGetValue(endPoint, out var source))
+                {
+                    source = new TaskCompletionSource<UdpAuthResponse>();
+                    authing.Add(endPoint, source);
+
+                    UdpAuthRequest reqest = new UdpAuthRequest();
+                    reqest.Guid = Guid.NewGuid();
+                    //创建认证消息
+                    byte[] buffer = new byte[UdpAuthRequest.Length];
+                    reqest.Serialize(buffer);
+
+                    Task.Run(async () =>
+                    {
+                        //120秒后超时，防止内存泄露
+                        await Task.Delay(1000 * 120);
+                        authing.Remove(endPoint);
+                    });
+
+                    try
+                    {
+                        client.SendTo(buffer, 0, buffer.Length, SocketFlags.None, endPoint);
+                    }
+                    catch (Exception e)
+                    {
+                        //忽略所有异常
+                        Console.WriteLine(e);
+                    }
                 }
 
                 return source.Task;

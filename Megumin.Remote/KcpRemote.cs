@@ -178,6 +178,16 @@ namespace Megumin.Remote
                 KcpCore.Input(new ReadOnlySpan<byte>(buffer, start, count));
             }
         }
+
+        protected internal override void RecvKcpData(IPEndPoint endPoint, ReadOnlySpan<byte> buffer)
+        {
+            //lock (lockobj)
+            {
+                //由于FindRemote 是异步，可能挂起多个RecvKcpData，当异步恢复时，可能导致多线程同时调用此处。
+                KcpCore.Input(buffer);
+            }
+        }
+
         static readonly Random convRandom = new Random();
         public override Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
         {

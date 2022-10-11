@@ -268,5 +268,20 @@ namespace Megumin.Remote
         {
 
         }
+
+        internal protected virtual void RecvLLData(IPEndPoint endPoint, ReadOnlySpan<byte> buffer)
+        {
+            ProcessBody(buffer);
+        }
+
+        internal protected virtual void RecvUdpData(IPEndPoint endPoint, ReadOnlySpan<byte> buffer)
+        {
+            ProcessBody(buffer);
+        }
+
+        internal protected virtual void RecvKcpData(IPEndPoint endPoint, ReadOnlySpan<byte> buffer)
+        {
+
+        }
     }
 }

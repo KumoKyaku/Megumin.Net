@@ -4,6 +4,7 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
@@ -283,184 +284,284 @@ namespace Megumin.Remote
         }
     }
 
-    //public class UdpRemoteListener2 : IListener2<UdpRemote>
-    //{
-    //    internal protected static class IPEndPointStatics
-    //    {
-    //        internal const int AnyPort = IPEndPoint.MinPort;
-    //        internal static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
-    //        internal static readonly IPEndPoint IPv6Any = new IPEndPoint(IPAddress.IPv6Any, AnyPort);
-    //    }
+    public partial class UdpRemoteListener2 : IListener2<UdpRemote>
+    {
+        internal protected static class IPEndPointStatics
+        {
+            internal const int AnyPort = IPEndPoint.MinPort;
+            internal static readonly IPEndPoint Any = new IPEndPoint(IPAddress.Any, AnyPort);
+            internal static readonly IPEndPoint IPv6Any = new IPEndPoint(IPAddress.IPv6Any, AnyPort);
+        }
 
-    //    public IPEndPoint ConnectIPEndPoint { get; set; }
-    //    public AddressFamily Family = AddressFamily.InterNetwork;
-        
-    //    UdpSendWriter sendWriter = new UdpSendWriter();
-    //    protected Queue<(SocketReceiveFromResult Result, IMemoryOwner<byte> Owner)> UdpReceives = new Queue<(SocketReceiveFromResult Result, IMemoryOwner<byte> Owner)>();
-    //    protected virtual async void Accept()
-    //    {
-    //        var ow = sendWriter.GetMemory();
-    //        if (MemoryMarshal.TryGetArray<byte>(ow, out var segment))
-    //        {
-    //            var remote = Family == AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
-    //            var res = await Socket.ReceiveFromAsync(segment, SocketFlags.None, remote);
-    //            sendWriter.Advance(res.ReceivedBytes);
-    //            var p = sendWriter.Pop();
-    //            UdpReceives.Enqueue((res, p.Item1));
+        public IPEndPoint ConnectIPEndPoint { get; set; }
+        public AddressFamily? Family = null;
+        protected readonly UdpAuthHelper authHelper = new UdpAuthHelper();
+        UdpSendWriter sendWriter = new UdpSendWriter();
+        protected readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
+        protected readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
 
-    //            Accept();
-    //        }
-    //        else
-    //        {
-    //            throw new NotSupportedException();
-    //        }
-    //    }
+        Socket Socket;
+        protected Socket[] SendSockets = new Socket[20];
 
-    //    Socket Socket;
-    //    public void Start(object option = null)
-    //    {
-    //        if (Socket == null)
-    //        {
+        public UdpRemoteListener2(int port, AddressFamily? addressFamily = null)
+        {
+            this.Family = addressFamily;
+            this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
+        }
 
-    //        }
+        protected async ValueTask<UdpRemote> FindRemote(IPEndPoint endPoint)
+        {
+            if (connected.TryGetValue(endPoint, out var remote))
+            {
+                return remote;
+            }
+            else
+            {
+                var answer = await authHelper.Auth(endPoint, Socket).ConfigureAwait(false);
 
-    //        Accept();
-    //        MessageReceive();
-    //    }
+                lock (lut)
+                {
+                    if (lut.TryGetValue(answer.Guid, out var udpRemote))
+                    {
+                        if (udpRemote.Password != answer.Password)
+                        {
+                            //guid和密码不匹配,可能遇到有人碰撞攻击
+                            return null;
+                        }
+                        else
+                        {
+                            if (udpRemote.ConnectIPEndPoint != endPoint)
+                            {
+                                //重绑定远端
+                                connected.Remove(udpRemote.ConnectIPEndPoint);
+                                udpRemote.ConnectIPEndPoint = endPoint;
+                                connected.Add(endPoint, udpRemote);
+                            }
 
-    //    private async void MessageReceive()
-    //    {
-    //        while (true)
-    //        {
-    //            if (UdpReceives.Count > 0)
-    //            {
-    //                var (Result, Owner) = UdpReceives.Dequeue();
-    //                if (Result.RemoteEndPoint == null || Owner == null)
-    //                {
-    //                    //可能是多线程问题，结果是null，暂时没找到原因
-    //                }
-    //                else
-    //                {
-    //                    InnerDeal(Result.RemoteEndPoint, Owner, Result.ReceivedBytes);
-    //                }
-    //            }
-    //            else
-    //            {
-    //                await Task.Yield();
-    //            }
-    //        }
-    //    }
+                            return udpRemote;
+                        }
+                    }
+                }
 
-    //    protected readonly UdpAuthHelper authHelper = new UdpAuthHelper();
-    //    private async void InnerDeal(IPEndPoint endPoint, IMemoryOwner<byte> owner, int receivedBytes)
-    //    {
-    //        var recvbuffer = owner.Memory.Span.Slice(0, receivedBytes);
-    //        if (recvbuffer.Length == 0)
-    //        {
-    //            //if (connected.TryGetValue(endPoint, out var remote))
-    //            //{
-    //            //    remote.Recv0(endPoint);
-    //            //}
-    //            return;
-    //        }
+                //没有找到现有的
+                UdpRemote udp = await CreateNew(endPoint, answer);
+                if (udp == null)
+                {
+                    TraceListener?.Fail($"Listner 无法创建 remote");
+                }
+                return udp;
+            }
+        }
 
-    //        byte messageType = recvbuffer[0];
-    //        switch (messageType)
-    //        {
-    //            case UdpRemoteMessageDefine.UdpAuthRequest:
-    //                //被动侧不处理主动侧提出的验证。
-    //                break;
-    //            case UdpRemoteMessageDefine.UdpAuthResponse:
-    //                authHelper.DealAnswerBuffer(endPoint, recvbuffer);
-    //                break;
-    //            case UdpRemoteMessageDefine.LLData:
-    //                {
-    //                    var remote = await FindRemote(endPoint).ConfigureAwait(false);
-    //                    if (remote != null)
-    //                    {
-    //                        remote.RecvLLData(endPoint, recvbuffer, 1, recvbuffer.Length - 1);
-    //                    }
-    //                }
-    //                break;
-    //            case UdpRemoteMessageDefine.UdpData:
-    //                {
-    //                    var remote = await FindRemote(endPoint).ConfigureAwait(false);
-    //                    if (remote != null)
-    //                    {
-    //                        remote.RecvUdpData(endPoint, recvbuffer, 1, recvbuffer.Length - 1);
-    //                    }
-    //                }
+        protected virtual async ValueTask<UdpRemote> CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
+        {
+            //Todo 超时2000ms
+            var (CreateRemote, OnComplete) = await remoteCreators.ReadAsync();
 
-    //                break;
-    //            case UdpRemoteMessageDefine.KcpData:
-    //                {
-    //                    var remote = await FindRemote(endPoint).ConfigureAwait(false);
-    //                    if (remote != null)
-    //                    {
-    //                        remote.RecvKcpData(endPoint, recvbuffer, 1, recvbuffer.Length - 1);
-    //                    }
-    //                }
-    //                break;
-    //            default:
-    //                break;
-    //        }
-    //    }
+            var udp = CreateRemote.Invoke();
 
-    //    protected async ValueTask<UdpRemote> FindRemote(IPEndPoint endPoint)
-    //    {
-    //        if (connected.TryGetValue(endPoint, out var remote))
-    //        {
-    //            return remote;
-    //        }
-    //        else
-    //        {
-    //            var answer = await authHelper.Auth(endPoint, this).ConfigureAwait(false);
-    //            lock (lut)
-    //            {
-    //                if (lut.TryGetValue(answer.Guid, out var udpRemote))
-    //                {
-    //                    if (udpRemote.Password != answer.Password)
-    //                    {
-    //                        //guid和密码不匹配,可能遇到有人碰撞攻击
-    //                        return null;
-    //                    }
-    //                    else
-    //                    {
-    //                        if (udpRemote.ConnectIPEndPoint != endPoint)
-    //                        {
-    //                            //重绑定远端
-    //                            connected.Remove(udpRemote.ConnectIPEndPoint);
-    //                            udpRemote.ConnectIPEndPoint = endPoint;
-    //                            connected.Add(endPoint, udpRemote);
-    //                        }
+            if (udp != null)
+            {
+                //udp.Listener = this;
+                udp.IsVaild = true;
+                udp.ConnectIPEndPoint = endPoint;
+                udp.GUID = answer.Guid;
+                udp.Password = answer.Password;
+                //todo add listenUdpclient.
+                var sendSocket = SendSockets[connected.Count % SendSockets.Length];
+                udp.SetSocket(sendSocket);
+                lut.Add(udp.GUID.Value, udp);
+                connected.Add(endPoint, udp);
+            }
 
-    //                        return udpRemote;
-    //                    }
-    //                }
-    //                else
-    //                {
-    //                    UdpRemote udp = CreateNew(endPoint, answer);
-    //                    if (udp == null)
-    //                    {
-    //                        TraceListener?.Fail($"Listner 无法创建 remote");
-    //                    }
-    //                    return udp;
-    //                }
-    //            }
-    //        }
-    //    }
+            OnComplete?.Invoke(udp);
+            return udp;
+        }
 
-    //    public void Stop()
-    //    {
-    //        throw new NotImplementedException();
-    //    }
+        public TraceListener TraceListener { get; set; }
+    }
 
-    //    public TraceListener TraceListener { get; set; }
+    public partial class UdpRemoteListener2
+    {
+        public void Start(object option = null)
+        {
+            if (Socket == null)
+            {
+                if (Family == null)
+                {
+                    Socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                    for (int i = 0; i < SendSockets.Length; i++)
+                    {
+                        SendSockets[i] = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                    }
+                }
+                else
+                {
+                    Socket = new Socket(Family.Value, SocketType.Dgram, ProtocolType.Udp);
+                    for (int i = 0; i < SendSockets.Length; i++)
+                    {
+                        SendSockets[i] = new Socket(Family.Value, SocketType.Dgram, ProtocolType.Udp);
+                    }
+                }
 
-    //    public ValueTask<R> ReadAsync<R>(Func<R> createFunc) where R : UdpRemote
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-    //}
+                ///可能有点小 预期 10000连接 每秒 100kb  10000 * 1024 * 100 
+                ///测试代码 10000 * 1024 * 50(TestMessage3) 
+                ///换个角度，千兆网卡，理论上吃满带宽 接收缓冲区需要千兆
+
+                ///1020 * 1024 * 5; 5mb才 500万字节左右。测试代码的要求时每秒1亿2千万，不丢包就怪了。
+                Socket.ReceiveBufferSize = 1020 * 1024 * 5; //先设个5mb看看 
+            }
+            else
+            {
+                return;
+            }
+
+            SocketReceive();
+            MessageReceive();
+        }
+
+        public void Stop()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected QueuePipe<(Func<UdpRemote> CreateRemote, Action<UdpRemote> OnComplete)> remoteCreators
+            = new QueuePipe<(Func<UdpRemote> CreateRemote, Action<UdpRemote> OnComplete)>();
+
+
+        public ValueTask<R> ReadAsync<R>(Func<R> createFunc) where R : UdpRemote
+        {
+            TaskCompletionSource<R> source = new TaskCompletionSource<R>();
+            remoteCreators.Write((createFunc, (remote) =>
+            {
+                source.TrySetResult(remote as R);
+            }
+            ));
+            return new ValueTask<R>(source.Task);
+        }
+    }
+
+    public partial class UdpRemoteListener2
+    {
+        protected QueuePipe<(IPEndPoint RemoteEndPoint, IMemoryOwner<byte> Owner, int ReceivedBytes)> SocketRecvData
+            = new QueuePipe<(IPEndPoint RemoteEndPoint, IMemoryOwner<byte> Owner, int ReceivedBytes)>();
+
+        public bool IsSocketReceiving { get; protected set; }
+        protected virtual async void SocketReceive()
+        {
+            lock (sendWriter)
+            {
+                if (IsSocketReceiving)
+                {
+                    return;
+                }
+                IsSocketReceiving = true;
+            }
+
+            try
+            {
+                while (true)
+                {
+                    var ow = sendWriter.GetMemory();
+                    if (MemoryMarshal.TryGetArray<byte>(ow, out var segment))
+                    {
+                        var remote = Family == AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
+                        var res = await Socket.ReceiveFromAsync(segment, SocketFlags.None, remote).ConfigureAwait(false);
+                        sendWriter.Advance(res.ReceivedBytes);
+                        var p = sendWriter.Pop();
+
+#pragma warning disable CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
+                        Task.Run(() => { SocketRecvData.Write(((IPEndPoint)res.RemoteEndPoint, p.Item1, res.ReceivedBytes)); });
+#pragma warning restore CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
+
+                    }
+                    else
+                    {
+                        throw new NotSupportedException();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            finally
+            {
+                IsSocketReceiving = false;
+            }
+        }
+
+        protected async void MessageReceive()
+        {
+            while (true)
+            {
+                var (RemoteEndPoint, Owner, ReceivedBytes) = await SocketRecvData.ReadAsync().ConfigureAwait(false);
+                if (RemoteEndPoint == null || Owner == null)
+                {
+                    //可能是多线程问题，结果是null，暂时没找到原因
+                }
+                else
+                {
+                    InnerDeal(RemoteEndPoint, Owner, ReceivedBytes);
+                }
+            }
+        }
+
+        protected async void InnerDeal(IPEndPoint endPoint, IMemoryOwner<byte> owner, int receivedBytes)
+        {
+            var recvbuffer = owner.Memory.Slice(0, receivedBytes);
+            if (recvbuffer.Length == 0)
+            {
+                if (connected.TryGetValue(endPoint, out var remote))
+                {
+                    remote.Recv0(endPoint);
+                }
+                return;
+            }
+
+            byte messageType = recvbuffer.Span[0];
+            switch (messageType)
+            {
+                case UdpRemoteMessageDefine.UdpAuthRequest:
+                    //被动侧不处理主动侧提出的验证。
+                    break;
+                case UdpRemoteMessageDefine.UdpAuthResponse:
+                    authHelper.DealAnswerBuffer(endPoint, recvbuffer.Span);
+                    break;
+                case UdpRemoteMessageDefine.LLData:
+                    {
+                        var remote = await FindRemote(endPoint).ConfigureAwait(false);
+                        if (remote != null)
+                        {
+                            remote.RecvLLData(endPoint, recvbuffer.Span.Slice(1, receivedBytes - 1));
+                        }
+                    }
+                    break;
+                case UdpRemoteMessageDefine.UdpData:
+                    {
+                        var remote = await FindRemote(endPoint).ConfigureAwait(false);
+                        if (remote != null)
+                        {
+                            remote.RecvUdpData(endPoint, recvbuffer.Span.Slice(1, receivedBytes - 1));
+                        }
+                    }
+
+                    break;
+                case UdpRemoteMessageDefine.KcpData:
+                    {
+                        var remote = await FindRemote(endPoint).ConfigureAwait(false);
+                        if (remote != null)
+                        {
+                            remote.RecvKcpData(endPoint, recvbuffer.Span.Slice(1, receivedBytes - 1));
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+    }
 }
 
