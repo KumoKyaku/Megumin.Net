@@ -90,18 +90,21 @@ namespace TestServer
                 case Mode.TCP:
                     {
                         TcpRemoteListener remote = new TcpRemoteListener(Port);
+                        remote.TraceListener = new ConsoleTraceListener();
                         Listen(remote);
                     }
                     break;
                 case Mode.UDP:
                     {
                         UdpRemoteListener remote = new UdpRemoteListener(Port);
+                        remote.TraceListener = new ConsoleTraceListener();
                         Listen(remote);
                     }
                     break;
                 case Mode.KCP:
                     {
                         KcpRemoteListener remote = new KcpRemoteListener(Port);
+                        remote.TraceListener = new ConsoleTraceListener();
                         ListenKcp(remote);
                     }
                     break;
@@ -160,7 +163,7 @@ namespace TestServer
                     TraceListener = new ConsoleTraceListener(),
                 };
             });
-            re.KcpCore.TraceListener = new ConsoleTraceListener();
+            //re.KcpCore.TraceListener = new ConsoleTraceListener();
             Interlocked.Increment(ref connectCount);
             ListenKcp(remote);
         }

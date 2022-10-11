@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using static TestConfig;
 using Megumin.Message;
 using System.Collections.Generic;
+using System.Linq;
 
 public static class TestConfig
 {
@@ -21,8 +22,9 @@ public static class TestConfig
     /// <summary>
     /// 本机同时开Client Server 15000左右连接Tcp就会用尽端口
     /// Tcp每秒8kw字节差不多就是极限了，多了就自动卡死了，不清楚是socket问题还是console.writeline问题。
+    /// Kcp测试10000连接没有成功。5000也不性。推测应该是UdpListenner一个端口无法处理这么大流量，大量丢包。
     /// </summary>
-    public static int RemoteCount = 5000;
+    public static int RemoteCount = 500;
 }
 
 namespace TestClient
@@ -150,6 +152,7 @@ namespace TestClient
                         TestTcpRemote testR = new TestTcpRemote();
                         testR.Dealer.Index = clientIndex;
                         testR.Dealer.MessageCount = MessageCount;
+                        testR.TraceListener = new ConsoleTraceListener();
                         remote = testR;
                     }
                     break;
@@ -158,6 +161,7 @@ namespace TestClient
                         TestUdpRemote testR = new TestUdpRemote();
                         testR.Dealer.Index = clientIndex;
                         testR.Dealer.MessageCount = MessageCount;
+                        testR.TraceListener = new ConsoleTraceListener();
                         remote = testR;
                     }
                     break;
@@ -166,6 +170,7 @@ namespace TestClient
                         TestKcpRemote testR = new TestKcpRemote();
                         testR.Dealer.Index = clientIndex;
                         testR.Dealer.MessageCount = MessageCount;
+                        testR.TraceListener = new ConsoleTraceListener();
                         remote = testR;
                     }
                     break;
@@ -178,10 +183,11 @@ namespace TestClient
                 if (remote is IConnectable conn)
                 {
                     await conn.ConnectAsync(new IPEndPoint(IPAddress.Loopback, Port));
+                    Console.WriteLine($"Remote{clientIndex} 连接成功。");
                     if (remote is KcpRemote kcp)
                     {
-                        kcp.KcpCore.TraceListener = new ConsoleTraceListener();
-                        //kcp.SendBeat();
+                        //kcp.KcpCore.TraceListener = new ConsoleTraceListener();
+                        kcp.SendBeat();
                     }
                 }
             }

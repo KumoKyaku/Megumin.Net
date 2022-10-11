@@ -12,7 +12,14 @@ namespace Megumin.Remote
 {
 
     /// <summary>
-    /// todo 连接kcpid
+    /// 测试发送消息 1000个 1024*10消息，多次发送，有几率假死。
+    /// debug发现发送的Kcpdata和接收的Kcpdata对不上。发送一个data，接收到的是旧的数据。
+    /// 新的数据不知道去了那里。感觉像卡在系统的接收数据缓冲里。可能是UDP底层出了问题。
+    /// 有可能是数据量过大IOCP出现了假死，UdpClient.ReceiveAsync异步触发出了问题。
+    /// 实在找不到问题所在。暂时搁置。
+    /// 目前处理方法是使用发送心跳包方式保活。收不到直接就进入断线流程。
+    /// <para></para>
+    /// 工程实践中由于消息是不间断的，总是出现打嗝卡顿，后续消息会触发fastack。假死现象要比测试少一点。
     /// </summary>
     public partial class KcpRemote : UdpRemote
     {
@@ -27,22 +34,16 @@ namespace Megumin.Remote
                 var kcpIO = new PoolSegManager.KcpIO((uint)KcpIOChannel);
 
                 //具体设置参数要根据项目调整。测试数据量一大有打嗝和假死现象。还没搞清楚原因。
-                /**
-                 * 测试发送消息 1000个 1024*10消息，多次发送，有几率假死。
-                 * debug发现发送的Kcpdata和接收的Kcpdata对不上。发送一个data，接收到的是旧的数据。
-                 * 新的数据不知道去了那里。感觉像卡在系统的接收数据缓冲里。可能是UDP底层出了问题。
-                 * 有可能是数据量过大IOCP出现了假死，UdpClient.ReceiveAsync异步触发出了问题。
-                 * 实在找不到问题所在。暂时搁置。
-                 * 目前处理方法是使用发送心跳包方式保活。收不到直接就进入断线流程。
-                 */
+                
                 kcpIO.NoDelay(2, 5, 2, 1);
                 kcpIO.WndSize(64, 128);
+                ///不要限制最大fastack，rto快速增长时很难恢复，指望快速重传来减小延迟。
                 kcpIO.fastlimit = -1;
 
                 KcpCore = kcpIO;
                 kcpUpdate = kcpIO;
 
-                lock (AllKcp)
+                lock (kcpUpdateLock)
                 {
                     AllKcp.Add(kcpUpdate);
                 }
@@ -182,6 +183,12 @@ namespace Megumin.Remote
         {
             InitKcp(convRandom.Next(1000, 10000));
             return base.ConnectAsync(endPoint, retryCount);
+        }
+
+        protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+            base.OnDisconnect(error, activeOrPassive);
+            TraceListener?.WriteLine($"连接断开");
         }
     }
 }
