@@ -32,5 +32,15 @@ namespace Megumin.Message
         {
             return Default;
         }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            return Default;
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            return Default;
+        }
     }
 }

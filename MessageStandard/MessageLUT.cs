@@ -38,6 +38,7 @@ namespace Megumin.Remote
         /// 消息类型
         /// </summary>
         Type BindType { get; }
+
         /// <summary>
         /// 序列化函数
         /// </summary>
@@ -46,15 +47,37 @@ namespace Megumin.Remote
         /// <param name="options"></param>
         /// <remarks>序列化函数不在提供序列化多少字节，需要在writer中自己统计</remarks>
         void Serialize(IBufferWriter<byte> writer, object value, object options = null);
+
         /// <summary>
         /// 反序列化函数
         /// </summary>
-        /// <param name="byteSequence"></param>
+        /// <param name="source"></param>
         /// <param name="options"></param>
         /// <returns></returns>
         /// <remarks>返回值不考虑泛型，泛型虽然能避免值类型消息装箱，但是调用时要使用反射去转化为
         /// 对应类型接口，在rpc回调转型处仍然会有类型匹配失败问题，得不偿失。</remarks>
-        object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null);
+        object Deserialize(in ReadOnlySpan<byte> source, object options = null);
+
+        /// <summary>
+        /// 反序列化函数
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <remarks>返回值不考虑泛型，泛型虽然能避免值类型消息装箱，但是调用时要使用反射去转化为
+        /// 对应类型接口，在rpc回调转型处仍然会有类型匹配失败问题，得不偿失。</remarks>
+        object Deserialize(in ReadOnlySequence<byte> source, object options = null);
+
+        /// <summary>
+        /// 反序列化函数
+        /// <para></para>虽然ReadOnlyMemory可以转换为ReadOnlySpan，但是序列化库支持不一致，所以三个API都要
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <remarks>返回值不考虑泛型，泛型虽然能避免值类型消息装箱，但是调用时要使用反射去转化为
+        /// 对应类型接口，在rpc回调转型处仍然会有类型匹配失败问题，得不偿失。</remarks>
+        object Deserialize(in ReadOnlyMemory<byte> source, object options = null);
     }
 
     public interface IMeguminFormater<T> : IMeguminFormater
@@ -87,7 +110,7 @@ namespace Megumin.Remote
     /// <summary>
     /// 消息查找表
     /// </summary>
-    public class MessageLUT
+    public partial class MessageLUT
     {
         static readonly Dictionary<int, IMeguminFormater> IDDic = new Dictionary<int, IMeguminFormater>();
         static readonly Dictionary<Type, IMeguminFormater> TypeDic = new Dictionary<Type, IMeguminFormater>();
@@ -204,39 +227,6 @@ namespace Megumin.Remote
             return formater.MessageID;
         }
 
-        /// <summary>
-        /// 反序列化
-        /// </summary>
-        /// <param name="messageID"></param>
-        /// <param name="byteSequence"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        /// <exception cref="KeyNotFoundException"></exception>
-        /// <exception cref="ArgumentNullException"></exception>
-        public static object Deserialize(int messageID, in ReadOnlySequence<byte> byteSequence, object options = null)
-        {
-            var formater = IDDic[messageID];
-            var result = formater.Deserialize(byteSequence, options);
-            return result;
-        }
-
-        /// <summary>
-        /// 反序列化
-        /// </summary>
-        /// <param name="byteSequence"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        /// <remarks>有时即使类型不匹配也能反序列化成功，但得到的值时错误的</remarks>
-        /// <exception cref="KeyNotFoundException"></exception>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidCastException"></exception>
-        public static T Deserialize<T>(in ReadOnlySequence<byte> byteSequence, object options = null)
-        {
-            var type = typeof(T);
-            var formater = TypeDic[type];
-            var result = formater.Deserialize(byteSequence, options);
-            return (T)result;
-        }
 
         /// <summary>
         /// 查找消息类型
@@ -335,6 +325,111 @@ namespace Megumin.Remote
         public static bool TryGetFormater(int messageID, out IMeguminFormater formater)
         {
             return IDDic.TryGetValue(messageID, out formater);
+        }
+    }
+
+    public partial class MessageLUT
+    {
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="messageID"></param>
+        /// <param name="byteSequence"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <exception cref="KeyNotFoundException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static object Deserialize(int messageID, in ReadOnlySequence<byte> byteSequence, object options = null)
+        {
+            var formater = IDDic[messageID];
+            var result = formater.Deserialize(byteSequence, options);
+            return result;
+        }
+
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="messageID"></param>
+        /// <param name="byteSequence"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <exception cref="KeyNotFoundException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static object Deserialize(int messageID, in ReadOnlySpan<byte> byteSequence, object options = null)
+        {
+            var formater = IDDic[messageID];
+            var result = formater.Deserialize(byteSequence, options);
+            return result;
+        }
+
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="messageID"></param>
+        /// <param name="byteSequence"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <exception cref="KeyNotFoundException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static object Deserialize(int messageID, in ReadOnlyMemory<byte> byteSequence, object options = null)
+        {
+            var formater = IDDic[messageID];
+            var result = formater.Deserialize(byteSequence, options);
+            return result;
+        }
+
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <remarks>有时即使类型不匹配也能反序列化成功，但得到的值时错误的</remarks>
+        /// <exception cref="KeyNotFoundException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidCastException"></exception>
+        public static T Deserialize<T>(in ReadOnlySequence<byte> source, object options = null)
+        {
+            var type = typeof(T);
+            var formater = TypeDic[type];
+            var result = formater.Deserialize(source, options);
+            return (T)result;
+        }
+
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <remarks>有时即使类型不匹配也能反序列化成功，但得到的值时错误的</remarks>
+        /// <exception cref="KeyNotFoundException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidCastException"></exception>
+        public static T Deserialize<T>(in ReadOnlySpan<byte> source, object options = null)
+        {
+            var type = typeof(T);
+            var formater = TypeDic[type];
+            var result = formater.Deserialize(source, options);
+            return (T)result;
+        }
+
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <remarks>有时即使类型不匹配也能反序列化成功，但得到的值时错误的</remarks>
+        /// <exception cref="KeyNotFoundException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidCastException"></exception>
+        public static T Deserialize<T>(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            var type = typeof(T);
+            var formater = TypeDic[type];
+            var result = formater.Deserialize(source, options);
+            return (T)result;
         }
     }
 

@@ -28,12 +28,30 @@ namespace Megumin.Message
             Serialize(writer, value.ToString(), options);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
 #if NET5_0_OR_GREATER
-            return UTF8.GetString(byteSequence);
+            return UTF8.GetString(source);
 #else
-            return UTF8.GetString(byteSequence.ToArray());
+            return UTF8.GetString(source.ToArray());
+#endif
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+#if NET5_0_OR_GREATER
+            return UTF8.GetString(source);
+#else
+            return UTF8.GetString(source.ToArray());
+#endif
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+#if NET5_0_OR_GREATER
+            return UTF8.GetString(source.Span);
+#else
+            return UTF8.GetString(source.ToArray());
 #endif
         }
     }
@@ -55,9 +73,19 @@ namespace Megumin.Message
             Serialize(writer, (int)value, options);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            return byteSequence.ReadInt();
+            return source.ReadInt();
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            return source.ReadInt();
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            return source.ReadInt();
         }
     }
 
@@ -78,9 +106,19 @@ namespace Megumin.Message
             Serialize(writer, (float)value, options);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            return byteSequence.ReadFloat();
+            return source.ReadFloat();
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            return source.ReadFloat();
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            return source.ReadFloat();
         }
     }
 
@@ -101,9 +139,19 @@ namespace Megumin.Message
             Serialize(writer, (long)value, options);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            return byteSequence.ReadLong();
+            return source.ReadLong();
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            return source.ReadLong();
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            return source.ReadLong();
         }
     }
 
@@ -124,9 +172,19 @@ namespace Megumin.Message
             Serialize(writer, (double)value, options);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            return byteSequence.ReadDouble();
+            return source.ReadDouble();
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            return source.ReadDouble();
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            return source.ReadDouble();
         }
     }
 
@@ -147,9 +205,19 @@ namespace Megumin.Message
             Serialize(writer, (DateTimeOffset)value, options);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            return DateTime.FromBinary(byteSequence.ReadLong());
+            return DateTime.FromBinary(source.ReadLong());
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            return DateTime.FromBinary(source.ReadLong());
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            return DateTime.FromBinary(source.ReadLong());
         }
     }
 
@@ -170,9 +238,19 @@ namespace Megumin.Message
             Serialize(writer, (DateTimeOffset)value, options);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            return DateTimeOffset.FromUnixTimeMilliseconds(byteSequence.ReadLong());
+            return DateTimeOffset.FromUnixTimeMilliseconds(source.ReadLong());
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            return DateTimeOffset.FromUnixTimeMilliseconds(source.ReadLong());
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            return DateTimeOffset.FromUnixTimeMilliseconds(source.ReadLong());
         }
     }
 
@@ -191,9 +269,19 @@ namespace Megumin.Message
             Serialize(writer, (byte[])value, options);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            return byteSequence.ToArray();
+            return source.ToArray();
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            return source.ToArray();
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            return source.ToArray();
         }
     }
 }

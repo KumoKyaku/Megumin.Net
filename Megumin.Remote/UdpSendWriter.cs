@@ -11,7 +11,7 @@ namespace Megumin.Remote
         private IMemoryOwner<byte> buffer;
         int index = 0;
 
-        public UdpSendWriter(int bufferLenght)
+        public UdpSendWriter(int bufferLenght = 1024 * 8)
         {
             this.defaultCount = bufferLenght;
         }
@@ -45,7 +45,6 @@ namespace Megumin.Remote
                 Ensure(sizeHint);
                 return buffer.Memory.Slice(index, buffer.Memory.Length - index);
             }
-
         }
 
         readonly object syncLock = new object();

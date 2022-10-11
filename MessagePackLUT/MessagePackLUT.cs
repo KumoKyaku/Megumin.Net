@@ -111,9 +111,23 @@ namespace Megumin.Remote
             MessagePackSerializer.Serialize<T>(writer, (T)value, options as MessagePackSerializerOptions);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            return MessagePackSerializer.Deserialize<T>(byteSequence, options as MessagePackSerializerOptions);
+            return MessagePackSerializer.Deserialize<T>(source, options as MessagePackSerializerOptions);
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            using (var buffer = MemoryPool<byte>.Shared.Rent(source.Length))
+            {
+                source.CopyTo(buffer.Memory.Span);
+                return MessagePackSerializer.Deserialize<T>(buffer.Memory, options as MessagePackSerializerOptions);
+            }
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            return MessagePackSerializer.Deserialize<T>(source, options as MessagePackSerializerOptions);
         }
     }
 }

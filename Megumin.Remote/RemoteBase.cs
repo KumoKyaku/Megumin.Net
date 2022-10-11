@@ -219,6 +219,58 @@ namespace Megumin.Remote
         }
 
         /// <summary>
+        /// 尝试反序列化
+        /// </summary>
+        /// <param name="messageID"></param>
+        /// <param name="byteSequence"></param>
+        /// <param name="message"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
+        protected virtual bool TryDeserialize
+            (int messageID, in ReadOnlyMemory<byte> byteSequence,
+            out object message, object options = null)
+        {
+            try
+            {
+                message = MessageLUT.Deserialize(messageID, byteSequence, options);
+                return true;
+            }
+            catch (Exception e)
+            {
+                TraceListener?.WriteLine($"反序列化过程出现异常。MessageID:{messageID}--Lenght:{byteSequence.Length}。\n {e}");
+                message = default;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 尝试反序列化
+        /// </summary>
+        /// <param name="messageID"></param>
+        /// <param name="byteSequence"></param>
+        /// <param name="message"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
+        protected virtual bool TryDeserialize
+            (int messageID, in ReadOnlySpan<byte> byteSequence,
+            out object message, object options = null)
+        {
+            try
+            {
+                message = MessageLUT.Deserialize(messageID, byteSequence, options);
+                return true;
+            }
+            catch (Exception e)
+            {
+                TraceListener?.WriteLine($"反序列化过程出现异常。MessageID:{messageID}--Lenght:{byteSequence.Length}。\n {e}");
+                message = default;
+                return false;
+            }
+        }
+
+        /// <summary>
         /// 发送rpcID和消息
         /// </summary>
         public abstract void Send(int rpcID, object message, object options = null);
@@ -343,6 +395,22 @@ namespace Megumin.Remote
             ProcessBody(byteSequence.Slice(10), options, RpcID, CMD, MessageID);
         }
 
+        protected virtual void ProcessBody(in ReadOnlySpan<byte> byteSequence,
+                                           object options = null)
+        {
+            //读取RpcID 和 消息ID
+            var (RpcID, CMD, MessageID) = byteSequence.ReadHeader();
+            ProcessBody(byteSequence.Slice(10), options, RpcID, CMD, MessageID);
+        }
+
+        protected virtual void ProcessBody(in ReadOnlyMemory<byte> byteSequence,
+                                           object options = null)
+        {
+            //读取RpcID 和 消息ID
+            var (RpcID, CMD, MessageID) = byteSequence.ReadHeader();
+            ProcessBody(byteSequence.Slice(10), options, RpcID, CMD, MessageID);
+        }
+
         /// <summary>
         /// 反序列化失败时，是否将直接字节数组传递到上层。
         /// </summary>
@@ -351,6 +419,56 @@ namespace Megumin.Remote
         /// 处理一个完整的消息包，已分离报头
         /// </summary>
         protected virtual void ProcessBody(in ReadOnlySequence<byte> bodyBytes,
+                                           object options,
+                                           int RpcID,
+                                           short CMD,
+                                           int MessageID)
+        {
+            if (TryDeserialize(MessageID, bodyBytes, out var message, options))
+            {
+                DeserializeSuccess(RpcID, CMD, MessageID, message);
+            }
+            else
+            {
+                if (UseByteArrayOnDeserializeError)
+                {
+                    //反序列化失败,返回上层一个byte[] 
+                    byte[] bytes = new byte[bodyBytes.Length];
+                    bodyBytes.CopyTo(bytes);
+                    DeserializeSuccess(RpcID, CMD, MessageID, bytes);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 处理一个完整的消息包，已分离报头
+        /// </summary>
+        protected virtual void ProcessBody(in ReadOnlySpan<byte> bodyBytes,
+                                           object options,
+                                           int RpcID,
+                                           short CMD,
+                                           int MessageID)
+        {
+            if (TryDeserialize(MessageID, bodyBytes, out var message, options))
+            {
+                DeserializeSuccess(RpcID, CMD, MessageID, message);
+            }
+            else
+            {
+                if (UseByteArrayOnDeserializeError)
+                {
+                    //反序列化失败,返回上层一个byte[] 
+                    byte[] bytes = new byte[bodyBytes.Length];
+                    bodyBytes.CopyTo(bytes);
+                    DeserializeSuccess(RpcID, CMD, MessageID, bytes);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 处理一个完整的消息包，已分离报头
+        /// </summary>
+        protected virtual void ProcessBody(in ReadOnlyMemory<byte> bodyBytes,
                                            object options,
                                            int RpcID,
                                            short CMD,

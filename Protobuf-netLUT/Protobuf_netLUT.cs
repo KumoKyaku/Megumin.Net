@@ -111,44 +111,56 @@ namespace Megumin.Remote
             Serializer.Serialize<T>(writer, (T)value, options);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            var result = Serializer.Deserialize<T>(byteSequence, userState: options);
+            var result = Serializer.Deserialize<T>(source, userState: options);
+            return result;
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            var result = Serializer.Deserialize<T>(source, userState: options);
+            return result;
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            var result = Serializer.Deserialize<T>(source, userState: options);
             return result;
         }
     }
 
-    internal class PBnetFormaterOld<T> : IMeguminFormater
-    {
-        public int MessageID { get; }
-        public Type BindType { get; }
+    //internal class PBnetFormaterOld<T> : IMeguminFormater
+    //{
+    //    public int MessageID { get; }
+    //    public Type BindType { get; }
 
-        private BufferWriterBytesSteam bufferSteam;
-        private MemoryStream dmemoryS;
+    //    private BufferWriterBytesSteam bufferSteam;
+    //    private MemoryStream dmemoryS;
 
-        public PBnetFormaterOld(int messageID)
-        {
-            MessageID = messageID;
-            BindType = typeof(T);
-            bufferSteam = new BufferWriterBytesSteam();
-            dmemoryS = new MemoryStream();
-        }
+    //    public PBnetFormaterOld(int messageID)
+    //    {
+    //        MessageID = messageID;
+    //        BindType = typeof(T);
+    //        bufferSteam = new BufferWriterBytesSteam();
+    //        dmemoryS = new MemoryStream();
+    //    }
 
-        public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
-        {
-            bufferSteam.BufferWriter = writer;
-            Serializer.Serialize<T>(bufferSteam, (T)value);
-            bufferSteam.BufferWriter = null;
-        }
+    //    public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
+    //    {
+    //        bufferSteam.BufferWriter = writer;
+    //        Serializer.Serialize<T>(bufferSteam, (T)value);
+    //        bufferSteam.BufferWriter = null;
+    //    }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
-        {
-            int length = (int)byteSequence.Length;
-            dmemoryS.Seek(0, SeekOrigin.Begin);
-            dmemoryS.SetLength(length);
-            byteSequence.CopyTo(dmemoryS.GetBuffer());
-            var result = Serializer.Deserialize<T>(dmemoryS);
-            return result;
-        }
-    }
+    //    public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+    //    {
+    //        int length = (int)byteSequence.Length;
+    //        dmemoryS.Seek(0, SeekOrigin.Begin);
+    //        dmemoryS.SetLength(length);
+    //        byteSequence.CopyTo(dmemoryS.GetBuffer());
+    //        var result = Serializer.Deserialize<T>(dmemoryS);
+    //        return result;
+    //    }
+    //}
 }

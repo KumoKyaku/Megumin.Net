@@ -23,9 +23,21 @@ namespace Megumin.Message
             Serialize(writer, (Authentication)value, options);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            var str = MessageLUT.Deserialize<string>(byteSequence, options);
+            var str = MessageLUT.Deserialize<string>(source, options);
+            return new Authentication() { Token = str };
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            var str = MessageLUT.Deserialize<string>(source, options);
+            return new Authentication() { Token = str };
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            var str = MessageLUT.Deserialize<string>(source, options);
             return new Authentication() { Token = str };
         }
     }

@@ -66,7 +66,7 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="key"></param>
         public static void Regist<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip)
-            where T:IMessage<T>
+            where T : IMessage<T>
         {
             var type = typeof(T);
             var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
@@ -96,39 +96,37 @@ namespace Megumin.Remote
     internal class DefaultFormater<T> : IMeguminFormater where T : IMessage<T>
     {
         public int MessageID { get; }
-        public Type BindType { get; }
-
-        private BufferWriterBytesSteam bufferSteam;
-        private CodedOutputStream codeOutputSteam;
+        public Type BindType => typeof(T);
 
         MessageParser<T> parser =
                 typeof(T).GetProperty("Parser", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) as MessageParser<T>;
         public DefaultFormater(int messageID)
         {
             MessageID = messageID;
-            BindType = typeof(T);
-            bufferSteam = new BufferWriterBytesSteam();
-            codeOutputSteam = new CodedOutputStream(bufferSteam);
         }
 
         public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
         {
-            bufferSteam.BufferWriter = writer;
             IMessage<T> message = (IMessage<T>)value;
-            message.WriteTo(codeOutputSteam);
-            codeOutputSteam.Flush();
-            bufferSteam.BufferWriter = null;
+            message.WriteTo(writer);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            int length = (int)byteSequence.Length;
-            var buffer = Shared.Rent(length);
-            byteSequence.CopyTo(buffer.AsSpan());
-            var result = parser.ParseFrom(buffer,0, length);
+            var result = parser.ParseFrom(source);
+            return result;
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            var result = parser.ParseFrom(source);
+            return result;
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            var result = parser.ParseFrom(source.Span);
             return result;
         }
     }
-
-    
 }

@@ -27,9 +27,9 @@ namespace Megumin.Message
             writer.Advance(Size);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            if (byteSequence.Length < Size)
+            if (source.Length < Size)
             {
                 return null;
             }
@@ -38,7 +38,41 @@ namespace Megumin.Message
             unsafe
             {
                 Span<byte> span = stackalloc byte[4];
-                byteSequence.Slice(0, 4).CopyTo(span);
+                source.Slice(0, 4).CopyTo(span);
+                result.Value = BinaryPrimitives.ReadInt32LittleEndian(span);
+            }
+            return result;
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            if (source.Length < Size)
+            {
+                return null;
+            }
+
+            var result = new TestPacket1();
+            unsafe
+            {
+                Span<byte> span = stackalloc byte[4];
+                source.Slice(0, 4).CopyTo(span);
+                result.Value = BinaryPrimitives.ReadInt32LittleEndian(span);
+            }
+            return result;
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            if (source.Length < Size)
+            {
+                return null;
+            }
+
+            var result = new TestPacket1();
+            unsafe
+            {
+                Span<byte> span = stackalloc byte[4];
+                source.Span.Slice(0, 4).CopyTo(span);
                 result.Value = BinaryPrimitives.ReadInt32LittleEndian(span);
             }
             return result;
@@ -65,9 +99,9 @@ namespace Megumin.Message
             writer.Advance(Size);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            if (byteSequence.Length < Size)
+            if (source.Length < Size)
             {
                 return null;
             }
@@ -76,7 +110,41 @@ namespace Megumin.Message
             unsafe
             {
                 byte[] span = new byte[4];
-                byteSequence.Slice(0, 4).CopyTo(span);
+                source.Slice(0, 4).CopyTo(span);
+                result.Value = BitConverter.ToSingle(span, 0);
+            }
+            return result;
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            if (source.Length < Size)
+            {
+                return null;
+            }
+
+            var result = new TestPacket2();
+            unsafe
+            {
+                byte[] span = new byte[4];
+                source.Slice(0, 4).CopyTo(span);
+                result.Value = BitConverter.ToSingle(span, 0);
+            }
+            return result;
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            if (source.Length < Size)
+            {
+                return null;
+            }
+
+            var result = new TestPacket2();
+            unsafe
+            {
+                byte[] span = new byte[4];
+                source.Slice(0, 4).CopyTo(span);
                 result.Value = BitConverter.ToSingle(span, 0);
             }
             return result;
@@ -103,9 +171,9 @@ namespace Megumin.Message
             writer.Advance(Size);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            if (byteSequence.Length < Size)
+            if (source.Length < Size)
             {
                 return null;
             }
@@ -114,7 +182,41 @@ namespace Megumin.Message
             unsafe
             {
                 byte[] span = new byte[4];
-                byteSequence.Slice(0, 4).CopyTo(span);
+                source.Slice(0, 4).CopyTo(span);
+                result.Value = BitConverter.ToSingle(span, 0);
+            }
+            return result;
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            if (source.Length < Size)
+            {
+                return null;
+            }
+
+            var result = new TestPacket3();
+            unsafe
+            {
+                byte[] span = new byte[4];
+                source.Slice(0, 4).CopyTo(span);
+                result.Value = BitConverter.ToSingle(span, 0);
+            }
+            return result;
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            if (source.Length < Size)
+            {
+                return null;
+            }
+
+            var result = new TestPacket3();
+            unsafe
+            {
+                byte[] span = new byte[4];
+                source.Slice(0, 4).CopyTo(span);
                 result.Value = BitConverter.ToSingle(span, 0);
             }
             return result;
@@ -138,9 +240,21 @@ namespace Megumin.Message
             Serialize(writer, (TestPacket4)value, options);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            var str = MessageLUT.Deserialize<string>(byteSequence, options);
+            var str = MessageLUT.Deserialize<string>(source, options);
+            return new TestPacket4() { Value = str };
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            var str = MessageLUT.Deserialize<string>(source, options);
+            return new TestPacket4() { Value = str };
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            var str = MessageLUT.Deserialize<string>(source, options);
             return new TestPacket4() { Value = str };
         }
     }

@@ -28,11 +28,27 @@ namespace Megumin.Message
             Serialize(writer, (GetTime)value, options);
         }
 
-        public object Deserialize(in ReadOnlySequence<byte> byteSequence, object options = null)
+        public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
             var result = new GetTime();
-            result.PreReceiveType = byteSequence.ReadInt();
-            result.ReceiveThreadPost2ThreadScheduler = byteSequence.ReadBoolNullable(4);
+            result.PreReceiveType = source.ReadInt();
+            result.ReceiveThreadPost2ThreadScheduler = source.ReadBoolNullable(4);
+            return result;
+        }
+
+        public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
+        {
+            var result = new GetTime();
+            result.PreReceiveType = source.ReadInt();
+            result.ReceiveThreadPost2ThreadScheduler = source.ReadBoolNullable(4);
+            return result;
+        }
+
+        public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            var result = new GetTime();
+            result.PreReceiveType = source.Span.ReadInt();
+            result.ReceiveThreadPost2ThreadScheduler = source.Span.ReadBoolNullable(4);
             return result;
         }
     }
@@ -47,7 +63,7 @@ namespace Megumin.Message
         public int PreReceiveType { get; set; } = 2;
     }
 
-    partial class GetTime: IReceiveThreadControlable
+    partial class GetTime : IReceiveThreadControlable
     {
         public bool? ReceiveThreadPost2ThreadScheduler { get; set; } = false;
     }
