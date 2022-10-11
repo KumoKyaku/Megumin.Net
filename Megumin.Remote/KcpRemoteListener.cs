@@ -64,4 +64,42 @@ namespace Megumin.Remote
             return ListenAsync(createFunc);
         }
     }
+
+    public class KcpRemoteListener2 : UdpRemoteListener2, IListener2<KcpRemote>
+    {
+        public KcpRemoteListener2(int port, AddressFamily? addressFamily = null) : base(port, addressFamily)
+        {
+        }
+
+        protected override async ValueTask<UdpRemote> CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
+        {
+            //Todo 超时2000ms
+            var (CreateRemote, OnComplete) = await remoteCreators.ReadAsync();
+
+            var udp = CreateRemote?.Invoke();
+
+            KcpRemote remote = udp as KcpRemote;
+            if (remote != null)
+            {
+                remote.InitKcp(answer.KcpChannel);
+                remote.IsVaild = true;
+                remote.ConnectIPEndPoint = endPoint;
+                remote.GUID = answer.Guid;
+                remote.Password = answer.Password;
+                //todo add listenUdpclient.
+                var sendSocket = SendSockets[connected.Count % SendSockets.Length];
+                udp.SetSocket(sendSocket);
+                lut.Add(answer.Guid, remote);
+                connected.Add(endPoint, remote);
+            }
+
+            OnComplete?.Invoke(remote);
+            return udp;
+        }
+
+        public new ValueTask<R> ReadAsync<R>(Func<R> createFunc) where R : KcpRemote
+        {
+            return base.ReadAsync(createFunc);
+        }
+    }
 }

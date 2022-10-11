@@ -142,7 +142,7 @@ namespace Megumin.Remote
 #pragma warning restore CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 OnAcceptException(e);
                 return;

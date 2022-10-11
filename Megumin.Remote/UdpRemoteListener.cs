@@ -306,7 +306,8 @@ namespace Megumin.Remote
         public UdpRemoteListener2(int port, AddressFamily? addressFamily = null)
         {
             this.Family = addressFamily;
-            this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
+            var ip = Family == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any;
+            this.ConnectIPEndPoint = new IPEndPoint(ip, port);
         }
 
         protected async ValueTask<UdpRemote> FindRemote(IPEndPoint endPoint)
@@ -358,7 +359,7 @@ namespace Megumin.Remote
             //Todo 超时2000ms
             var (CreateRemote, OnComplete) = await remoteCreators.ReadAsync();
 
-            var udp = CreateRemote.Invoke();
+            var udp = CreateRemote?.Invoke();
 
             if (udp != null)
             {
@@ -409,7 +410,8 @@ namespace Megumin.Remote
                 ///换个角度，千兆网卡，理论上吃满带宽 接收缓冲区需要千兆
 
                 ///1020 * 1024 * 5; 5mb才 500万字节左右。测试代码的要求时每秒1亿2千万，不丢包就怪了。
-                Socket.ReceiveBufferSize = 1020 * 1024 * 5; //先设个5mb看看 
+                Socket.ReceiveBufferSize = 1020 * 1024 * 5; //先设个5mb看看  
+                Socket.Bind(ConnectIPEndPoint);
             }
             else
             {

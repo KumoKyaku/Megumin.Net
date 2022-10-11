@@ -1,16 +1,11 @@
-﻿using Megumin.Remote;
-using Megumin.Remote.Test;
+﻿using Megumin.Message;
 using Megumin.Remote;
 using Net.Remote;
 using System;
-using System.Net;
-using System.Net.Sockets;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using static TestConfig;
-using System.Security.Cryptography;
-using Megumin.Message;
-using System.Diagnostics;
 
 namespace TestServer
 {
@@ -85,33 +80,111 @@ namespace TestServer
                 });
             }
 
-            switch (PMode)
+            bool useNewListener = true;
+            if (useNewListener)
             {
-                case Mode.TCP:
-                    {
-                        TcpRemoteListener remote = new TcpRemoteListener(Port);
-                        remote.TraceListener = new ConsoleTraceListener();
-                        Listen(remote);
-                    }
-                    break;
-                case Mode.UDP:
-                    {
-                        UdpRemoteListener remote = new UdpRemoteListener(Port);
-                        remote.TraceListener = new ConsoleTraceListener();
-                        Listen(remote);
-                    }
-                    break;
-                case Mode.KCP:
-                    {
-                        KcpRemoteListener remote = new KcpRemoteListener(Port);
-                        remote.TraceListener = new ConsoleTraceListener();
-                        ListenKcp(remote);
-                    }
-                    break;
-                default:
-                    break;
+                switch (PMode)
+                {
+                    case Mode.TCP:
+                        {
+                            TcpRemoteListener2 listener2 = new TcpRemoteListener2(Port);
+                            listener2.TraceListener = new ConsoleTraceListener();
+                            listener2.Start();
+                            while (true)
+                            {
+                                /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
+                                var re = await listener2.ReadAsync(static () =>
+                                {
+                                    Console.WriteLine($"总接收到连接{connectCount}");
+                                    return new TestTcpServerRemote()
+                                    {
+                                        Post2ThreadScheduler = UsePost2ThreadScheduler,
+                                        UID = connectCount,
+                                        TraceListener = new ConsoleTraceListener(),
+                                    };
+                                }).ConfigureAwait(false);
+                                Interlocked.Increment(ref connectCount);
+                            }
+                        }
+                        break;
+                    case Mode.UDP:
+                        {
+                            UdpRemoteListener2 listener2 = new UdpRemoteListener2(Port);
+                            listener2.TraceListener = new ConsoleTraceListener();
+                            listener2.Start();
+                            while (true)
+                            {
+                                /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
+                                var re = await listener2.ReadAsync(static () =>
+                                {
+                                    Console.WriteLine($"总接收到连接{connectCount}");
+                                    return new TestUdpServerRemote()
+                                    {
+                                        Post2ThreadScheduler = UsePost2ThreadScheduler,
+                                        UID = connectCount,
+                                        TraceListener = new ConsoleTraceListener(),
+                                    };
+                                }).ConfigureAwait(false);
+                                Interlocked.Increment(ref connectCount);
+                            }
+                        }
+                        break;
+                    case Mode.KCP:
+                        {
+                            KcpRemoteListener2 listener2 = new KcpRemoteListener2(Port);
+                            listener2.TraceListener = new ConsoleTraceListener();
+                            listener2.Start();
+                            while (true)
+                            {
+                                /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
+                                var re = await listener2.ReadAsync(static () =>
+                                {
+                                    Console.WriteLine($"总接收到连接{connectCount}");
+                                    return new TestKcpServerRemote()
+                                    {
+                                        Post2ThreadScheduler = UsePost2ThreadScheduler,
+                                        UID = connectCount,
+                                        TraceListener = new ConsoleTraceListener(),
+                                    };
+                                }).ConfigureAwait(false);
+                                //re.KcpCore.TraceListener = new ConsoleTraceListener();
+                                Interlocked.Increment(ref connectCount);
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
-            
+            else
+            {
+                switch (PMode)
+                {
+                    case Mode.TCP:
+                        {
+                            TcpRemoteListener remote = new TcpRemoteListener(Port);
+                            remote.TraceListener = new ConsoleTraceListener();
+                            Listen(remote);
+                        }
+                        break;
+                    case Mode.UDP:
+                        {
+                            UdpRemoteListener remote = new UdpRemoteListener(Port);
+                            remote.TraceListener = new ConsoleTraceListener();
+                            Listen(remote);
+                        }
+                        break;
+                    case Mode.KCP:
+                        {
+                            KcpRemoteListener remote = new KcpRemoteListener(Port);
+                            remote.TraceListener = new ConsoleTraceListener();
+                            ListenKcp(remote);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
 
         static int connectCount = 1;
