@@ -77,7 +77,15 @@ namespace Megumin.Remote
             while (IsListening)
             {
                 var res = await ReceiveAsync().ConfigureAwait(false);
-                UdpReceives.Enqueue(res);
+                try
+                {
+                    UdpReceives.Enqueue(res);
+                }
+                catch (Exception e)
+                {
+                    //可能数量太多导致加入消息失败。
+                    TraceListener?.WriteLine(e.ToString());
+                }
             }
         }
 

@@ -89,19 +89,19 @@ namespace TestServer
             {
                 case Mode.TCP:
                     {
-                        TcpRemoteListener remote = new TcpRemoteListener(54321);
+                        TcpRemoteListener remote = new TcpRemoteListener(Port);
                         Listen(remote);
                     }
                     break;
                 case Mode.UDP:
                     {
-                        UdpRemoteListener remote = new UdpRemoteListener(54321);
+                        UdpRemoteListener remote = new UdpRemoteListener(Port);
                         Listen(remote);
                     }
                     break;
                 case Mode.KCP:
                     {
-                        KcpRemoteListener remote = new KcpRemoteListener(54321);
+                        KcpRemoteListener remote = new KcpRemoteListener(Port);
                         ListenKcp(remote);
                     }
                     break;
@@ -118,14 +118,16 @@ namespace TestServer
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
             var re = await remote.ListenAsync(static ()=>
             {
+                Console.WriteLine($"总接收到连接{connectCount}");
                 return new TestTcpServerRemote()
                 {
                     Post2ThreadScheduler = UsePost2ThreadScheduler,
-                    UID = connectCount
+                    UID = connectCount,
+                    TraceListener = new ConsoleTraceListener(),
                 };
             });
+            Interlocked.Increment(ref connectCount);
             Listen(remote);
-            Console.WriteLine($"总接收到连接{connectCount++}");
         }
 
         private static async void Listen(IListener<UdpRemote> remote)
@@ -133,14 +135,16 @@ namespace TestServer
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
             var re = await remote.ListenAsync(static () =>
             {
+                Console.WriteLine($"总接收到连接{connectCount}");
                 return new TestUdpServerRemote()
                 {
                     Post2ThreadScheduler = UsePost2ThreadScheduler,
-                    UID = connectCount
+                    UID = connectCount,
+                    TraceListener = new ConsoleTraceListener(),
                 };
             });
+            Interlocked.Increment(ref connectCount);
             Listen(remote);
-            Console.WriteLine($"总接收到连接{connectCount++}");
         }
 
         private static async void ListenKcp(IListener<KcpRemote> remote)
@@ -148,15 +152,17 @@ namespace TestServer
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
             var re = await remote.ListenAsync(static () =>
             {
+                Console.WriteLine($"总接收到连接{connectCount}");
                 return new TestKcpServerRemote()
                 {
                     Post2ThreadScheduler = UsePost2ThreadScheduler,
-                    UID = connectCount
+                    UID = connectCount,
+                    TraceListener = new ConsoleTraceListener(),
                 };
             });
             re.KcpCore.TraceListener = new ConsoleTraceListener();
+            Interlocked.Increment(ref connectCount);
             ListenKcp(remote);
-            Console.WriteLine($"总接收到连接{connectCount++}");
         }
     }
 

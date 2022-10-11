@@ -22,6 +22,10 @@ namespace Megumin.Remote
         /// <returns></returns>
         public (IMemoryOwner<byte>, int) Pop()
         {
+            if (buffer == null)
+            {
+                throw new NotSupportedException();
+            }
             var old = buffer;
             var lenght = index;
             buffer = null;
@@ -64,6 +68,12 @@ namespace Megumin.Remote
             {
                 var size = Math.Max(sizeHint, defaultCount);
                 buffer = MemoryPool<byte>.Shared.Rent(size);
+                if (buffer == null)
+                {
+                    //内存池用尽.todo 这里应该有个log
+                    Console.WriteLine($" MemoryPool<byte>.Shared.Rent(size) 返回null");
+                    buffer = new ManagedMemoryOwner(size);
+                }
                 return;
             }
 
@@ -88,6 +98,19 @@ namespace Megumin.Remote
             var span = GetSpan(1);
             span[0] = header;
             Advance(1);
+        }
+    }
+
+    public class ManagedMemoryOwner : IMemoryOwner<byte>
+    {
+        public Memory<byte> Memory { get; }
+
+        public ManagedMemoryOwner(int size)
+        {
+            Memory = new Memory<byte>(new byte[size]);
+        }
+        public void Dispose()
+        {
         }
     }
 }

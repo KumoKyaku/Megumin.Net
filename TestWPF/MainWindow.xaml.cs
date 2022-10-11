@@ -43,6 +43,42 @@ namespace TestWPF
             this.Serverlog.Content += $"\n 开始监听";
         }
 
+        async void ListenTcp()
+        {
+            int port = 54321;
+            int.TryParse(ListenPort.Text, out port);
+            var listener = new TcpRemoteListener2(port);
+            listener.Start();
+            this.Serverlog.Content += $"\n 开始监听";
+            while (true)
+            {
+                var accept = await listener.ReadAsync(Create);
+                if (accept != null)
+                {
+                    this.Serverlog.Content += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
+                    server = accept;
+                }
+            }
+        }
+
+        async void ListenUdp()
+        {
+            int port = 54321;
+            int.TryParse(ListenPort.Text, out port);
+            var listener = new TcpRemoteListener2(port);
+            listener.Start();
+            this.Serverlog.Content += $"\n 开始监听";
+            while (true)
+            {
+                var accept = await listener.ReadAsync(Create);
+                if (accept != null)
+                {
+                    this.Serverlog.Content += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
+                    server = accept;
+                }
+            }
+        }
+
         private async void Listen(TcpRemoteListener remote)
         {
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。

@@ -16,8 +16,13 @@ public static class TestConfig
         TCP, UDP, KCP
     }
     public static Mode PMode = TestConfig.Mode.KCP;
-    public static int MessageCount = 0;
-    public static int RemoteCount = 1;
+    public static int Port = 54321;
+    public static int MessageCount = 1;
+    /// <summary>
+    /// 本机同时开Client Server 15000左右连接Tcp就会用尽端口
+    /// Tcp每秒8kw字节差不多就是极限了，多了就自动卡死了，不清楚是socket问题还是console.writeline问题。
+    /// </summary>
+    public static int RemoteCount = 5000;
 }
 
 namespace TestClient
@@ -56,7 +61,7 @@ namespace TestClient
 
         #region 性能测试
 
-        static Dictionary<int, IRemote> clients = new Dictionary<int, IRemote>();
+        static Dictionary<int, IRemote> AllClient = new Dictionary<int, IRemote>();
 
         private static void OnKey(ConsoleKeyInfo key)
         {
@@ -69,25 +74,29 @@ namespace TestClient
                     SendAMessage2();
                     break;
                 case ConsoleKey.F4:
-                    SendAMessage4();
+                    SendTestMessage();
                     break;
                 default:
                     break;
             }
         }
 
-        private static async void SendAMessage4()
+        private static async void SendTestMessage()
         {
             var msg = new TestPacket1 { Value = 0 };
             await Task.Run(() =>
             {
-                foreach (var remote in clients)
+                foreach (var remote in AllClient)
                 {
+                    Stopwatch look1 = new Stopwatch();
+                    look1.Start();
                     for (int i = 0; i < MessageCount; i++)
                     {
                         msg.Value = i;
                         remote.Value?.Send(msg);
                     }
+                    look1.Stop();
+                    Console.WriteLine($"Remote{remote.Key}: SendAsync{MessageCount}包 ---- 用时: {look1.ElapsedMilliseconds}ms----- 平均每秒发送:{MessageCount * 1024 / (look1.ElapsedMilliseconds + 1)}");
                 }
             });
         }
@@ -95,7 +104,7 @@ namespace TestClient
         private static void SendAMessage2()
         {
             var msg = new TestPacket3();
-            foreach (var item in clients)
+            foreach (var item in AllClient)
             {
                 item.Value?.Send(msg);
             }
@@ -104,7 +113,7 @@ namespace TestClient
         private static void SendAMessage()
         {
             var msg = new TestPacket4();
-            foreach (var item in clients)
+            foreach (var item in AllClient)
             {
                 item.Value?.Send(msg, SendOption.Echo);
             }
@@ -115,15 +124,22 @@ namespace TestClient
         /// int MessageCount = 10000;
         /// int RemoteCount = 100;
         /// </summary>
-        private static void TestSpeed()
+        private static async void TestSpeed()
         {
             for (int i = 1; i <= RemoteCount; i++)
             {
-                NewRemote(i);
+                await NewRemote(i);
+                if (i % 10 == 0)
+                {
+                    //连接太快了
+                    await Task.Delay(30);
+                }
             }
+
+            SendTestMessage();
         }
 
-        private static async void NewRemote(int clientIndex)
+        private static async Task NewRemote(int clientIndex)
         {
             IRemote remote = null;
 
@@ -161,11 +177,11 @@ namespace TestClient
             {
                 if (remote is IConnectable conn)
                 {
-                    await conn.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
+                    await conn.ConnectAsync(new IPEndPoint(IPAddress.Loopback, Port));
                     if (remote is KcpRemote kcp)
                     {
                         kcp.KcpCore.TraceListener = new ConsoleTraceListener();
-                        kcp.SendBeat();
+                        //kcp.SendBeat();
                     }
                 }
             }
@@ -174,30 +190,7 @@ namespace TestClient
                 throw;
             }
 
-            //await TestRpc(clientIndex, remote);
-
-            Stopwatch look1 = new Stopwatch();
-            var msg = new TestPacket1 { Value = 0 };
-            look1.Start();
-
-            await Task.Run(() =>
-            {
-                for (int i = 0; i < MessageCount; i++)
-                {
-                    msg.Value = i;
-                    remote.Send(msg);
-                }
-            });
-
-            look1.Stop();
-            Console.WriteLine($"Remote{clientIndex}: SendAsync{MessageCount}包 ---- 用时: {look1.ElapsedMilliseconds}ms----- 平均每秒发送:{MessageCount * 1024 / (look1.ElapsedMilliseconds + 1)}");
-
-
-            //Remote.BroadCastAsync(new Packet1 { Value = -99999 },remote);
-
-            //var (Result, Excption) = await remote.SendAsync<Packet2>(new Packet1 { Value = 100 });
-            //Console.WriteLine($"RPC接收消息{nameof(Packet2)}--{Result.Value}");
-            clients[clientIndex] = remote;
+            AllClient[clientIndex] = remote;
         }
 
         private static async Task TestRpc(int clientIndex, IRemote remote)
@@ -215,32 +208,6 @@ namespace TestClient
                                 }
                             });
             Console.WriteLine($"Rpc调用返回----------------------------------------- {res2.Value}");
-        }
-
-        #endregion
-
-        #region 连接测试
-
-
-        private static async void TestConnect()
-        {
-            for (int i = 0; i < RemoteCount; i++)
-            {
-                Connect(i);
-            }
-        }
-
-        private static async void Connect(int index)
-        {
-            TcpRemote remote = new TcpRemote();
-            try
-            {
-                await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
         }
 
         #endregion
