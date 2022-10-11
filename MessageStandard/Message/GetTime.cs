@@ -40,7 +40,7 @@ namespace Megumin.Message
         {
             var result = new GetTime();
             result.PreReceiveType = source.ReadInt();
-            result.ReceiveThreadPost2ThreadScheduler = source.ReadBoolNullable(4);
+            result.ReceiveThreadPost2ThreadScheduler = source.Slice(4).ReadBoolNullable();
             return result;
         }
 
@@ -48,7 +48,7 @@ namespace Megumin.Message
         {
             var result = new GetTime();
             result.PreReceiveType = source.Span.ReadInt();
-            result.ReceiveThreadPost2ThreadScheduler = source.Span.ReadBoolNullable(4);
+            result.ReceiveThreadPost2ThreadScheduler = source.Span.Slice(4).ReadBoolNullable();
             return result;
         }
     }

@@ -226,7 +226,8 @@ namespace Megumin.Message
         public void Serialize(IBufferWriter<byte> writer, DateTimeOffset value, object options = null)
         {
             var span = writer.GetSpan(8);
-            span.Write(value.ToUnixTimeMilliseconds());
+            long fileTime = value.ToFileTime();
+            span.Write(fileTime);
             writer.Advance(8);
         }
 
@@ -240,17 +241,20 @@ namespace Megumin.Message
 
         public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            return DateTimeOffset.FromUnixTimeMilliseconds(source.ReadLong());
+            var fileTime = source.ReadLong();
+            return DateTimeOffset.FromFileTime(fileTime);
         }
 
         public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
         {
-            return DateTimeOffset.FromUnixTimeMilliseconds(source.ReadLong());
+            var fileTime = source.ReadLong();
+            return DateTimeOffset.FromFileTime(fileTime);
         }
 
         public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
         {
-            return DateTimeOffset.FromUnixTimeMilliseconds(source.ReadLong());
+            var fileTime = source.ReadLong();
+            return DateTimeOffset.FromFileTime(fileTime);
         }
     }
 

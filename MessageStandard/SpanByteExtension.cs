@@ -55,38 +55,38 @@ namespace Megumin.Message
         #region Int
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ReadInt(this in ReadOnlySequence<byte> byteSequence, int offset = 0)
+        public static int ReadInt(this in ReadOnlySequence<byte> source, int start = 0)
         {
             unsafe
             {
                 Span<byte> span = stackalloc byte[4];
-                byteSequence.Slice(offset, 4).CopyTo(span);
+                source.Slice(start, 4).CopyTo(span);
                 return span.ReadInt();
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ReadInt(this Memory<byte> span)
+        public static int ReadInt(this Memory<byte> source)
         {
-            return BinaryPrimitives.ReadInt32LittleEndian(span.Span);
+            return BinaryPrimitives.ReadInt32LittleEndian(source.Span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ReadInt(this ReadOnlySpan<byte> span)
+        public static int ReadInt(this ReadOnlySpan<byte> source)
         {
-            return BinaryPrimitives.ReadInt32LittleEndian(span);
+            return BinaryPrimitives.ReadInt32LittleEndian(source);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ReadInt(this ReadOnlyMemory<byte> span)
+        public static int ReadInt(this ReadOnlyMemory<byte> source)
         {
-            return BinaryPrimitives.ReadInt32LittleEndian(span.Span);
+            return BinaryPrimitives.ReadInt32LittleEndian(source.Span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ReadInt(this Span<byte> span)
+        public static int ReadInt(this Span<byte> source)
         {
-            return BinaryPrimitives.ReadInt32LittleEndian(span);
+            return BinaryPrimitives.ReadInt32LittleEndian(source);
         }
 
         /// <summary>
@@ -120,32 +120,32 @@ namespace Megumin.Message
         #region Long
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long ReadLong(this in ReadOnlySequence<byte> byteSequence)
+        public static long ReadLong(this in ReadOnlySequence<byte> source)
         {
             unsafe
             {
                 Span<byte> span = stackalloc byte[8];
-                byteSequence.Slice(0, 8).CopyTo(span);
+                source.Slice(0, 8).CopyTo(span);
                 return span.ReadLong();
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long ReadLong(this Memory<byte> span)
+        public static long ReadLong(this Memory<byte> source)
         {
-            return BinaryPrimitives.ReadInt64LittleEndian(span.Span);
+            return BinaryPrimitives.ReadInt64LittleEndian(source.Span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long ReadLong(this ReadOnlySpan<byte> span)
+        public static long ReadLong(this ReadOnlySpan<byte> source)
         {
-            return BinaryPrimitives.ReadInt64LittleEndian(span);
+            return BinaryPrimitives.ReadInt64LittleEndian(source);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long ReadLong(this ReadOnlyMemory<byte> span)
+        public static long ReadLong(this ReadOnlyMemory<byte> source)
         {
-            return BinaryPrimitives.ReadInt64LittleEndian(span.Span);
+            return BinaryPrimitives.ReadInt64LittleEndian(source.Span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -185,46 +185,41 @@ namespace Megumin.Message
         #region Float
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ReadFloat(this in ReadOnlySequence<byte> byteSequence)
+        public static float ReadFloat(this in ReadOnlySequence<byte> source, int start = 0)
         {
             unsafe
             {
-                Span<byte> span = stackalloc byte[8];
-                byteSequence.Slice(0, 8).CopyTo(span);
+                Span<byte> span = stackalloc byte[4];
+                source.Slice(start, 4).CopyTo(span);
                 return span.ReadFloat();
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ReadFloat(this in ReadOnlySpan<byte> byteSequence)
-        {
-            unsafe
-            {
-                Span<byte> span = stackalloc byte[8];
-                byteSequence.Slice(0, 8).CopyTo(span);
-                return span.ReadFloat();
-            }
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ReadFloat(this in ReadOnlyMemory<byte> byteSequence)
-        {
-            unsafe
-            {
-                Span<byte> span = stackalloc byte[8];
-                byteSequence.Span.Slice(0, 8).CopyTo(span);
-                return span.ReadFloat();
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ReadFloat(this Span<byte> span)
+        public static float ReadFloat(this Span<byte> source)
         {
 #if NET5_0_OR_GREATER
-            return BinaryPrimitives.ReadSingleLittleEndian(span);
+            return BinaryPrimitives.ReadSingleLittleEndian(source);
 #else
-            return BitConverter.ToSingle(span.ToArray(), 0);
+            return BitConverter.ToSingle(source.ToArray(), 0);
 #endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ReadFloat(this in ReadOnlySpan<byte> source)
+        {
+#if NET5_0_OR_GREATER
+            return BinaryPrimitives.ReadSingleLittleEndian(source);
+#else
+            return BitConverter.ToSingle(source.ToArray(), 0);
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ReadFloat(this in ReadOnlyMemory<byte> source)
+        {
+            return source.Span.ReadFloat();
         }
 
         /// <summary>
@@ -268,46 +263,40 @@ namespace Megumin.Message
         #region Double
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double ReadDouble(this in ReadOnlySequence<byte> byteSequence)
+        public static double ReadDouble(this in ReadOnlySequence<byte> source, int start = 0)
         {
             unsafe
             {
                 Span<byte> span = stackalloc byte[8];
-                byteSequence.Slice(0, 8).CopyTo(span);
+                source.Slice(start, 8).CopyTo(span);
                 return span.ReadDouble();
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double ReadDouble(this in ReadOnlySpan<byte> byteSequence)
-        {
-            unsafe
-            {
-                Span<byte> span = stackalloc byte[8];
-                byteSequence.Slice(0, 8).CopyTo(span);
-                return span.ReadDouble();
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double ReadDouble(this in ReadOnlyMemory<byte> byteSequence)
-        {
-            unsafe
-            {
-                Span<byte> span = stackalloc byte[8];
-                byteSequence.Span.Slice(0, 8).CopyTo(span);
-                return span.ReadDouble();
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double ReadDouble(this Span<byte> span)
+        public static double ReadDouble(this Span<byte> source)
         {
 #if NET5_0_OR_GREATER
-            return BinaryPrimitives.ReadDoubleLittleEndian(span);
+            return BinaryPrimitives.ReadDoubleLittleEndian(source);
 #else
-            return BitConverter.ToDouble(span.ToArray(), 0);
+            return BitConverter.ToDouble(source.ToArray(), 0);
 #endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double ReadDouble(this in ReadOnlySpan<byte> source)
+        {
+#if NET5_0_OR_GREATER
+            return BinaryPrimitives.ReadDoubleLittleEndian(source);
+#else
+            return BitConverter.ToDouble(source.ToArray(), 0);
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double ReadDouble(this in ReadOnlyMemory<byte> source)
+        {
+            return source.Span.ReadDouble();
         }
 
         /// <summary>
@@ -351,21 +340,32 @@ namespace Megumin.Message
         #region Short
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static short ReadShort(this Memory<byte> span)
+        public static short ReadShort(this in ReadOnlySequence<byte> source, int start = 0)
         {
-            return BinaryPrimitives.ReadInt16LittleEndian(span.Span);
+            unsafe
+            {
+                Span<byte> span = stackalloc byte[2];
+                source.Slice(start, 2).CopyTo(span);
+                return span.ReadShort();
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static short ReadShort(this Span<byte> span)
+        public static short ReadShort(this ReadOnlyMemory<byte> source)
         {
-            return BinaryPrimitives.ReadInt16LittleEndian(span);
+            return BinaryPrimitives.ReadInt16LittleEndian(source.Span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static short ReadShort(this ReadOnlySpan<byte> span)
+        public static short ReadShort(this Span<byte> source)
         {
-            return BinaryPrimitives.ReadInt16LittleEndian(span);
+            return BinaryPrimitives.ReadInt16LittleEndian(source);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static short ReadShort(this ReadOnlySpan<byte> source)
+        {
+            return BinaryPrimitives.ReadInt16LittleEndian(source);
         }
 
         /// <summary>
@@ -393,21 +393,32 @@ namespace Megumin.Message
         #region UShort
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ushort ReadUshort(this Memory<byte> span)
+        public static ushort ReadUShort(this in ReadOnlySequence<byte> source, int start = 0)
         {
-            return BinaryPrimitives.ReadUInt16LittleEndian(span.Span);
+            unsafe
+            {
+                Span<byte> span = stackalloc byte[2];
+                source.Slice(start, 2).CopyTo(span);
+                return span.ReadUShort();
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ushort ReadUshort(this Span<byte> span)
+        public static ushort ReadUShort(this ReadOnlyMemory<byte> source)
         {
-            return BinaryPrimitives.ReadUInt16LittleEndian(span);
+            return BinaryPrimitives.ReadUInt16LittleEndian(source.Span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ushort ReadUshort(this ReadOnlySpan<byte> span)
+        public static ushort ReadUShort(this Span<byte> source)
         {
-            return BinaryPrimitives.ReadUInt16LittleEndian(span);
+            return BinaryPrimitives.ReadUInt16LittleEndian(source);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort ReadUShort(this ReadOnlySpan<byte> source)
+        {
+            return BinaryPrimitives.ReadUInt16LittleEndian(source);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -421,28 +432,39 @@ namespace Megumin.Message
 
         #region GUID
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Guid ReadGuid(this in ReadOnlySequence<byte> source, int start = 0)
+        {
+            unsafe
+            {
+                Span<byte> span = stackalloc byte[16];
+                source.Slice(start, 16).CopyTo(span);
+                return span.ReadGuid();
+            }
+        }
+
         /// <summary>
         /// todo 优化alloc
         /// </summary>
-        /// <param name="span"></param>
+        /// <param name="source"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Guid ReadGuid(this ReadOnlySpan<byte> span)
+        public static Guid ReadGuid(this ReadOnlySpan<byte> source)
         {
-            if (span.Length < 16)
+            if (source.Length < 16)
             {
                 return default;
             }
 
             byte[] temp = new byte[16];
-            span.Slice(0, 16).CopyTo(temp);
+            source.Slice(0, 16).CopyTo(temp);
             return new Guid(temp);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Guid ReadGuid(this Span<byte> span)
+        public static Guid ReadGuid(this Span<byte> source)
         {
-            return ReadGuid((ReadOnlySpan<byte>)span);
+            return ReadGuid((ReadOnlySpan<byte>)source);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -476,46 +498,44 @@ namespace Megumin.Message
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool? ReadBoolNullable(this in ReadOnlySequence<byte> byteSequence, int offset = 0)
+        public static bool? ReadBoolNullable(this in ReadOnlySequence<byte> source, int start = 0)
         {
             unsafe
             {
                 Span<byte> span = stackalloc byte[1];
-                byteSequence.Slice(offset, 1).CopyTo(span);
-                return span.ReadBoolNullable();
+                source.Slice(start, 1).CopyTo(span);
+                return ReadBoolNullable((ReadOnlySpan<byte>)span);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool? ReadBoolNullable(this in ReadOnlySpan<byte> source, int offset = 0)
+        public static bool? ReadBoolNullable(this in ReadOnlySpan<byte> source)
         {
             unsafe
             {
-                Span<byte> span = stackalloc byte[1];
-                source.Slice(offset, 1).CopyTo(span);
-                return span.ReadBoolNullable();
+                unsafe
+                {
+                    byte flag = source[0];
+                    if (flag == 255)
+                    {
+                        return null;
+                    }
+                    else if (flag == 0)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool? ReadBoolNullable(this in Span<byte> bytes, int offset = 0)
+        public static bool? ReadBoolNullable(this in Span<byte> source)
         {
-            unsafe
-            {
-                byte flag = bytes[offset];
-                if (flag == 255)
-                {
-                    return null;
-                }
-                else if (flag == 0)
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
+            return ReadBoolNullable((ReadOnlySpan<byte>)source);
         }
 
         #endregion
