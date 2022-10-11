@@ -25,7 +25,7 @@ public static class TestConfig
     /// Upd 测试5000连接比较稳定。
     /// Kcp测试10000连接没有成功。5000也不性。推测应该是UdpListenner一个端口无法处理这么大流量，大量丢包。
     /// </summary>
-    public static int RemoteCount = 3000;
+    public static int RemoteCount = 1000;
 }
 
 namespace TestClient

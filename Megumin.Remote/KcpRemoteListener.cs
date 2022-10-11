@@ -68,7 +68,7 @@ namespace Megumin.Remote
     /// <summary>
     /// <inheritdoc cref="KcpRemoteListener"/>
     /// <para>--------</para>
-    /// 新的UdpRemoteListener优化了接收循环，勉强能处理3000个连接
+    /// 新的UdpRemoteListener优化了接收循环，勉强能处理3000个连接。打嗝假死现象减弱了。
     /// </summary>
     public class KcpRemoteListener2 : UdpRemoteListener2, IListener2<KcpRemote>
     {

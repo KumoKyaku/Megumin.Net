@@ -1,12 +1,7 @@
-﻿using Megumin.Message;
-using Megumin.Remote.Rpc;
+﻿using Megumin.Remote.Rpc;
 using Net.Remote;
-
 using System;
-using System.Collections.Generic;
-using System.Data;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Megumin.Remote

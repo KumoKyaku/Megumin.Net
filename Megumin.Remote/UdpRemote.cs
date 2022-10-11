@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.XPath;
 using static Megumin.Remote.TcpRemote;
 
 namespace Megumin.Remote
@@ -77,7 +78,7 @@ namespace Megumin.Remote
             }
             Client.Bind(new IPEndPoint(IPAddress.Any, 0));
             //Client.SendTo(conn, endPoint);//承担bind作用，不然不能recv。
-            ClientSideRecv();
+            ClientSideSocketReceive();
             return Task.CompletedTask;
         }
 
@@ -198,29 +199,39 @@ namespace Megumin.Remote
     {
         //接收============================================================
 
+        public bool IsSocketReceiving { get; protected set; }
+        protected readonly object ClientSideSocketReceiveLock = new object();
         /// <summary>
         /// 主动侧需要手动开启接收，被动侧由listener接收然后分发
         /// </summary>
         /// <param name="port"></param>
-        public async void ClientSideRecv()
+        public async void ClientSideSocketReceive()
         {
+            lock (ClientSideSocketReceiveLock)
+            {
+                if (IsSocketReceiving)
+                {
+                    return;
+                }
+                IsSocketReceiving = true;
+            }
+
             //Client.Bind(new IPEndPoint(IPAddress.Any, port));
             IsVaild = true;
             IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
             while (true)
             {
-                var cache = ArrayPool<byte>.Shared.Rent(8192);
-                ArraySegment<byte> buffer = new ArraySegment<byte>(cache);
+                var cache = ArrayPool<byte>.Shared.Rent(0x10000);
                 try
                 {
-                    var res = await Client.ReceiveFromAsync(
-                    buffer, SocketFlags.None, remoteEndPoint).ConfigureAwait(false);
+                    ArraySegment<byte> buffer = new ArraySegment<byte>(cache);
+                    var res = await Client.ReceiveFromAsync(buffer, SocketFlags.None, remoteEndPoint).ConfigureAwait(false);
                     InnerDeal(res.RemoteEndPoint as IPEndPoint, cache, 0, res.ReceivedBytes);
                 }
                 catch (Exception e)
                 {
-                    TraceListener?.WriteLine(e.ToString());
+                    TraceListener?.WriteLine(e);
                 }
                 finally
                 {

@@ -4,11 +4,9 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -410,7 +408,7 @@ namespace Megumin.Remote
                 ///换个角度，千兆网卡，理论上吃满带宽 接收缓冲区需要千兆
 
                 ///1020 * 1024 * 5; 5mb才 500万字节左右。测试代码的要求时每秒1亿2千万，不丢包就怪了。
-                Socket.ReceiveBufferSize = 1020 * 1024 * 5; //先设个5mb看看  
+                Socket.ReceiveBufferSize = 1020 * 1024 * 16;
                 Socket.Bind(ConnectIPEndPoint);
             }
             else
@@ -424,7 +422,12 @@ namespace Megumin.Remote
 
         public void Stop()
         {
-            throw new NotImplementedException();
+            if (Socket != null)
+            {
+                Socket.Shutdown(SocketShutdown.Both);
+                Socket.Disconnect(false);
+                Socket.Close();
+            }
         }
 
         protected QueuePipe<(Func<UdpRemote> CreateRemote, Action<UdpRemote> OnComplete)> remoteCreators
@@ -505,14 +508,21 @@ namespace Megumin.Remote
         {
             while (true)
             {
-                var (RemoteEndPoint, Owner, ReceivedBytes) = await SocketRecvData.ReadAsync().ConfigureAwait(false);
-                if (RemoteEndPoint == null || Owner == null)
+                try
                 {
-                    //可能是多线程问题，结果是null，暂时没找到原因
+                    var (RemoteEndPoint, Owner, ReceivedBytes) = await SocketRecvData.ReadAsync().ConfigureAwait(false);
+                    if (RemoteEndPoint == null || Owner == null)
+                    {
+                        //可能是多线程问题，结果是null，暂时没找到原因
+                    }
+                    else
+                    {
+                        InnerDeal(RemoteEndPoint, Owner, ReceivedBytes);
+                    }
                 }
-                else
+                catch (Exception e)
                 {
-                    InnerDeal(RemoteEndPoint, Owner, ReceivedBytes);
+                    TraceListener?.WriteLine(e);
                 }
             }
         }

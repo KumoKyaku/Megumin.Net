@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Megumin.Remote
 {
-    public class UdpSendWriter : IBufferWriter<byte>
+    public class UdpBufferWriter : IBufferWriter<byte>
     {
         private int defaultCount;
         private IMemoryOwner<byte> buffer;
         int index = 0;
 
-        public UdpSendWriter(int bufferLenght = 1024 * 8)
+        public UdpBufferWriter(int bufferLenght = 1024 * 8)
         {
             this.defaultCount = bufferLenght;
         }

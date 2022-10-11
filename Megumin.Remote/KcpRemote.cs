@@ -163,7 +163,14 @@ namespace Megumin.Remote
                 var (buffer, lenght) = kcprecv.Pop();
                 if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
                 {
-                    ProcessBody(new ReadOnlySequence<byte>(segment.Array, 0, lenght));
+                    try
+                    {
+                        ProcessBody(new ReadOnlySequence<byte>(segment.Array, 0, lenght));
+                    }
+                    catch (Exception e)
+                    {
+                        TraceListener?.WriteLine(e);
+                    }
                 }
                 buffer.Dispose();
             }
