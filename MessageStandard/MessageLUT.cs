@@ -433,6 +433,16 @@ namespace Megumin.Remote
         }
     }
 
+    public partial class MessageLUT
+    {
+        public static T TestType<T>(T original)
+        {
+            MessageLUTTestBuffer wr = new MessageLUTTestBuffer();
+            MessageLUT.Serialize(wr, original);
+            return MessageLUT.Deserialize<T>(wr.ReadOnlySpan);
+        }
+    }
+
     /// <summary>
     /// 包装<see cref="IBufferWriter{T}"/><see cref="byte"/>成一个长度无限的只写流，
     /// 只有<see cref="Write(byte[], int, int)"/>函数起作用。
