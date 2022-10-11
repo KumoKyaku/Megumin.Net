@@ -23,7 +23,7 @@ namespace Megumin.Remote
         public Socket Client { get; protected set; }
         public bool IsVaild { get; internal protected set; }
         public float LastReceiveTimeFloat { get; }
-        public UdpRemoteListener Listener { get; internal set; }
+        public UdpRemoteListenerOld Listener { get; internal set; }
         /// <summary>
         /// 为kcp预留
         /// </summary>
@@ -160,7 +160,7 @@ namespace Megumin.Remote
     {
         //发送==========================================================
 
-        protected virtual UdpSendWriter SendWriter { get; } = new UdpSendWriter(8192 * 4);
+        protected virtual UdpBufferWriter SendWriter { get; } = new UdpBufferWriter(8192 * 4);
 
         public override void Send(int rpcID, object message, object options = null)
         {

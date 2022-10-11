@@ -9,13 +9,13 @@ using System.Threading.Tasks;
 namespace Megumin.Remote
 {
 
-    public class TcpRemoteListener : IListener<TcpRemote>
+    public class TcpRemoteListenerOld : IListenerOld<TcpRemote>
     {
         private TcpListener tcpListener;
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public System.Diagnostics.TraceListener TraceListener { get; set; }
 
-        public TcpRemoteListener(int port)
+        public TcpRemoteListenerOld(int port)
         {
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
         }
@@ -92,12 +92,12 @@ namespace Megumin.Remote
 
     }
 
-    public class TcpRemoteListener2 : IListener2<TcpRemote>
+    public class TcpRemoteListener : IListener<TcpRemote>
     {
         private TcpListener tcpListener;
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public TraceListener TraceListener { get; set; }
-        public TcpRemoteListener2(int port)
+        public TcpRemoteListener(int port)
         {
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
         }

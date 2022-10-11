@@ -87,7 +87,7 @@ namespace TestServer
                 {
                     case Mode.TCP:
                         {
-                            TcpRemoteListener2 listener2 = new TcpRemoteListener2(Port);
+                            TcpRemoteListener listener2 = new TcpRemoteListener(Port);
                             listener2.TraceListener = new ConsoleTraceListener();
                             listener2.Start();
                             while (true)
@@ -109,7 +109,7 @@ namespace TestServer
                         break;
                     case Mode.UDP:
                         {
-                            UdpRemoteListener2 listener2 = new UdpRemoteListener2(Port);
+                            UdpRemoteListener listener2 = new UdpRemoteListener(Port);
                             listener2.TraceListener = new ConsoleTraceListener();
                             listener2.Start();
                             while (true)
@@ -131,7 +131,7 @@ namespace TestServer
                         break;
                     case Mode.KCP:
                         {
-                            KcpRemoteListener2 listener2 = new KcpRemoteListener2(Port);
+                            KcpRemoteListener listener2 = new KcpRemoteListener(Port);
                             listener2.TraceListener = new ConsoleTraceListener();
                             listener2.Start();
                             while (true)
@@ -162,21 +162,21 @@ namespace TestServer
                 {
                     case Mode.TCP:
                         {
-                            TcpRemoteListener remote = new TcpRemoteListener(Port);
+                            TcpRemoteListenerOld remote = new TcpRemoteListenerOld(Port);
                             remote.TraceListener = new ConsoleTraceListener();
                             Listen(remote);
                         }
                         break;
                     case Mode.UDP:
                         {
-                            UdpRemoteListener remote = new UdpRemoteListener(Port);
+                            UdpRemoteListenerOld remote = new UdpRemoteListenerOld(Port);
                             remote.TraceListener = new ConsoleTraceListener();
                             Listen(remote);
                         }
                         break;
                     case Mode.KCP:
                         {
-                            KcpRemoteListener remote = new KcpRemoteListener(Port);
+                            KcpRemoteListenerOld remote = new KcpRemoteListenerOld(Port);
                             remote.TraceListener = new ConsoleTraceListener();
                             ListenKcp(remote);
                         }
@@ -189,7 +189,7 @@ namespace TestServer
 
         static int connectCount = 1;
 
-        private static async void Listen(IListener<TcpRemote> remote)
+        private static async void Listen(IListenerOld<TcpRemote> remote)
         {
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
             var re = await remote.ListenAsync(static ()=>
@@ -206,7 +206,7 @@ namespace TestServer
             Listen(remote);
         }
 
-        private static async void Listen(IListener<UdpRemote> remote)
+        private static async void Listen(IListenerOld<UdpRemote> remote)
         {
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
             var re = await remote.ListenAsync(static () =>
@@ -223,7 +223,7 @@ namespace TestServer
             Listen(remote);
         }
 
-        private static async void ListenKcp(IListener<KcpRemote> remote)
+        private static async void ListenKcp(IListenerOld<KcpRemote> remote)
         {
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
             var re = await remote.ListenAsync(static () =>

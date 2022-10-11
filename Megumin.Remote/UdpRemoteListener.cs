@@ -22,7 +22,7 @@ namespace Megumin.Remote
     /// <summary>
     /// 2018年时IPV4 IPV6 udp中不能混用，不知道现在情况
     /// </summary>
-    public class UdpRemoteListener : UdpClient, IListener<UdpRemote>
+    public class UdpRemoteListenerOld : UdpClient, IListenerOld<UdpRemote>
     {
         public IPEndPoint ConnectIPEndPoint { get; set; }
 
@@ -46,13 +46,13 @@ namespace Megumin.Remote
         /// 最开始可以先用listen端口发送，异步测试是否支持，等到能支持时转到SendSockets发送。，不支持必须使用 listen端口发送。
         /// </summary>
         protected Socket[] SendSockets = new Socket[20];
-        public UdpRemoteListener(int port)
+        public UdpRemoteListenerOld(int port)
             : base(port)
         {
             Init(port);
         }
 
-        public UdpRemoteListener(int port, AddressFamily addressFamily)
+        public UdpRemoteListenerOld(int port, AddressFamily addressFamily)
             : base(port, addressFamily)
         {
             Init(port);
@@ -282,7 +282,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class UdpRemoteListener2 : IListener2<UdpRemote>
+    public partial class UdpRemoteListener : IListener<UdpRemote>
     {
         internal protected static class IPEndPointStatics
         {
@@ -301,7 +301,7 @@ namespace Megumin.Remote
         Socket Socket;
         protected Socket[] SendSockets = new Socket[20];
 
-        public UdpRemoteListener2(int port, AddressFamily? addressFamily = null)
+        public UdpRemoteListener(int port, AddressFamily? addressFamily = null)
         {
             this.Family = addressFamily;
             var ip = Family == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any;
@@ -380,7 +380,7 @@ namespace Megumin.Remote
         public TraceListener TraceListener { get; set; }
     }
 
-    public partial class UdpRemoteListener2
+    public partial class UdpRemoteListener
     {
         public void Start(object option = null)
         {
@@ -446,7 +446,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class UdpRemoteListener2
+    public partial class UdpRemoteListener
     {
         protected QueuePipe<(IPEndPoint RemoteEndPoint, IMemoryOwner<byte> Owner, int ReceivedBytes)> SocketRecvData
             = new QueuePipe<(IPEndPoint RemoteEndPoint, IMemoryOwner<byte> Owner, int ReceivedBytes)>();
@@ -458,7 +458,7 @@ namespace Megumin.Remote
         /// https://blog.csdn.net/flybirddizi/article/details/73065667
         /// https://source.dot.net/#System.Net.Sockets/System/Net/Sockets/UDPClient.cs,16
         /// </summary>
-        protected UdpSendWriter recvBuffer = new UdpSendWriter(0x10000);
+        protected UdpBufferWriter recvBuffer = new UdpBufferWriter(0x10000);
         protected virtual async void SocketReceive()
         {
             lock (recvBuffer)

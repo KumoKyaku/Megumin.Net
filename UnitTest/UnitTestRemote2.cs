@@ -23,7 +23,7 @@ namespace UnitTest
         public void TestUdpRemote()
         {
             const int port = 65432;
-            UdpRemoteListener listener = new UdpRemoteListener(port);
+            UdpRemoteListenerOld listener = new UdpRemoteListenerOld(port);
             listener.ListenAsync(CreateUdp);
 
             UdpRemote client = new UdpRemote();
@@ -38,7 +38,7 @@ namespace UnitTest
         public void TestKcpRemote()
         {
             const int port = 55432;
-            KcpRemoteListener listener = new KcpRemoteListener(port);
+            KcpRemoteListenerOld listener = new KcpRemoteListenerOld(port);
             listener.ListenAsync(CreateKcp);
 
             KcpRemote client = new KcpRemote();

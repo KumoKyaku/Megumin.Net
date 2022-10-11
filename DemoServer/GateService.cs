@@ -11,7 +11,7 @@ namespace DemoServer
     {
         public int GUID { get; set; }
 
-        TcpRemoteListener listener = new TcpRemoteListener(Config.MainPort);
+        TcpRemoteListenerOld listener = new TcpRemoteListenerOld(Config.MainPort);
 
         public void Start()
         {

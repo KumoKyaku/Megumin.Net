@@ -19,14 +19,14 @@ namespace Megumin.Remote
     /// 所以问题出在接收侧，接收端口无法处理过大的数据量。
     /// 但是用UDP测试，不能复现这种一个UdpRemoteListener不应该处理过多的连接的情况。尽管丢包现象明显。
     /// </summary>
-    public class KcpRemoteListener : UdpRemoteListener, IListener<KcpRemote>
+    public class KcpRemoteListenerOld : UdpRemoteListenerOld, IListenerOld<KcpRemote>
     {
-        public KcpRemoteListener(int port)
+        public KcpRemoteListenerOld(int port)
             : base(port)
         {
         }
 
-        public KcpRemoteListener(int port, AddressFamily addressFamily)
+        public KcpRemoteListenerOld(int port, AddressFamily addressFamily)
             : base(port, addressFamily)
         {
         }
@@ -59,20 +59,20 @@ namespace Megumin.Remote
             return null;
         }
 
-        ValueTask<R> IListener<KcpRemote>.ListenAsync<R>(Func<R> createFunc)
+        ValueTask<R> IListenerOld<KcpRemote>.ListenAsync<R>(Func<R> createFunc)
         {
             return ListenAsync(createFunc);
         }
     }
 
     /// <summary>
-    /// <inheritdoc cref="KcpRemoteListener"/>
+    /// <inheritdoc cref="KcpRemoteListenerOld"/>
     /// <para>--------</para>
     /// 新的UdpRemoteListener优化了接收循环，勉强能处理3000个连接。打嗝假死现象减弱了。
     /// </summary>
-    public class KcpRemoteListener2 : UdpRemoteListener2, IListener2<KcpRemote>
+    public class KcpRemoteListener : UdpRemoteListener, IListener<KcpRemote>
     {
-        public KcpRemoteListener2(int port, AddressFamily? addressFamily = null) : base(port, addressFamily)
+        public KcpRemoteListener(int port, AddressFamily? addressFamily = null) : base(port, addressFamily)
         {
         }
 

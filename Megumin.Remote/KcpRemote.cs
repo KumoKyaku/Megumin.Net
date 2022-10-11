@@ -118,7 +118,7 @@ namespace Megumin.Remote
         }
 
         // 发送===================================================================
-        protected UdpSendWriter kcpout = new UdpSendWriter(BufferSizer);
+        protected UdpBufferWriter kcpout = new UdpBufferWriter(BufferSizer);
         async void KcpOutput()
         {
             while (true)
@@ -154,7 +154,7 @@ namespace Megumin.Remote
 
         ///接收===================================================================
 
-        protected UdpSendWriter kcprecv = new UdpSendWriter(BufferSizer);
+        protected UdpBufferWriter kcprecv = new UdpBufferWriter(BufferSizer);
         async void KCPRecv()
         {
             while (true)

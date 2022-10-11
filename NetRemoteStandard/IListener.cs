@@ -1,22 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Net.Remote
 {
-    public interface IListener<in T>
+    public interface IListenerOld<in T>
         where T : IRemote
     {
         ValueTask<R> ListenAsync<R>(Func<R> createFunc) where R : T;
     }
 
-    public interface IListener2<in T>
+    public interface IListener<in T>
         where T : IRemote
     {
         IPEndPoint ConnectIPEndPoint { get; set; }
-        ValueTask<R> ReadAsync<R>(Func<R> createFunc) where R : T;
+        ValueTask<Remote> ReadAsync<Remote>(Func<Remote> createFunc) where Remote : T;
         void Start(object option = null);
         void Stop();
 
