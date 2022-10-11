@@ -14,11 +14,11 @@
 
 # 它是开箱即用的么？
 是的，使用Nuget获取Megumin.Remote。但是注意，需要搭配序列化库，不同的序列化库可能有额外的要求。  
-由于使用了C# 7.3语法，在unity中如果使用源码至少需要2018.3。
-
-# [``开发路线图``](https://trello.com/b/s84Jn7hW/meguminnet)
+~~由于使用了C# 7.3语法，在unity中如果使用源码至少需要2018.3。~~  
+目标框架netstandard2.1，在unity中建议unity版本2021.2以上。过小的版本可以使用源码，但需要自行解决依赖关系。
 
 # 优势
+- 支持Tcp，Udp，Kcp。
 - 使用内存池和多线程处理收发，可配置线程调度，无需担心网络模块性能问题。
 - 内置Rpc。
 - 可以搭配不同的序列化类库，甚至不用序列化库。
@@ -33,7 +33,8 @@
 - **`MIT许可证`**
   
 # 劣势
-- 目前为止类库还很年青，没有经过足够的商业项目测试。
+- ~~目前为止类库还很年青，没有经过足够的商业项目测试。~~ 
+- 不持支 WebGL Networking
 - 对于非程序人员仍然需要一些学习成本。独立游戏作者用起来还是有一定难度的。
 + [类库没有解决操作系统的时间精度问题。](https://stackoverflow.com/questions/6254703/thread-sleep-for-less-than-1-millisecond)这个问题非常复杂，需要专人定制。
 
@@ -194,7 +195,7 @@ Heartbeat，RTT，Timestamp Synchronization等功能都由此机制实现。
         </linker>
   
 # 报头  
-  + Udp,Kcp 不用处理粘包，所以报头不含有TotalLength。   
+  + Udp,Kcp 不用处理粘包，所以报头不含有TotalLength，TotalLength改为1字节的消息种类识别码，具体参照源码。   
   + 使用小端字节序写入报头。BinaryPrimitives.WriteInt32LittleEndian。  
   + TotalLength = 4 + 4 + 2 + 4 + bodyLength。  
 
@@ -362,22 +363,12 @@ Udp 后面只需要继承和重写就可以了。
     + async == AsyncTaskMethodBuilder.Create().Task,并在方法末尾SetResult。  
     async是隐藏的生成一个Task/ValueTask。
 
-## ~~**``在1.0.0版本前API可能会有破坏性的改变。``**~~
-2.0版几乎所有API签名都进行了重构，因此1.0和2.0几乎无法兼容。sad。 
-
-API 已经稳定，预计不会再有大的改动。  
-
-严格来说，目前只有TCP协议可以在生产环境使用。  
-UDP,KCP已经完成,但还没有实际工程测试。
-
-
 **Megumin.Remote是以MMORPG为目标实现的。对于非MMORPG游戏可能不是最佳选择。** 在遥远的未来也许会针对不同游戏类型写出NetRemoteStandard的不同实现。
 
 # 工程实现需要，但本库没有实现的功能
 - 同时监听IPV4,IPV6。
 - 同时监听Tcp,Udp。
 - 同时监听多个端口，用于实现负载均衡。
-- WebGL Networking
 
 # 友情链接
 - [Megumin.Explosion](https://github.com/KumoKyaku/Megumin.Explosion) Megumin系列类库的最底层基础库，Megumin的其他库都有可能需要引用它。
