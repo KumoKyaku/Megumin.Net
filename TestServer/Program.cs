@@ -61,7 +61,7 @@ namespace TestServer
         {
             Console.WriteLine($"服务器/Server----UsePost2ThreadScheduler:{UsePost2ThreadScheduler}");
             ListenAsync();
-            Console.WriteLine($"客户端配置 RemoteCount:{RemoteCount}   MessageCount:{MessageCount}   TotalMessageCount:{RemoteCount * (long)MessageCount}");
+            Console.WriteLine($"客户端配置 {PMode} RemoteCount:{RemoteCount}   MessageCount:{MessageCount}   TotalMessageCount:{RemoteCount * (long)MessageCount}");
             Console.ReadLine();
         }
 

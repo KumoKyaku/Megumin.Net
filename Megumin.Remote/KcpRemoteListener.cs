@@ -79,7 +79,7 @@ namespace Megumin.Remote
         protected override async ValueTask<UdpRemote> CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
         {
             //Todo 超时2000ms
-            var (CreateRemote, OnComplete) = await remoteCreators.ReadAsync();
+            var (CreateRemote, OnComplete) = await remoteCreators.ReadAsync().ConfigureAwait(false);
 
             var udp = CreateRemote?.Invoke();
 

@@ -154,14 +154,15 @@ namespace Megumin.Remote
 
         }
 
-        ConcurrentQueue<Writer> sendQueue = new ConcurrentQueue<Writer>();
+        ConcurrentQueue<ISendBlock> sendQueue = new ConcurrentQueue<ISendBlock>();
 
         protected readonly object _pushLock = new object();
-        private void Push2Queue(Writer writer)
+        
+        internal protected void Push2Queue(ISendBlock sendblock)
         {
             lock (_pushLock)
             {
-                sendQueue.Enqueue(writer);
+                sendQueue.Enqueue(sendblock);
                 if (sendQueue.TryPeek(out var block))
                 {
                     if (source != null)

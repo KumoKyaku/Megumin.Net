@@ -287,7 +287,7 @@ namespace Megumin.Remote
                 try
                 {
                     //todo,改为tryPeek,发送成功AdvanceOne,解决回到队列问题.
-                    var target = await sendPipe.ReadNext();
+                    var target = await sendPipe.ReadNext().ConfigureAwait(false);
 
                     if (RemoteState != WorkState.Working
                         && RemoteState != WorkState.StopingWaitQueueSending)
