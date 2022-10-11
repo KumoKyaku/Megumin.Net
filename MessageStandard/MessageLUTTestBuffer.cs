@@ -7,7 +7,7 @@ namespace Megumin.Message
 {
     public class MessageLUTTestBuffer : IBufferWriter<byte>
     {
-        const int DefaultLength = 1020 * 100;
+        const int DefaultLength = 1024 * 100;
         byte[] data = new byte[DefaultLength];
         int index = 0;
         public void Advance(int count)
@@ -17,7 +17,8 @@ namespace Megumin.Message
 
         protected void Ensure(int sizeHint)
         {
-            if (data.Length - index - sizeHint <= 0)
+            var leftLength = data.Length - index;
+            if (leftLength >= sizeHint && leftLength > 0)
             {
                 var newData = new byte[data.Length + sizeHint + DefaultLength];
                 data.CopyTo(newData, 0);

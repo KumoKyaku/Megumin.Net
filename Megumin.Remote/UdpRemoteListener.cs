@@ -296,7 +296,7 @@ namespace Megumin.Remote
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public AddressFamily? Family = null;
         protected readonly UdpAuthHelper authHelper = new UdpAuthHelper();
-        UdpSendWriter sendWriter = new UdpSendWriter();
+
         protected readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
         protected readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
 
@@ -449,9 +449,16 @@ namespace Megumin.Remote
             = new QueuePipe<(IPEndPoint RemoteEndPoint, IMemoryOwner<byte> Owner, int ReceivedBytes)>();
 
         public bool IsSocketReceiving { get; protected set; }
+        /// <summary>
+        /// 0x10000 = 65535 Udp报头len占16位。
+        /// UDP允许传输的最大长度理论上2^16 - udp head - iphead（ 65507 字节 = 65535 - 20 - 8）
+        /// https://blog.csdn.net/flybirddizi/article/details/73065667
+        /// https://source.dot.net/#System.Net.Sockets/System/Net/Sockets/UDPClient.cs,16
+        /// </summary>
+        protected UdpSendWriter recvBuffer = new UdpSendWriter(0x10000);
         protected virtual async void SocketReceive()
         {
-            lock (sendWriter)
+            lock (recvBuffer)
             {
                 if (IsSocketReceiving)
                 {
@@ -464,13 +471,13 @@ namespace Megumin.Remote
             {
                 while (true)
                 {
-                    var ow = sendWriter.GetMemory();
+                    var ow = recvBuffer.GetMemory();
                     if (MemoryMarshal.TryGetArray<byte>(ow, out var segment))
                     {
                         var remote = Family == AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
                         var res = await Socket.ReceiveFromAsync(segment, SocketFlags.None, remote).ConfigureAwait(false);
-                        sendWriter.Advance(res.ReceivedBytes);
-                        var p = sendWriter.Pop();
+                        recvBuffer.Advance(res.ReceivedBytes);
+                        var p = recvBuffer.Pop();
 
 #pragma warning disable CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
                         Task.Run(() => { SocketRecvData.Write(((IPEndPoint)res.RemoteEndPoint, p.Item1, res.ReceivedBytes)); });
@@ -512,55 +519,58 @@ namespace Megumin.Remote
 
         protected async void InnerDeal(IPEndPoint endPoint, IMemoryOwner<byte> owner, int receivedBytes)
         {
-            var recvbuffer = owner.Memory.Slice(0, receivedBytes);
-            if (recvbuffer.Length == 0)
+            using (owner)
             {
-                if (connected.TryGetValue(endPoint, out var remote))
+                var recvbuffer = owner.Memory.Slice(0, receivedBytes);
+                if (recvbuffer.Length == 0)
                 {
-                    remote.Recv0(endPoint);
+                    if (connected.TryGetValue(endPoint, out var remote))
+                    {
+                        remote.Recv0(endPoint);
+                    }
+                    return;
                 }
-                return;
-            }
 
-            byte messageType = recvbuffer.Span[0];
-            switch (messageType)
-            {
-                case UdpRemoteMessageDefine.UdpAuthRequest:
-                    //被动侧不处理主动侧提出的验证。
-                    break;
-                case UdpRemoteMessageDefine.UdpAuthResponse:
-                    authHelper.DealAnswerBuffer(endPoint, recvbuffer.Span);
-                    break;
-                case UdpRemoteMessageDefine.LLData:
-                    {
-                        var remote = await FindRemote(endPoint).ConfigureAwait(false);
-                        if (remote != null)
+                byte messageType = recvbuffer.Span[0];
+                switch (messageType)
+                {
+                    case UdpRemoteMessageDefine.UdpAuthRequest:
+                        //被动侧不处理主动侧提出的验证。
+                        break;
+                    case UdpRemoteMessageDefine.UdpAuthResponse:
+                        authHelper.DealAnswerBuffer(endPoint, recvbuffer.Span);
+                        break;
+                    case UdpRemoteMessageDefine.LLData:
                         {
-                            remote.RecvLLData(endPoint, recvbuffer.Span.Slice(1, receivedBytes - 1));
+                            var remote = await FindRemote(endPoint).ConfigureAwait(false);
+                            if (remote != null)
+                            {
+                                remote.RecvLLData(endPoint, recvbuffer.Span.Slice(1, receivedBytes - 1));
+                            }
                         }
-                    }
-                    break;
-                case UdpRemoteMessageDefine.UdpData:
-                    {
-                        var remote = await FindRemote(endPoint).ConfigureAwait(false);
-                        if (remote != null)
+                        break;
+                    case UdpRemoteMessageDefine.UdpData:
                         {
-                            remote.RecvUdpData(endPoint, recvbuffer.Span.Slice(1, receivedBytes - 1));
+                            var remote = await FindRemote(endPoint).ConfigureAwait(false);
+                            if (remote != null)
+                            {
+                                remote.RecvUdpData(endPoint, recvbuffer.Span.Slice(1, receivedBytes - 1));
+                            }
                         }
-                    }
 
-                    break;
-                case UdpRemoteMessageDefine.KcpData:
-                    {
-                        var remote = await FindRemote(endPoint).ConfigureAwait(false);
-                        if (remote != null)
+                        break;
+                    case UdpRemoteMessageDefine.KcpData:
                         {
-                            remote.RecvKcpData(endPoint, recvbuffer.Span.Slice(1, receivedBytes - 1));
+                            var remote = await FindRemote(endPoint).ConfigureAwait(false);
+                            if (remote != null)
+                            {
+                                remote.RecvKcpData(endPoint, recvbuffer.Span.Slice(1, receivedBytes - 1));
+                            }
                         }
-                    }
-                    break;
-                default:
-                    break;
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
