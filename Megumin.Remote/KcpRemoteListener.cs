@@ -91,16 +91,16 @@ namespace Megumin.Remote
                 remote.GUID = answer.Guid;
                 remote.Password = answer.Password;
 
-                if (UseSendSocketInsteadRecvSocketOnListenSideRemote && SendSockets.Length > 0)
+                if (UseSendSocketInsteadRecvSocketOnListenSideRemote && SendSockets.Count > 0)
                 {
                     //监听侧使用特定的Socket发送，不使用接收端口发送减少发送压力。
                     //但是NAT情况可能会导致接收端数据直接被丢弃。
-                    var sendSocket = SendSockets[connected.Count % SendSockets.Length];
+                    var sendSocket = SendSockets[connected.Count % SendSockets.Count];
                     remote.SetSocket(sendSocket);
                 }
                 else
                 {
-                    remote.SetSocket(Socket);
+                    remote.SetSocket(ListenerSocket);
                 }
 
                 lut.Add(remote.GUID.Value, remote);

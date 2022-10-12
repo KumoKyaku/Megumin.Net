@@ -297,8 +297,9 @@ namespace Megumin.Remote
         protected readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
         protected readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
 
-        public Socket Socket { get; protected set; }
-        public Socket[] SendSockets = new Socket[10];
+        public Socket ListenerSocket { get; protected set; }
+        public int SendSocketCount { get; set; } = 10;
+        public List<Socket> SendSockets = new List<Socket>();
         public bool UseSendSocketInsteadRecvSocketOnListenSideRemote { get; set; } = false;
 
         /// <summary>
@@ -321,7 +322,7 @@ namespace Megumin.Remote
             }
             else
             {
-                var answer = await authHelper.Auth(endPoint, Socket).ConfigureAwait(false);
+                var answer = await authHelper.Auth(endPoint, ListenerSocket).ConfigureAwait(false);
 
                 lock (lut)
                 {
@@ -371,16 +372,23 @@ namespace Megumin.Remote
                 remote.GUID = answer.Guid;
                 remote.Password = answer.Password;
 
-                if (UseSendSocketInsteadRecvSocketOnListenSideRemote && SendSockets.Length > 0)
+                if (UseSendSocketInsteadRecvSocketOnListenSideRemote && SendSockets.Count > 0)
                 {
                     //监听侧使用特定的Socket发送，不使用接收端口发送减少发送压力。
                     //但是NAT情况可能会导致接收端数据直接被丢弃。
-                    var sendSocket = SendSockets[connected.Count % SendSockets.Length];
-                    remote.SetSocket(sendSocket);
+                    var sendSocket = SendSockets[connected.Count % SendSockets.Count];
+                    if (sendSocket != null)
+                    {
+                        remote.SetSocket(sendSocket);
+                    }
+                    else
+                    {
+                        remote.SetSocket(ListenerSocket);
+                    }
                 }
                 else
                 {
-                    remote.SetSocket(Socket);
+                    remote.SetSocket(ListenerSocket);
                 }
 
                 lut.Add(remote.GUID.Value, remote);
@@ -398,27 +406,28 @@ namespace Megumin.Remote
     {
         public void Start(object option = null)
         {
-            if (Socket == null)
+            if (ListenerSocket == null)
             {
                 var localEP = AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
+                SendSockets.Clear();
                 if (AddressFamily == null)
                 {
-                    Socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
-                    for (int i = 0; i < SendSockets.Length; i++)
+                    ListenerSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                    for (int i = 0; i < SendSocketCount; i++)
                     {
                         var sendSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
                         sendSocket.Bind(localEP);
-                        SendSockets[i] = sendSocket;
+                        SendSockets.Add(sendSocket);
                     }
                 }
                 else
                 {
-                    Socket = new Socket(AddressFamily.Value, SocketType.Dgram, ProtocolType.Udp);
-                    for (int i = 0; i < SendSockets.Length; i++)
+                    ListenerSocket = new Socket(AddressFamily.Value, SocketType.Dgram, ProtocolType.Udp);
+                    for (int i = 0; i < SendSocketCount; i++)
                     {
                         var sendSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
                         sendSocket.Bind(localEP);
-                        SendSockets[i] = sendSocket;
+                        SendSockets.Add(sendSocket);
                     }
                 }
 
@@ -427,8 +436,8 @@ namespace Megumin.Remote
                 ///换个角度，千兆网卡，理论上吃满带宽 接收缓冲区需要千兆
 
                 ///1020 * 1024 * 5; 5mb才 500万字节左右。测试代码的要求时每秒1亿2千万，不丢包就怪了。
-                Socket.ReceiveBufferSize = 1020 * 1024 * 16;
-                Socket.Bind(ConnectIPEndPoint);
+                ListenerSocket.ReceiveBufferSize = 1020 * 1024 * 16;
+                ListenerSocket.Bind(ConnectIPEndPoint);
             }
             else
             {
@@ -443,17 +452,31 @@ namespace Megumin.Remote
         {
             try
             {
-                if (Socket != null)
+                if (ListenerSocket != null)
                 {
-                    Socket.Shutdown(SocketShutdown.Both);
-                    Socket.Disconnect(false);
-                    Socket.Close();
+                    ListenerSocket.Shutdown(SocketShutdown.Both);
+                    ListenerSocket.Disconnect(false);
                 }
             }
             catch (Exception e)
             {
                 TraceListener?.WriteLine(e);
             }
+
+            try
+            {
+                if (ListenerSocket != null)
+                {
+                    ListenerSocket.Close();
+                }
+            }
+            catch (Exception e)
+            {
+                TraceListener?.WriteLine(e);
+            }
+
+            ListenerSocket = null;
+            SendSockets?.Clear();
         }
 
         protected QueuePipe<(Func<UdpRemote> CreateRemote, Action<UdpRemote> OnComplete)> remoteCreators
@@ -504,10 +527,10 @@ namespace Megumin.Remote
                     if (MemoryMarshal.TryGetArray<byte>(ow, out var segment))
                     {
                         var remote = AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
-                        var res = await Socket.ReceiveFromAsync(segment, SocketFlags.None, remote).ConfigureAwait(false);
+                        var res = await ListenerSocket.ReceiveFromAsync(segment, SocketFlags.None, remote).ConfigureAwait(false);
                         recvBuffer.Advance(res.ReceivedBytes);
                         var p = recvBuffer.Pop();
-                        
+
                         //此处为IOCP线程，不要在IOCP线程执行业务逻辑后续，防止接收效率受到影响。
 #pragma warning disable CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
                         Task.Run(() => { SocketRecvData.Write(((IPEndPoint)res.RemoteEndPoint, p.Item1, res.ReceivedBytes)); });
@@ -520,9 +543,12 @@ namespace Megumin.Remote
                     }
                 }
             }
+            catch (ObjectDisposedException)
+            {
+                //监听停止时触发。
+            }
             catch (Exception)
             {
-
                 throw;
             }
             finally
