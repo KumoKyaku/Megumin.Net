@@ -272,32 +272,13 @@ public class OpTest : MonoBehaviour
 
     public async void TestRTT()
     {
-        DateTimeOffset sendTime = DateTimeOffset.UtcNow;
-        var (obj, ex) = await client.Send<Heartbeat>(Heartbeat.Default, options: SendOption.Echo);
-        if (ex == null)
-        {
-            DateTimeOffset respTime = DateTimeOffset.UtcNow;
-            var rtt = (int)((respTime - sendTime).TotalMilliseconds);
-            Log($"RTT:{rtt}ms");
-        }
-        else
-        {
-            Log("RTT:--ms");
-        }
+        Log($"RTT:{await client.Rtt()}ms");
     }
 
     [Button]
     public void ThreadTest()
     {
-        this.LogThreadID(1);
-        Task.Run(async () =>
-        {
-            this.LogThreadID(2);
-            await Task.Delay(10);
-            this.LogThreadID(3);
-            await MainThread.Switch();
-            this.LogThreadID(4);
-        });
+        this.ThreadTest();
     }
 
     public TextMeshProUGUI TimeLable;
