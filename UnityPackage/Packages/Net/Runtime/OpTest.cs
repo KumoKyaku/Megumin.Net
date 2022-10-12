@@ -152,7 +152,7 @@ public class OpTest : MonoBehaviour
             var testClient = new TestTcpRemote();
             testClient.TraceListener = new UnityTraceListener();
             testClient.Test = this;
-            testClient.Post2ThreadScheduler = true;
+            testClient.Post2ThreadScheduler = false;
             client = testClient;
             Connect(testClient, port, targetIP);
         }
@@ -161,7 +161,7 @@ public class OpTest : MonoBehaviour
             var testClient = new TestUdpRemote(AddressFamily.InterNetwork);
             testClient.TraceListener = new UnityTraceListener();
             testClient.Test = this;
-            testClient.Post2ThreadScheduler = true;
+            testClient.Post2ThreadScheduler = false;
             client = testClient;
             Connect(testClient, port, targetIP);
         }
@@ -170,7 +170,7 @@ public class OpTest : MonoBehaviour
             var testClient = new TestKcpRemote(AddressFamily.InterNetwork);
             testClient.TraceListener = new UnityTraceListener();
             testClient.Test = this;
-            testClient.Post2ThreadScheduler = true;
+            testClient.Post2ThreadScheduler = false;
             client = testClient;
             Connect(testClient, port, targetIP);
         }
@@ -250,22 +250,22 @@ public class OpTest : MonoBehaviour
     [Button]
     public async void RemoteTime()
     {
-        this.LogThreadID();
         var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime());
         var span = (DateTimeOffset.UtcNow - remotetime).TotalMilliseconds;
+        this.LogThreadID();
         Log($"Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}");
     }
 
     [Button]
     public async void RemoteTime2()
     {
-        this.LogThreadID();
         SendOption sendOption = new SendOption()
         {
             RpcComplatePost2ThreadScheduler = false,
         };
         var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime(), options: sendOption).ConfigureAwait(false);
         var span = (DateTimeOffset.UtcNow - remotetime).TotalMilliseconds;
+        this.LogThreadID();
         await MainThread.Switch();
         Log($"Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}");
     }
