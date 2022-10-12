@@ -251,7 +251,7 @@ public class OpTest : MonoBehaviour
     public async void RemoteTime()
     {
         var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime());
-        var span = (DateTimeOffset.UtcNow - remotetime).TotalMilliseconds;
+        var span = (remotetime - DateTimeOffset.UtcNow).TotalMilliseconds;
         this.LogThreadID();
         Log($"Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}");
     }
@@ -264,7 +264,7 @@ public class OpTest : MonoBehaviour
             RpcComplatePost2ThreadScheduler = false,
         };
         var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime(), options: sendOption).ConfigureAwait(false);
-        var span = (DateTimeOffset.UtcNow - remotetime).TotalMilliseconds;
+        var span = (remotetime - DateTimeOffset.UtcNow).TotalMilliseconds;
         this.LogThreadID();
         await MainThread.Switch();
         Log($"Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}");

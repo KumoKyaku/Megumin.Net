@@ -55,6 +55,15 @@ public class TargetIP : MonoBehaviour
     {
         Target.text = IPAddress.IPv6Any.ToString();
     }
+    public void IP_TestLAN()
+    {
+        Target.text = "192.168.1.150";
+    }
+
+    public void IP_TestWAN()
+    {
+        Target.text = "47.102.202.48";
+    }
 
     public void Paste()
     {

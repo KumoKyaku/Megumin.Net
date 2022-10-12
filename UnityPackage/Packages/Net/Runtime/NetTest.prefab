@@ -2022,8 +2022,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 2842786245752688679}
-        m_TargetAssemblyTypeName: TargetIP, Assembly-CSharp
-        m_MethodName: IPV6Any
+        m_TargetAssemblyTypeName: TargetIP, Megumin.GameFramework.Net
+        m_MethodName: IP_TestWAN
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2099,7 +2099,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Any
+  m_text: 192.168.1.150
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -3355,7 +3355,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: IPV6.Any
+  m_text: 47.102.202.48
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -5188,8 +5188,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 2842786245752688679}
-        m_TargetAssemblyTypeName: TargetIP, Assembly-CSharp
-        m_MethodName: Any
+        m_TargetAssemblyTypeName: TargetIP, Megumin.GameFramework.Net
+        m_MethodName: IP_TestLAN
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
