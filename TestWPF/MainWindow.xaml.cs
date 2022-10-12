@@ -320,7 +320,7 @@ public class TestRemote : TcpRemote, ITestRemote
         return NullResult;
     }
 
-    protected override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, object options, int RpcID, short CMD, int MessageID)
+    protected override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, int RpcID, short CMD, int MessageID, object options)
     {
         if (LogRecvBytes)
         {
@@ -331,7 +331,7 @@ public class TestRemote : TcpRemote, ITestRemote
             });
         }
 
-        base.ProcessBody(bodyBytes, options, RpcID, CMD, MessageID);
+        base.ProcessBody(bodyBytes, RpcID, CMD, MessageID, options);
     }
 
     protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
@@ -401,7 +401,7 @@ public class TestKcpRemote : KcpRemote, ITestRemote
         return NullResult;
     }
 
-    protected override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, object options, int RpcID, short CMD, int MessageID)
+    protected override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, int RpcID, short CMD, int MessageID, object options)
     {
         if (LogRecvBytes)
         {
@@ -412,7 +412,7 @@ public class TestKcpRemote : KcpRemote, ITestRemote
             });
         }
 
-        base.ProcessBody(bodyBytes, options, RpcID, CMD, MessageID);
+        base.ProcessBody(bodyBytes, RpcID, CMD, MessageID, options);
     }
 
     protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)

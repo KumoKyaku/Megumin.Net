@@ -20,7 +20,7 @@ namespace Megumin.Remote
         public virtual int UID { get; set; }
         public RpcLayer RpcLayer = new RpcLayer();
 
-        protected virtual async void ProcessRecevie(int rpcID, short cmd, int messageID, object message)
+        protected virtual async void ProcessRecevie(int rpcID, short cmd, int messageID, object message, object options = null)
         {
             //这里封装起来OnReceive故意隐藏rpcID，就是让上层忽略rpc细节。
             //如果有特殊需求，就重写这个方法。
@@ -110,7 +110,7 @@ namespace Megumin.Remote
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void DeserializeSuccess(int rpcID, short cmd, int messageID, object message)
+        protected override void DeserializeSuccess(int rpcID, short cmd, int messageID, object message, object options = null)
         {
             ///分流普通消息和RPC回复消息
 
@@ -130,11 +130,11 @@ namespace Megumin.Remote
                 ///切换线程后调用 还是直接调用<see cref="ProcessRecevie"/>的区别
                 if (post)
                 {
-                    Push2MessageThreadTransducer(rpcID, cmd, messageID, message);
+                    Push2MessageThreadTransducer(rpcID, cmd, messageID, message, options);
                 }
                 else
                 {
-                    ProcessRecevie(rpcID, cmd, messageID, message);
+                    ProcessRecevie(rpcID, cmd, messageID, message, options);
                 }
             }
         }
@@ -146,17 +146,18 @@ namespace Megumin.Remote
         /// <param name="cmd"></param>
         /// <param name="messageID"></param>
         /// <param name="message"></param>
-        /// <remarks>独立一个函数，不然<see cref="MessageThreadTransducer.Push(int, short, int, object, IDealMessageable)"/>继承者无法调用</remarks>
+        /// <param name="options"></param>
+        /// <remarks>独立一个函数，不然<see cref="MessageThreadTransducer.Push(IDealMessageable, int, short, int, object,object)"/>继承者无法调用</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [System.Diagnostics.DebuggerHidden]
-        protected void Push2MessageThreadTransducer(int rpcID, short cmd, int messageID, object message)
+        protected void Push2MessageThreadTransducer(int rpcID, short cmd, int messageID, object message, object options = null)
         {
-            MessageThreadTransducer.Push(rpcID, cmd, messageID, message, this);
+            MessageThreadTransducer.Push(this, rpcID, cmd, messageID, message);
         }
 
-        void IDealMessageable.Deal(int rpcID, short cmd, int messageID, object message)
+        void IDealMessageable.Deal(int rpcID, short cmd, int messageID, object message, object options)
         {
-            ProcessRecevie(rpcID, cmd, messageID, message);
+            ProcessRecevie(rpcID, cmd, messageID, message, options);
         }
 
         public virtual ValueTask<(RpcResult result, Exception exception)>

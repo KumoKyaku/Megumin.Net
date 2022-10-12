@@ -36,7 +36,8 @@ namespace Megumin.Remote
         /// <param name="cmd"></param>
         /// <param name="messageID"></param>
         /// <param name="message"></param>
-        void Deal(int rpcID, short cmd, int messageID, object message);
+        /// <param name="options"></param>
+        void Deal(int rpcID, short cmd, int messageID, object message, object options = null);
     }
 
     /// <summary>
@@ -100,25 +101,27 @@ namespace Megumin.Remote
 
     internal struct DealWork
     {
+        readonly IDealMessageable r;
         readonly int rpcID;
         readonly short cmd;
         readonly int messageID;
         readonly object message;
-        readonly IDealMessageable r;
+        readonly object options;
 
-        internal DealWork(int rpcID, short cmd, int messageID,
-            object message, IDealMessageable r)
+        internal DealWork(IDealMessageable r, int rpcID, short cmd,
+            int messageID, object message, object options)
         {
             this.rpcID = rpcID;
             this.cmd = cmd;
             this.messageID = messageID;
             this.message = message;
             this.r = r;
+            this.options = options;
         }
 
         public void Invoke()
         {
-            r.Deal(rpcID, cmd, messageID, message);
+            r.Deal(rpcID, cmd, messageID, message, options);
         }
     }
     /// <summary>
@@ -133,7 +136,7 @@ namespace Megumin.Remote
         //static readonly ThreadSwitcher DefaultSwitcher = new ThreadSwitcher();
         static readonly ConcurrentQueue<MiniTask<int>> MiniTasksSwitcher = new ConcurrentQueue<MiniTask<int>>();
         static readonly List<MiniTask<int>> MiniTaskNoAwait = new List<MiniTask<int>>();
-        
+
         /// <summary>
         /// 在控制执行顺序的线程中刷新，所有异步方法的后续部分都在这个方法中执行
         /// </summary>
@@ -156,7 +159,7 @@ namespace Megumin.Remote
             }
 
             //DefaultSwitcher.Tick();
-        
+
             try
             {
                 MiniTaskNoAwait.Clear();
@@ -214,14 +217,15 @@ namespace Megumin.Remote
         /// <summary>
         /// 专用函数,比<see cref="Switch"/>性能高,但是通用性不好
         /// </summary>
+        /// <param name="r"></param>
         /// <param name="rpcID"></param>
         /// <param name="cmd"></param>
         /// <param name="messageID"></param>
         /// <param name="message"></param>
-        /// <param name="r"></param>
+        /// <param name="options"></param>
         /// <exception cref="ArgumentNullException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Push(int rpcID, short cmd, int messageID, object message, IDealMessageable r)
+        internal static void Push(IDealMessageable r, int rpcID, short cmd, int messageID, object message, object options = null)
         {
             if (r == null)
             {
@@ -229,7 +233,7 @@ namespace Megumin.Remote
             }
 
             //这里是性能敏感区域，使用结构体优化，不使用action闭包
-            DealWork work = new DealWork(rpcID, cmd, messageID, message, r);
+            DealWork work = new DealWork(r, rpcID, cmd, messageID, message, options);
             dealWorkQueue.Enqueue(work);
         }
 

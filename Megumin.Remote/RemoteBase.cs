@@ -370,7 +370,8 @@ namespace Megumin.Remote
         /// <param name="cmd"></param>
         /// <param name="messageID"></param>
         /// <param name="message"></param>
-        protected abstract void DeserializeSuccess(int rpcID, short cmd, int messageID, object message);
+        /// <param name="options"></param>
+        protected abstract void DeserializeSuccess(int rpcID, short cmd, int messageID, object message, object options = null);
 
         /// <summary>
         /// 处理一个完整的消息包，未解析报头
@@ -383,7 +384,7 @@ namespace Megumin.Remote
         {
             //读取RpcID 和 消息ID
             var (RpcID, CMD, MessageID) = byteSequence.ReadHeader();
-            ProcessBody(byteSequence.Slice(10), options, RpcID, CMD, MessageID);
+            ProcessBody(byteSequence.Slice(10), RpcID, CMD, MessageID, options);
         }
 
         protected virtual void ProcessBody(in ReadOnlySpan<byte> byteSequence,
@@ -391,7 +392,7 @@ namespace Megumin.Remote
         {
             //读取RpcID 和 消息ID
             var (RpcID, CMD, MessageID) = byteSequence.ReadHeader();
-            ProcessBody(byteSequence.Slice(10), options, RpcID, CMD, MessageID);
+            ProcessBody(byteSequence.Slice(10), RpcID, CMD, MessageID, options);
         }
 
         protected virtual void ProcessBody(in ReadOnlyMemory<byte> byteSequence,
@@ -399,7 +400,7 @@ namespace Megumin.Remote
         {
             //读取RpcID 和 消息ID
             var (RpcID, CMD, MessageID) = byteSequence.ReadHeader();
-            ProcessBody(byteSequence.Slice(10), options, RpcID, CMD, MessageID);
+            ProcessBody(byteSequence.Slice(10), RpcID, CMD, MessageID, options);
         }
 
         /// <summary>
@@ -410,14 +411,14 @@ namespace Megumin.Remote
         /// 处理一个完整的消息包，已分离报头
         /// </summary>
         protected virtual void ProcessBody(in ReadOnlySequence<byte> bodyBytes,
-                                           object options,
                                            int RpcID,
                                            short CMD,
-                                           int MessageID)
+                                           int MessageID,
+                                           object options = null)
         {
             if (TryDeserialize(MessageID, bodyBytes, out var message, options))
             {
-                DeserializeSuccess(RpcID, CMD, MessageID, message);
+                DeserializeSuccess(RpcID, CMD, MessageID, message, options);
             }
             else
             {
@@ -426,7 +427,7 @@ namespace Megumin.Remote
                     //反序列化失败,返回上层一个byte[] 
                     byte[] bytes = new byte[bodyBytes.Length];
                     bodyBytes.CopyTo(bytes);
-                    DeserializeSuccess(RpcID, CMD, MessageID, bytes);
+                    DeserializeSuccess(RpcID, CMD, MessageID, bytes, options);
                 }
             }
         }
@@ -435,14 +436,14 @@ namespace Megumin.Remote
         /// 处理一个完整的消息包，已分离报头
         /// </summary>
         protected virtual void ProcessBody(in ReadOnlySpan<byte> bodyBytes,
-                                           object options,
                                            int RpcID,
                                            short CMD,
-                                           int MessageID)
+                                           int MessageID,
+                                           object options = null)
         {
             if (TryDeserialize(MessageID, bodyBytes, out var message, options))
             {
-                DeserializeSuccess(RpcID, CMD, MessageID, message);
+                DeserializeSuccess(RpcID, CMD, MessageID, message, options);
             }
             else
             {
@@ -451,7 +452,7 @@ namespace Megumin.Remote
                     //反序列化失败,返回上层一个byte[] 
                     byte[] bytes = new byte[bodyBytes.Length];
                     bodyBytes.CopyTo(bytes);
-                    DeserializeSuccess(RpcID, CMD, MessageID, bytes);
+                    DeserializeSuccess(RpcID, CMD, MessageID, bytes, options);
                 }
             }
         }
@@ -460,14 +461,14 @@ namespace Megumin.Remote
         /// 处理一个完整的消息包，已分离报头
         /// </summary>
         protected virtual void ProcessBody(in ReadOnlyMemory<byte> bodyBytes,
-                                           object options,
                                            int RpcID,
                                            short CMD,
-                                           int MessageID)
+                                           int MessageID,
+                                           object options = null)
         {
             if (TryDeserialize(MessageID, bodyBytes, out var message, options))
             {
-                DeserializeSuccess(RpcID, CMD, MessageID, message);
+                DeserializeSuccess(RpcID, CMD, MessageID, message, options);
             }
             else
             {
@@ -476,7 +477,7 @@ namespace Megumin.Remote
                     //反序列化失败,返回上层一个byte[] 
                     byte[] bytes = new byte[bodyBytes.Length];
                     bodyBytes.CopyTo(bytes);
-                    DeserializeSuccess(RpcID, CMD, MessageID, bytes);
+                    DeserializeSuccess(RpcID, CMD, MessageID, bytes, options);
                 }
             }
         }
