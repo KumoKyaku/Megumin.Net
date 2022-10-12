@@ -72,38 +72,46 @@ namespace Megumin.Remote
 
             try
             {
+                DateTimeOffset last = DateTimeOffset.UtcNow;
                 while (true)
                 {
-                    await Task.Delay(1);
-                    //await Task.Yield();  //会吃满所有CPU？
                     var time = DateTimeOffset.UtcNow;
-                    if (AllKcp.Count == 0)
+                    if ((time - last).TotalMilliseconds < 1)
                     {
-                        break;
+                        await Task.Delay(1);
+                        //await Task.Yield();  //会吃满所有CPU？
                     }
-
-                    lock (kcpUpdateLock)
+                    else
                     {
-                        foreach (var item in AllKcp)
+                        last = time;
+                        if (AllKcp.Count == 0)
                         {
-                            try
-                            {
-                                item?.Update(time);
-                            }
-                            catch (ObjectDisposedException)
-                            {
-                                DisposedKcp.Add(item);
-                            }
+                            break;
                         }
 
-                        foreach (var item in DisposedKcp)
+                        lock (kcpUpdateLock)
                         {
-                            if (item != null)
+                            foreach (var item in AllKcp)
                             {
-                                AllKcp.Remove(item);
+                                try
+                                {
+                                    item?.Update(time);
+                                }
+                                catch (ObjectDisposedException)
+                                {
+                                    DisposedKcp.Add(item);
+                                }
                             }
+
+                            foreach (var item in DisposedKcp)
+                            {
+                                if (item != null)
+                                {
+                                    AllKcp.Remove(item);
+                                }
+                            }
+                            DisposedKcp.Clear();
                         }
-                        DisposedKcp.Clear();
                     }
                 }
             }

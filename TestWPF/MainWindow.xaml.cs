@@ -25,7 +25,7 @@ namespace TestWPF
         private TcpRemoteListener listener;
         private KcpRemoteListener KcpRemoteListener;
 
-        static bool tcpOrkcp = false;
+        static bool tcpOrkcp = true;
 
         public MainWindow()
         {
