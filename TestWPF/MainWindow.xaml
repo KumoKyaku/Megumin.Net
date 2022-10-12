@@ -38,6 +38,11 @@
         <CheckBox x:Name="LogRecvBytes" Grid.Column="2" Content="LogRecvBytes" HorizontalAlignment="Left" Margin="34,83,0,0" VerticalAlignment="Top" Width="108" Checked="LogRecvBytes_Checked" Unchecked="LogRecvBytes_Unchecked" IsChecked="False"/>
         <Button x:Name="StopSocketSend" Content="StopSocketSend" HorizontalAlignment="Left" Margin="365,105,0,0" VerticalAlignment="Top" Width="105" Click="StopSocketSend_Click"/>
         <Button x:Name="StartSocketSend" Content="StartSocketSend" HorizontalAlignment="Left" Margin="365,80,0,0" VerticalAlignment="Top" Width="105" Click="StartSocketSend_Click"/>
+        <ComboBox x:Name="Protocol" HorizontalAlignment="Left" Margin="368,15,0,0" VerticalAlignment="Top" Width="120" Text="Tcp" SelectionChanged="Protocol_SelectionChanged">
+            <ComboBoxItem IsSelected="True">Tcp</ComboBoxItem>
+            <ComboBoxItem>Udp</ComboBoxItem>
+            <ComboBoxItem>Kcp</ComboBoxItem>
+        </ComboBox>
 
     </Grid>
 </Window>

@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using TestWPF;
 using System.Collections.Generic;
 using Net.Remote;
+using Megumin.Remote;
 
 namespace TestWPF
 {
@@ -25,7 +26,7 @@ namespace TestWPF
         private TcpRemoteListener listener;
         private KcpRemoteListener KcpRemoteListener;
 
-        static bool tcpOrkcp = true;
+        static Protocol ProtocolType = Megumin.Remote.Protocol.Tcp;
 
         public MainWindow()
         {
@@ -39,7 +40,7 @@ namespace TestWPF
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            if (tcpOrkcp)
+            if (ProtocolType ==  Megumin.Remote.Protocol.Tcp)
             {
                 ListenTcp();
             }
@@ -47,6 +48,7 @@ namespace TestWPF
             {
                 ListenKcp();
             }
+            this.Serverlog.Content += $"\n 开始监听 {ProtocolType}";
         }
 
         async void ListenTcp()
@@ -55,7 +57,7 @@ namespace TestWPF
             int.TryParse(ListenPort.Text, out port);
             listener = new TcpRemoteListener(port);
             listener.Start();
-            this.Serverlog.Content += $"\n 开始监听";
+
             while (true)
             {
                 var accept = await listener.ReadAsync(() =>
@@ -79,7 +81,7 @@ namespace TestWPF
             int.TryParse(ListenPort.Text, out port);
             KcpRemoteListener = new KcpRemoteListener(port);
             KcpRemoteListener.Start();
-            this.Serverlog.Content += $"\n 开始监听";
+
             while (true)
             {
                 var accept = await KcpRemoteListener.ReadAsync(() =>
@@ -110,7 +112,7 @@ namespace TestWPF
             IPAddress targetIP = IPAddress.Loopback;
             IPAddress.TryParse(TargetIP.Text, out targetIP);
 
-            if (tcpOrkcp)
+            if (ProtocolType == Megumin.Remote.Protocol.Tcp)
             {
                 client = new TestRemote();
             }
@@ -230,6 +232,24 @@ namespace TestWPF
         private void StopSocketSend_Click(object sender, RoutedEventArgs e)
         {
             client.StopSocketSend();
+        }
+
+        private void Protocol_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            switch (Protocol.SelectedIndex)
+            {
+                case 0:
+                    ProtocolType = Megumin.Remote.Protocol.Tcp;
+                    break;
+                case 1:
+                    ProtocolType = Megumin.Remote.Protocol.Udp;
+                    break;
+                case 2:
+                    ProtocolType = Megumin.Remote.Protocol.Kcp;
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }

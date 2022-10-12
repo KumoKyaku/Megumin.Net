@@ -422,11 +422,18 @@ namespace Megumin.Remote
 
         public void Stop()
         {
-            if (Socket != null)
+            try
             {
-                Socket.Shutdown(SocketShutdown.Both);
-                Socket.Disconnect(false);
-                Socket.Close();
+                if (Socket != null)
+                {
+                    Socket.Shutdown(SocketShutdown.Both);
+                    Socket.Disconnect(false);
+                    Socket.Close();
+                }
+            }
+            catch (Exception e)
+            {
+                TraceListener?.WriteLine(e);
             }
         }
 
