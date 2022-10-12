@@ -28,7 +28,7 @@ namespace UnitTest
 
             UdpRemote client = new UdpRemote();
             client.ConnectIPEndPoint = new IPEndPoint(IPAddress.Loopback, port);
-            client.ClientSideSocketReceive();
+            client.ConnectSideSocketReceive();
             EchoTest(client);
             listener.Stop();
         }
@@ -44,7 +44,7 @@ namespace UnitTest
             KcpRemote client = new KcpRemote();
             client.InitKcp(1001);
             client.ConnectIPEndPoint = new IPEndPoint(IPAddress.Loopback, port);
-            client.ClientSideSocketReceive();
+            client.ConnectSideSocketReceive();
             EchoTest(client);
             listener.Stop();
         }

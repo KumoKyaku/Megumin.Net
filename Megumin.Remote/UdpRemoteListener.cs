@@ -231,7 +231,6 @@ namespace Megumin.Remote
 
                 if (udp != null)
                 {
-                    udp.Listener = this;
                     udp.IsVaild = true;
                     udp.ConnectIPEndPoint = endPoint;
                     udp.GUID = answer.Guid;
@@ -292,19 +291,25 @@ namespace Megumin.Remote
         }
 
         public IPEndPoint ConnectIPEndPoint { get; set; }
-        public AddressFamily? Family = null;
+        public AddressFamily? AddressFamily { get; set; } = null;
         protected readonly UdpAuthHelper authHelper = new UdpAuthHelper();
 
         protected readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
         protected readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
 
-        Socket Socket;
-        protected Socket[] SendSockets = new Socket[20];
+        public Socket Socket { get; protected set; }
+        public Socket[] SendSockets = new Socket[10];
+        public bool UseSendSocketInsteadRecvSocketOnListenSideRemote { get; set; } = false;
 
+        /// <summary>
+        /// Unity中必须明确指定使用IPV4还是IPV6。无论什么平台。可能是mono的问题。
+        /// </summary>
+        /// <param name="port"></param>
+        /// <param name="addressFamily"></param>
         public UdpRemoteListener(int port, AddressFamily? addressFamily = null)
         {
-            this.Family = addressFamily;
-            var ip = Family == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any;
+            this.AddressFamily = addressFamily;
+            var ip = AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any;
             this.ConnectIPEndPoint = new IPEndPoint(ip, port);
         }
 
@@ -357,24 +362,33 @@ namespace Megumin.Remote
             //Todo 超时2000ms
             var (CreateRemote, OnComplete) = await remoteCreators.ReadAsync().ConfigureAwait(false);
 
-            var udp = CreateRemote?.Invoke();
+            var remote = CreateRemote?.Invoke();
 
-            if (udp != null)
+            if (remote != null)
             {
-                //udp.Listener = this;
-                udp.IsVaild = true;
-                udp.ConnectIPEndPoint = endPoint;
-                udp.GUID = answer.Guid;
-                udp.Password = answer.Password;
-                //todo add listenUdpclient.
-                var sendSocket = SendSockets[connected.Count % SendSockets.Length];
-                udp.SetSocket(sendSocket);
-                lut.Add(udp.GUID.Value, udp);
-                connected.Add(endPoint, udp);
+                remote.IsVaild = true;
+                remote.ConnectIPEndPoint = endPoint;
+                remote.GUID = answer.Guid;
+                remote.Password = answer.Password;
+
+                if (UseSendSocketInsteadRecvSocketOnListenSideRemote && SendSockets.Length > 0)
+                {
+                    //监听侧使用特定的Socket发送，不使用接收端口发送减少发送压力。
+                    //但是NAT情况可能会导致接收端数据直接被丢弃。
+                    var sendSocket = SendSockets[connected.Count % SendSockets.Length];
+                    remote.SetSocket(sendSocket);
+                }
+                else
+                {
+                    remote.SetSocket(Socket);
+                }
+
+                lut.Add(remote.GUID.Value, remote);
+                connected.Add(endPoint, remote);
             }
 
-            OnComplete?.Invoke(udp);
-            return udp;
+            OnComplete?.Invoke(remote);
+            return remote;
         }
 
         public TraceListener TraceListener { get; set; }
@@ -386,20 +400,25 @@ namespace Megumin.Remote
         {
             if (Socket == null)
             {
-                if (Family == null)
+                var localEP = AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
+                if (AddressFamily == null)
                 {
                     Socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
                     for (int i = 0; i < SendSockets.Length; i++)
                     {
-                        SendSockets[i] = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                        var sendSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                        sendSocket.Bind(localEP);
+                        SendSockets[i] = sendSocket;
                     }
                 }
                 else
                 {
-                    Socket = new Socket(Family.Value, SocketType.Dgram, ProtocolType.Udp);
+                    Socket = new Socket(AddressFamily.Value, SocketType.Dgram, ProtocolType.Udp);
                     for (int i = 0; i < SendSockets.Length; i++)
                     {
-                        SendSockets[i] = new Socket(Family.Value, SocketType.Dgram, ProtocolType.Udp);
+                        var sendSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                        sendSocket.Bind(localEP);
+                        SendSockets[i] = sendSocket;
                     }
                 }
 
@@ -484,7 +503,7 @@ namespace Megumin.Remote
                     var ow = recvBuffer.GetMemory();
                     if (MemoryMarshal.TryGetArray<byte>(ow, out var segment))
                     {
-                        var remote = Family == AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
+                        var remote = AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
                         var res = await Socket.ReceiveFromAsync(segment, SocketFlags.None, remote).ConfigureAwait(false);
                         recvBuffer.Advance(res.ReceivedBytes);
                         var p = recvBuffer.Pop();

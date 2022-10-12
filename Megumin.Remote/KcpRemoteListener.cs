@@ -83,22 +83,31 @@ namespace Megumin.Remote
 
             var udp = CreateRemote?.Invoke();
 
-            KcpRemote remote = udp as KcpRemote;
-            if (remote != null)
+            if (udp is KcpRemote remote)
             {
                 remote.InitKcp(answer.KcpChannel);
                 remote.IsVaild = true;
                 remote.ConnectIPEndPoint = endPoint;
                 remote.GUID = answer.Guid;
                 remote.Password = answer.Password;
-                //todo add listenUdpclient.
-                var sendSocket = SendSockets[connected.Count % SendSockets.Length];
-                udp.SetSocket(sendSocket);
-                lut.Add(answer.Guid, remote);
+
+                if (UseSendSocketInsteadRecvSocketOnListenSideRemote && SendSockets.Length > 0)
+                {
+                    //监听侧使用特定的Socket发送，不使用接收端口发送减少发送压力。
+                    //但是NAT情况可能会导致接收端数据直接被丢弃。
+                    var sendSocket = SendSockets[connected.Count % SendSockets.Length];
+                    remote.SetSocket(sendSocket);
+                }
+                else
+                {
+                    remote.SetSocket(Socket);
+                }
+
+                lut.Add(remote.GUID.Value, remote);
                 connected.Add(endPoint, remote);
             }
 
-            OnComplete?.Invoke(remote);
+            OnComplete?.Invoke(udp);
             return udp;
         }
 

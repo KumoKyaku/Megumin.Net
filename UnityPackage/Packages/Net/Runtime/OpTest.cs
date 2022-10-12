@@ -8,9 +8,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
-using UnityEditor.PackageManager;
 using UnityEngine;
-using UnityEngine.tvOS;
 
 public class OpTest : MonoBehaviour
 {
@@ -91,7 +89,7 @@ public class OpTest : MonoBehaviour
             case Protocol.Udp:
                 {
                     listener?.Stop();
-                    var rl = new UdpRemoteListener(port);
+                    var rl = new UdpRemoteListener(port, AddressFamily.InterNetwork);
                     Log($"开始监听 {ProtocolType}");
                     while (true)
                     {
@@ -442,7 +440,7 @@ public class OpTest : MonoBehaviour
                 client2.Disconnect();
             }
         }
-        
+
     }
 
     public class TestTcpRemote : TcpRemote
@@ -478,6 +476,22 @@ public class OpTest : MonoBehaviour
 
     public class TestUdpRemote : UdpRemote
     {
+
+        public TestUdpRemote() : base()
+        {
+
+        }
+
+        /// <remarks>
+        /// 明确指定使用IPV4还是IPV6
+        /// <para>SocketException: Protocol option not supported</para>
+        /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
+        /// </remarks>
+        public TestUdpRemote(AddressFamily addressFamily) : base(addressFamily)
+        {
+
+        }
+
         public OpTest Test { get; internal set; }
 
         protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)

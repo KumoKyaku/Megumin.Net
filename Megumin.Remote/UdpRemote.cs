@@ -10,12 +10,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.XPath;
 using static Megumin.Remote.TcpRemote;
+using static Megumin.Remote.UdpRemoteListener;
 
 namespace Megumin.Remote
 {
     public partial class UdpRemote : RpcRemote, IRemoteEndPoint, IRemote, IConnectable
     {
         public int ID { get; } = InterlockedID<IRemoteID>.NewID();
+        public AddressFamily? AddressFamily { get; set; } = null;
         public Guid? GUID { get; internal set; } = null;
         public int? Password { get; set; } = null;
         public IPEndPoint ConnectIPEndPoint { get; set; }
@@ -23,25 +25,19 @@ namespace Megumin.Remote
         public Socket Client { get; protected set; }
         public bool IsVaild { get; internal protected set; }
         public float LastReceiveTimeFloat { get; }
-        public UdpRemoteListenerOld Listener { get; internal set; }
         /// <summary>
         /// 为kcp预留
         /// </summary>
         protected int KcpIOChannel { get; set; }
 
-        public UdpRemote()
-        {
-
-        }
-
         /// <remarks>
-        /// 明确指定使用IPV4还是IPV6
+        /// Unity中必须,明确指定使用IPV4还是IPV6。无论什么平台。可能是mono的问题。
         /// <para>SocketException: Protocol option not supported</para>
         /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
         /// </remarks>
-        public UdpRemote(AddressFamily addressFamily)
+        public UdpRemote(AddressFamily? addressFamily = null)
         {
-            SetSocket(new Socket(addressFamily, SocketType.Stream, ProtocolType.Udp));
+            this.AddressFamily = addressFamily;
         }
 
         /// <summary>
@@ -65,6 +61,16 @@ namespace Megumin.Remote
         //连接相关功能
 
         static byte[] conn = new byte[1];
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para></para>
+        /// Unity中必须明确指定使用IPV4还是IPV6。无论什么平台。可能是mono的问题。
+        /// </summary>
+        /// <param name="endPoint"></param>
+        /// <param name="retryCount"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public virtual Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
         {
             if (!Password.HasValue)
@@ -74,11 +80,19 @@ namespace Megumin.Remote
             ConnectIPEndPoint = endPoint;
             if (Client == null)
             {
-                Client = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                if (AddressFamily == null)
+                {
+                    Client = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                }
+                else
+                {
+                    Client = new Socket(AddressFamily.Value, SocketType.Dgram, ProtocolType.Udp);
+                }
             }
-            Client.Bind(new IPEndPoint(IPAddress.Any, 0));
+            var localEP = AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
+            Client.Bind(localEP);
             //Client.SendTo(conn, endPoint);//承担bind作用，不然不能recv。
-            ClientSideSocketReceive();
+            ConnectSideSocketReceive();
             return Task.CompletedTask;
         }
 
@@ -200,14 +214,14 @@ namespace Megumin.Remote
         //接收============================================================
 
         public bool IsSocketReceiving { get; protected set; }
-        protected readonly object ClientSideSocketReceiveLock = new object();
+        protected readonly object ConnectSideSocketReceiveLock = new object();
         /// <summary>
         /// 主动侧需要手动开启接收，被动侧由listener接收然后分发
         /// </summary>
         /// <param name="port"></param>
-        public async void ClientSideSocketReceive()
+        public async void ConnectSideSocketReceive()
         {
-            lock (ClientSideSocketReceiveLock)
+            lock (ConnectSideSocketReceiveLock)
             {
                 if (IsSocketReceiving)
                 {
