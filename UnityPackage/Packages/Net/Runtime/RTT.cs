@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using Megumin.Message;
+using Net.Remote;
 
 namespace Megumin
 {
@@ -17,10 +18,10 @@ namespace Megumin
     {
         public TextMeshProUGUI RTTValue;
         public int IntervalMilliseconds = 500;
-        private TcpRemote Target;
+        private ISendCanAwaitable Target;
         private CancellationTokenSource cancellation;
 
-        internal void SetTarget(TcpRemote client)
+        internal void SetTarget(ISendCanAwaitable client)
         {
             this.Target = client;
             cancellation?.Cancel();

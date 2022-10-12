@@ -1,7 +1,6 @@
 ﻿using Megumin;
 using Megumin.Message;
 using Megumin.Remote;
-using Megumin.Remote.Simple;
 using Net.Remote;
 using System;
 using System.Net;
@@ -9,7 +8,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
+using UnityEditor.PackageManager;
 using UnityEngine;
+using UnityEngine.tvOS;
 
 public class OpTest : MonoBehaviour
 {
@@ -36,36 +37,103 @@ public class OpTest : MonoBehaviour
         }
     }
 
-    private TcpRemoteListener listener;
-    private EchoTcp serverSide;
+    public Protocol ProtocolType = Protocol.Tcp;
 
-
-    public void Listen()
+    public void OnProtocolTypeChange(int index)
     {
-        int port = 54321;
-        int.TryParse(TargetPort.text, out port);
-        listener?.Stop();
-        listener = new TcpRemoteListener(port);
-        Listen(listener);
-        Log("开始监听");
-    }
-
-    private async void Listen(TcpRemoteListener remote)
-    {
-        /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-        var accept = await remote.ListenAsync(Create);
-        Listen(remote);
-        if (accept != null)
+        switch (index)
         {
-            Console.text += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
-            Log($"收到连接 {accept.Client.RemoteEndPoint}");
-            serverSide = accept;
+            case 0:
+                ProtocolType = Protocol.Tcp;
+                break;
+            case 1:
+                ProtocolType = Protocol.Udp;
+                break;
+            case 2:
+                ProtocolType = Protocol.Kcp;
+                break;
+            default:
+                break;
         }
     }
 
-    public EchoTcp Create()
+    private IListener listener;
+    private IRemote serverSide;
+
+
+    public async void Listen()
     {
-        return new EchoTcp() { };
+        int port = 54321;
+        int.TryParse(TargetPort.text, out port);
+        switch (ProtocolType)
+        {
+            case Protocol.Tcp:
+                {
+                    listener?.Stop();
+                    var rl = new TcpRemoteListener(port);
+                    Log($"开始监听 {ProtocolType}");
+                    while (true)
+                    {
+                        var accept = await rl.ReadAsync(() =>
+                        {
+                            return new TcpRemote();
+                        });
+
+                        if (accept != null)
+                        {
+                            Console.text += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
+                            Log($"收到连接 {accept.Client.RemoteEndPoint}");
+                            serverSide = accept;
+                        }
+                    }
+                }
+                break;
+            case Protocol.Udp:
+                {
+                    listener?.Stop();
+                    var rl = new UdpRemoteListener(port);
+                    Log($"开始监听 {ProtocolType}");
+                    while (true)
+                    {
+                        var accept = await rl.ReadAsync(() =>
+                        {
+                            return new TestKcpRemote();
+                        });
+
+                        if (accept != null)
+                        {
+                            Console.text += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
+                            Log($"收到连接 {accept.Client.RemoteEndPoint}");
+                            serverSide = accept;
+                        }
+                    }
+                }
+                break;
+            case Protocol.Kcp:
+                {
+                    listener?.Stop();
+                    var rl = new KcpRemoteListener(port);
+                    Log($"开始监听 {ProtocolType}");
+                    while (true)
+                    {
+                        var accept = await rl.ReadAsync(() =>
+                        {
+                            return new TestKcpRemote();
+                        });
+
+                        if (accept != null)
+                        {
+                            Console.text += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
+                            Log($"收到连接 {accept.Client.RemoteEndPoint}");
+                            serverSide = accept;
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+
     }
 
     public void Clear()
@@ -73,7 +141,7 @@ public class OpTest : MonoBehaviour
         Console.text = "";
     }
 
-    private Remote client;
+    private IRemote client;
     public void ConnectTarget()
     {
         int port = 54321;
@@ -81,14 +149,37 @@ public class OpTest : MonoBehaviour
         IPAddress targetIP = IPAddress.Loopback;
         IPAddress.TryParse(TargetIP.text, out targetIP);
 
-        client = new Remote();
-        client.Logger = new MyLogger();
-        client.Test = this;
-        client.Post2ThreadScheduler = true;
-        Connect(port, targetIP);
+        if (ProtocolType == Protocol.Tcp)
+        {
+            var testClient = new TestTcpRemote();
+            testClient.TraceListener = new UnityTraceListener();
+            testClient.Test = this;
+            testClient.Post2ThreadScheduler = true;
+            client = testClient;
+            Connect(testClient, port, targetIP);
+        }
+        else if (ProtocolType == Protocol.Udp)
+        {
+            var testClient = new TestUdpRemote();
+            testClient.TraceListener = new UnityTraceListener();
+            testClient.Test = this;
+            testClient.Post2ThreadScheduler = true;
+            client = testClient;
+            Connect(testClient, port, targetIP);
+        }
+        else if (ProtocolType == Protocol.Kcp)
+        {
+            var testClient = new TestKcpRemote();
+            testClient.TraceListener = new UnityTraceListener();
+            testClient.Test = this;
+            testClient.Post2ThreadScheduler = true;
+            client = testClient;
+            Connect(testClient, port, targetIP);
+        }
     }
 
-    private async void Connect(int port, IPAddress targetIP)
+    private async void Connect<T>(T client, int port, IPAddress targetIP)
+        where T : IConnectable, ISendCanAwaitable
     {
         try
         {
@@ -107,7 +198,10 @@ public class OpTest : MonoBehaviour
 
     public void Disconnect()
     {
-        client.Disconnect();
+        if (client is IConnectable connectable)
+        {
+            connectable.Disconnect();
+        }
     }
 
     /// <summary>
@@ -119,7 +213,7 @@ public class OpTest : MonoBehaviour
     {
         Authentication authentication = new Authentication();
         authentication.Token = "TestClient9527";
-        var (result,ex) = await remote.Send<int>(authentication);
+        var (result, ex) = await remote.Send<int>(authentication);
         if (ex == null)
         {
             if (result == 200)
@@ -149,7 +243,7 @@ public class OpTest : MonoBehaviour
     public async void Send()
     {
         var send = string.Format(SendMessageText.text, messageIndex);
-        messageIndex++;
+        Interlocked.Increment(ref messageIndex);
         Log($"发送：{send}");
         var resp = await client.SendSafeAwait<string>(send);
         Log($"返回：{resp}");
@@ -231,36 +325,7 @@ public class OpTest : MonoBehaviour
         }
     }
 
-    public class Remote : TcpRemote
-    {
-        public OpTest Test { get; internal set; }
 
-        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
-        {
-            Test.Log($"接收：{message}");
-            return new ValueTask<object>(base.OnReceive(cmd, messageID, message));
-        }
-
-        public override void OnSendSafeAwaitException(object request, object response, Action<Exception> onException, Exception finnalException)
-        {
-            base.OnSendSafeAwaitException(request, response, onException, finnalException);
-            Debug.Log(finnalException);
-            Test.Log($"接收：{finnalException}");
-        }
-
-        protected override async void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        {
-#if UNITY_EDITOR
-            await MainThread.Switch();
-            if (UnityEditor.EditorApplication.isPlaying == false)
-            {
-                //防止编辑器停止播放时触发断线重连
-                return;
-            }
-#endif
-            Test.OnDisconnect(error, activeOrPassive);
-        }
-    }
 
     public GameObject AutoReConnectUI;
     private async void OnDisconnect(SocketError error, ActiveOrPassive activeOrPassive)
@@ -330,58 +395,146 @@ public class OpTest : MonoBehaviour
         //模拟重连过程，正式代码注释掉
         await Task.Delay(1000);
 
-
-        client.Disconnect();
-
-        var  client2 = new Remote();
-        client2.Logger = new MyLogger();
-        client2.Test = this;
-        client2.Post2ThreadScheduler = true;
-
-        try
+        if (client is TestTcpRemote oldTcpRemote)
         {
-            Log($"\n 断线重连 {client.ConnectIPEndPoint.Address} : {client.ConnectIPEndPoint.Port}");
-            //在两秒内重连
-            var res = await client2.ConnectAsync(client.ConnectIPEndPoint).WaitAsync(2000);
-            if (res && !token.IsCancellationRequested)
+            oldTcpRemote.Disconnect();
+
+            var client2 = new TestTcpRemote();
+            client2.TraceListener = new UnityTraceListener();
+            client2.Test = this;
+            client2.Post2ThreadScheduler = true;
+
+            try
             {
-                Log($"\n 连接成功");
-                var success = await Auth(client2);
-                
-                if (success && !token.IsCancellationRequested)
+                Log($"\n 断线重连 {oldTcpRemote.ConnectIPEndPoint.Address} : {oldTcpRemote.ConnectIPEndPoint.Port}");
+                //在两秒内重连
+                var res = await client2.ConnectAsync(oldTcpRemote.ConnectIPEndPoint).WaitAsync(2000);
+                if (res && !token.IsCancellationRequested)
                 {
-                    //使用旧的remote的rpclayer，sendpipe。
-                    client2.ReConnectFrom(client);
-                    client = client2;
+                    Log($"\n 连接成功");
+                    var success = await Auth(client2);
 
-                    RTT.SetTarget(client);
-                    //重连成功
-                    if (AutoReConnectUI)
+                    if (success && !token.IsCancellationRequested)
                     {
-                        AutoReConnectUI.SetActive(false);
+                        //使用旧的remote的rpclayer，sendpipe。
+                        client2.ReConnectFrom(oldTcpRemote);
+                        oldTcpRemote = client2;
+
+                        RTT.SetTarget(oldTcpRemote);
+                        //重连成功
+                        if (AutoReConnectUI)
+                        {
+                            AutoReConnectUI.SetActive(false);
+                        }
+                        return;
                     }
-                    return;
                 }
+
+                //重连失败
+                client2.Disconnect();
+                ReConnectError();
             }
-           
-            //重连失败
-            client2.Disconnect();
-            ReConnectError();
+            catch (Exception ex)
+            {
+                ReConnectError();
+                Log($"\n {ex.Message}");
+                //重连失败
+                client2.Disconnect();
+            }
         }
-        catch (Exception ex)
+        
+    }
+
+    public class TestTcpRemote : TcpRemote
+    {
+        public OpTest Test { get; internal set; }
+
+        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
-            ReConnectError();
-            Log($"\n {ex.Message}");
-            //重连失败
-            client2.Disconnect();
+            Test.Log($"接收：{message}");
+            return new ValueTask<object>(base.OnReceive(cmd, messageID, message));
+        }
+
+        public override void OnSendSafeAwaitException(object request, object response, Action<Exception> onException, Exception finnalException)
+        {
+            base.OnSendSafeAwaitException(request, response, onException, finnalException);
+            Debug.Log(finnalException);
+            Test.Log($"接收：{finnalException}");
+        }
+
+        protected override async void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+#if UNITY_EDITOR
+            await MainThread.Switch();
+            if (UnityEditor.EditorApplication.isPlaying == false)
+            {
+                //防止编辑器停止播放时触发断线重连
+                return;
+            }
+#endif
+            Test.OnDisconnect(error, activeOrPassive);
         }
     }
 
-    internal class MyLogger : IMeguminRemoteLogger
+    public class TestUdpRemote : UdpRemote
     {
-        public void Log(string error)
+        public OpTest Test { get; internal set; }
+
+        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
-            Debug.LogError(error);
+            Test.Log($"接收：{message}");
+            return new ValueTask<object>(base.OnReceive(cmd, messageID, message));
+        }
+
+        public override void OnSendSafeAwaitException(object request, object response, Action<Exception> onException, Exception finnalException)
+        {
+            base.OnSendSafeAwaitException(request, response, onException, finnalException);
+            Debug.Log(finnalException);
+            Test.Log($"接收：{finnalException}");
+        }
+
+        protected override async void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+#if UNITY_EDITOR
+            await MainThread.Switch();
+            if (UnityEditor.EditorApplication.isPlaying == false)
+            {
+                //防止编辑器停止播放时触发断线重连
+                return;
+            }
+#endif
+            Test.OnDisconnect(error, activeOrPassive);
+        }
+    }
+
+    public class TestKcpRemote : KcpRemote
+    {
+        public OpTest Test { get; internal set; }
+
+        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        {
+            Test.Log($"接收：{message}");
+            return new ValueTask<object>(base.OnReceive(cmd, messageID, message));
+        }
+
+        public override void OnSendSafeAwaitException(object request, object response, Action<Exception> onException, Exception finnalException)
+        {
+            base.OnSendSafeAwaitException(request, response, onException, finnalException);
+            Debug.Log(finnalException);
+            Test.Log($"接收：{finnalException}");
+        }
+
+        protected override async void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+#if UNITY_EDITOR
+            await MainThread.Switch();
+            if (UnityEditor.EditorApplication.isPlaying == false)
+            {
+                //防止编辑器停止播放时触发断线重连
+                return;
+            }
+#endif
+            Test.OnDisconnect(error, activeOrPassive);
         }
     }
 }

@@ -56,6 +56,14 @@ namespace Megumin.Remote
         void Log(string error);
     }
 
+    [Flags]
+    public enum Protocol
+    {
+        Tcp = 1 << 0,
+        Udp = 1 << 1,
+        Kcp = 1 << 2,
+    }
+
     /// <summary>
     /// 事实上 无论UID是Int,long,还是string,都无法满足全部需求。当你需要其他类型是，请修改源码。
     /// </summary>
