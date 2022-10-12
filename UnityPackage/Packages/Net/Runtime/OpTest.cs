@@ -95,7 +95,7 @@ public class OpTest : MonoBehaviour
                     {
                         var accept = await rl.ReadAsync(() =>
                         {
-                            return new TestKcpRemote();
+                            return new TestUdpRemote(AddressFamily.InterNetwork);
                         });
 
                         if (accept != null)
@@ -116,7 +116,7 @@ public class OpTest : MonoBehaviour
                     {
                         var accept = await rl.ReadAsync(() =>
                         {
-                            return new TestKcpRemote();
+                            return new TestKcpRemote(AddressFamily.InterNetwork);
                         });
 
                         if (accept != null)
@@ -158,7 +158,7 @@ public class OpTest : MonoBehaviour
         }
         else if (ProtocolType == Protocol.Udp)
         {
-            var testClient = new TestUdpRemote();
+            var testClient = new TestUdpRemote(AddressFamily.InterNetwork);
             testClient.TraceListener = new UnityTraceListener();
             testClient.Test = this;
             testClient.Post2ThreadScheduler = true;
@@ -167,7 +167,7 @@ public class OpTest : MonoBehaviour
         }
         else if (ProtocolType == Protocol.Kcp)
         {
-            var testClient = new TestKcpRemote();
+            var testClient = new TestKcpRemote(AddressFamily.InterNetwork);
             testClient.TraceListener = new UnityTraceListener();
             testClient.Test = this;
             testClient.Post2ThreadScheduler = true;
@@ -476,18 +476,7 @@ public class OpTest : MonoBehaviour
 
     public class TestUdpRemote : UdpRemote
     {
-
-        public TestUdpRemote() : base()
-        {
-
-        }
-
-        /// <remarks>
-        /// 明确指定使用IPV4还是IPV6
-        /// <para>SocketException: Protocol option not supported</para>
-        /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
-        /// </remarks>
-        public TestUdpRemote(AddressFamily addressFamily) : base(addressFamily)
+        public TestUdpRemote(AddressFamily? addressFamily) : base(addressFamily)
         {
 
         }
@@ -523,6 +512,11 @@ public class OpTest : MonoBehaviour
 
     public class TestKcpRemote : KcpRemote
     {
+        public TestKcpRemote(AddressFamily? addressFamily) : base(addressFamily)
+        {
+
+        }
+
         public OpTest Test { get; internal set; }
 
         protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)

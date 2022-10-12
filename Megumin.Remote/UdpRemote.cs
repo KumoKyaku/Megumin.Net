@@ -14,6 +14,13 @@ using static Megumin.Remote.UdpRemoteListener;
 
 namespace Megumin.Remote
 {
+    /// <summary>
+    /// <inheritdoc/>
+    /// <para></para>
+    /// Unity中必须,明确指定使用IPV4还是IPV6。无论什么平台。可能是mono的问题。
+    /// <para>SocketException: Protocol option not supported</para>
+    /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
+    /// </summary>
     public partial class UdpRemote : RpcRemote, IRemoteEndPoint, IRemote, IConnectable
     {
         public int ID { get; } = InterlockedID<IRemoteID>.NewID();
@@ -22,6 +29,7 @@ namespace Megumin.Remote
         public int? Password { get; set; } = null;
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public virtual EndPoint RemappedEndPoint => ConnectIPEndPoint;
+        public EndPoint RemoteEndPoint => ConnectIPEndPoint;
         public Socket Client { get; protected set; }
         public bool IsVaild { get; internal protected set; }
         public float LastReceiveTimeFloat { get; }
@@ -30,11 +38,6 @@ namespace Megumin.Remote
         /// </summary>
         protected int KcpIOChannel { get; set; }
 
-        /// <remarks>
-        /// Unity中必须,明确指定使用IPV4还是IPV6。无论什么平台。可能是mono的问题。
-        /// <para>SocketException: Protocol option not supported</para>
-        /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
-        /// </remarks>
         public UdpRemote(AddressFamily? addressFamily = null)
         {
             this.AddressFamily = addressFamily;
@@ -71,7 +74,7 @@ namespace Megumin.Remote
         /// <param name="retryCount"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public virtual Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
+        public virtual async Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
         {
             if (!Password.HasValue)
             {
@@ -93,7 +96,13 @@ namespace Megumin.Remote
             Client.Bind(localEP);
             //Client.SendTo(conn, endPoint);//承担bind作用，不然不能recv。
             ConnectSideSocketReceive();
-            return Task.CompletedTask;
+
+            //发送一个心跳包触发认证。
+            var (_, exception) = await Send<Heartbeat>(Heartbeat.Default, SendOption.Echo);
+            if (exception != null)
+            {
+                throw exception;
+            }
         }
 
         //连接认证部分================================================

@@ -507,7 +507,8 @@ namespace Megumin.Remote
                         var res = await Socket.ReceiveFromAsync(segment, SocketFlags.None, remote).ConfigureAwait(false);
                         recvBuffer.Advance(res.ReceivedBytes);
                         var p = recvBuffer.Pop();
-
+                        
+                        //此处为IOCP线程，不要在IOCP线程执行业务逻辑后续，防止接收效率受到影响。
 #pragma warning disable CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
                         Task.Run(() => { SocketRecvData.Write(((IPEndPoint)res.RemoteEndPoint, p.Item1, res.ReceivedBytes)); });
 #pragma warning restore CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
@@ -537,6 +538,7 @@ namespace Megumin.Remote
                 try
                 {
                     var (RemoteEndPoint, Owner, ReceivedBytes) = await SocketRecvData.ReadAsync().ConfigureAwait(false);
+                    //此处为ThreadPool线程。默认是ThreadPoolTaskScheduler。
                     if (RemoteEndPoint == null || Owner == null)
                     {
                         //可能是多线程问题，结果是null，暂时没找到原因

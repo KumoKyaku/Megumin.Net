@@ -23,7 +23,7 @@ namespace Megumin.Remote
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public Socket Client { get; protected set; }
         public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
-
+        public EndPoint RemoteEndPoint => Client.RemoteEndPoint;
         public enum WorkState
         {
             /// <summary>

@@ -40,7 +40,7 @@ namespace TestWPF
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            if (ProtocolType ==  Megumin.Remote.Protocol.Tcp)
+            if (ProtocolType == Megumin.Remote.Protocol.Tcp)
             {
                 ListenTcp();
             }
@@ -69,7 +69,7 @@ namespace TestWPF
                 if (accept != null)
                 {
                     accept.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
-                    this.Serverlog.Content += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
+                    this.Serverlog.Content += $"\n 收到连接 {accept.RemoteEndPoint} ";
                     server = accept;
                 }
             }
@@ -88,12 +88,15 @@ namespace TestWPF
                 {
                     var r = new TestKcpRemote() { log = this.Serverlog };
                     return r;
-                });
+                }).ConfigureAwait(true);
 
                 if (accept != null)
                 {
                     accept.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
-                    this.Serverlog.Content += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
+                    this.Serverlog.Dispatcher.Invoke(new Action(() =>
+                    {
+                        this.Serverlog.Content += $"\n 收到连接 {accept.RemoteEndPoint} ";
+                    }));
                     server = accept;
                 }
             }

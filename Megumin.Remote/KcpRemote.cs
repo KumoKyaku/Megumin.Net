@@ -26,6 +26,11 @@ namespace Megumin.Remote
         public PoolSegManager.KcpIO KcpCore { get; internal protected set; } = null;
         IKcpUpdate kcpUpdate = null;
         const int BufferSizer = 1024 * 4;
+
+        public KcpRemote(AddressFamily? addressFamily = null) : base(addressFamily)
+        {
+        }
+
         public void InitKcp(int kcpChannel)
         {
             if (KcpCore == null)
@@ -34,7 +39,7 @@ namespace Megumin.Remote
                 var kcpIO = new PoolSegManager.KcpIO((uint)KcpIOChannel);
 
                 //具体设置参数要根据项目调整。测试数据量一大有打嗝和假死现象。还没搞清楚原因。
-                
+
                 kcpIO.NoDelay(2, 5, 2, 1);
                 kcpIO.WndSize(64, 128);
                 ///不要限制最大fastack，rto快速增长时很难恢复，指望快速重传来减小延迟。
@@ -54,6 +59,22 @@ namespace Megumin.Remote
             }
         }
 
+        static readonly Random convRandom = new Random();
+        public override Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
+        {
+            InitKcp(convRandom.Next(1000, 10000));
+            return base.ConnectAsync(endPoint, retryCount);
+        }
+
+        protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+            base.OnDisconnect(error, activeOrPassive);
+            TraceListener?.WriteLine($"连接断开");
+        }
+    }
+
+    public partial class KcpRemote
+    {
         //循环Tick================================================================
         internal protected static readonly List<IKcpUpdate> AllKcp = new List<IKcpUpdate>();
         internal protected static readonly List<IKcpUpdate> DisposedKcp = new List<IKcpUpdate>();
@@ -124,7 +145,10 @@ namespace Megumin.Remote
                 IsGlobalUpdate = false;
             }
         }
+    }
 
+    public partial class KcpRemote
+    {
         // 发送===================================================================
         protected UdpBufferWriter kcpout = new UdpBufferWriter(BufferSizer);
         async void KcpOutput()
@@ -159,7 +183,10 @@ namespace Megumin.Remote
                 }
             }
         }
+    }
 
+    public partial class KcpRemote
+    {
         ///接收===================================================================
 
         protected UdpBufferWriter kcprecv = new UdpBufferWriter(BufferSizer);
@@ -202,18 +229,8 @@ namespace Megumin.Remote
                 KcpCore.Input(buffer);
             }
         }
-
-        static readonly Random convRandom = new Random();
-        public override Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
-        {
-            InitKcp(convRandom.Next(1000, 10000));
-            return base.ConnectAsync(endPoint, retryCount);
-        }
-
-        protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        {
-            base.OnDisconnect(error, activeOrPassive);
-            TraceListener?.WriteLine($"连接断开");
-        }
     }
 }
+
+
+
