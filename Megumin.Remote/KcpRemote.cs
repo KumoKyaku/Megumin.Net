@@ -71,6 +71,22 @@ namespace Megumin.Remote
             base.OnDisconnect(error, activeOrPassive);
             TraceListener?.WriteLine($"连接断开");
         }
+
+        public override void PreDisconnect(SocketError error, object options = null)
+        {
+            base.PreDisconnect(error, options);
+            Task.Run(() =>
+            {
+                lock (kcpUpdateLock)
+                {
+                    AllKcp.Remove(kcpUpdate);
+                    if (kcpUpdate is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+            });
+        }
     }
 
     public partial class KcpRemote

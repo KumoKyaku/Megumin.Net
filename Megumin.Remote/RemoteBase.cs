@@ -485,17 +485,17 @@ namespace Megumin.Remote
 
     public partial class RemoteBase:IDisconnecHandle
     {
-        public void PreDisconnect(SocketError error, object options = null)
+        public virtual void PreDisconnect(SocketError error, object options = null)
         {
             
         }
 
-        public void OnDisconnect(SocketError error, object options = null)
+        public virtual void OnDisconnect(SocketError error, object options = null)
         {
             
         }
 
-        public void PostDisconnect(SocketError error, object options = null)
+        public virtual void PostDisconnect(SocketError error, object options = null)
         {
             
         }

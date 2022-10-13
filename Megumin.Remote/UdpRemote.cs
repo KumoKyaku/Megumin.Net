@@ -166,12 +166,22 @@ namespace Megumin.Remote
 
         internal protected virtual void Recv0(IPEndPoint endPoint)
         {
-            if (Closer != null)
+            if (IsListenSide)
             {
-                Closer.TraceListener = TraceListener;
-                Closer.OnRecv0(Client, this);
-                IsVaild = false;
-                Client = null;
+                //监听侧是公用的socket，不用做处理。
+                PreDisconnect(SocketError.Shutdown, null);
+                OnDisconnect(SocketError.Shutdown, null);
+                PostDisconnect(SocketError.Shutdown, null);
+            }
+            else
+            {
+                if (Closer != null)
+                {
+                    Closer.TraceListener = TraceListener;
+                    Closer.OnRecv0(Client, this);
+                    IsVaild = false;
+                    Client = null;
+                }
             }
         }
 

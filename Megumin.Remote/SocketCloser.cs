@@ -127,5 +127,6 @@ namespace Megumin.Remote
 
     public class DisconnectOptions
     {
+        public ActiveOrPassive ActiveOrPassive { get; set; } = ActiveOrPassive.Active;
     }
 }
