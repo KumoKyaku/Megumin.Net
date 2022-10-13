@@ -90,6 +90,8 @@ namespace Megumin.Remote
                 remote.ConnectIPEndPoint = endPoint;
                 remote.GUID = answer.Guid;
                 remote.Password = answer.Password;
+                remote.IsListenSide = true;
+                remote.UdpRemoteListener = this;
 
                 if (UseSendSocketInsteadRecvSocketOnListenSideRemote && SendSockets.Count > 0)
                 {

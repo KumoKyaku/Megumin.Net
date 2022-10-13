@@ -20,6 +20,10 @@ namespace Megumin
         public int IntervalMilliseconds = 500;
         private ISendCanAwaitable Target;
         private CancellationTokenSource cancellation;
+        public void OnEnable()
+        {
+
+        }
 
         internal void SetTarget(ISendCanAwaitable client)
         {
@@ -31,33 +35,36 @@ namespace Megumin
 
         private async void TestRTT(CancellationToken token)
         {
-            await Task.Delay(IntervalMilliseconds);
-            if (Target != null)
+            while (true)
             {
-                DateTimeOffset sendTime = DateTimeOffset.UtcNow;
-                var (obj, ex) = await Target.Send<Heartbeat>(Heartbeat.Default, options: SendOption.Echo);
-                if (ex == null)
+                await Task.Delay(IntervalMilliseconds);
+                if (token.IsCancellationRequested || !RTTValue)
                 {
-                    DateTimeOffset respTime = DateTimeOffset.UtcNow;
-                    var rtt = (int)((respTime - sendTime).TotalMilliseconds);
-                    if (RTTValue)
-                    {
-                        RTTValue.SetText("RTT:{0}ms", rtt);
-                    }
+                    break;
+                }
 
-                    if (!token.IsCancellationRequested)
+                if (Target != null && this.enabled)
+                {
+                    DateTimeOffset sendTime = DateTimeOffset.UtcNow;
+                    var (obj, ex) = await Target.Send<Heartbeat>(Heartbeat.Default, options: SendOption.Echo);
+                    if (ex == null)
                     {
-                        TestRTT(token);
+                        DateTimeOffset respTime = DateTimeOffset.UtcNow;
+                        var rtt = (int)((respTime - sendTime).TotalMilliseconds);
+                        if (RTTValue)
+                        {
+                            RTTValue.SetText("RTT:{0}ms", rtt);
+                        }
+                    }
+                    else
+                    {
+                        RTTValue.SetText("RTT:--ms");
                     }
                 }
                 else
                 {
                     RTTValue.SetText("RTT:--ms");
                 }
-            }
-            else
-            {
-                RTTValue.SetText("RTT:--ms");
             }
         }
 

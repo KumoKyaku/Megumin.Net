@@ -388,7 +388,7 @@ public class TestRemote : TcpRemote, ITestRemote
     }
 }
 
-public class TestUdpRemote : KcpRemote, ITestRemote
+public class TestUdpRemote : UdpRemote, ITestRemote
 {
     static Dictionary<string, TestUdpRemote> AllClient = new Dictionary<string, TestUdpRemote>();
     public Label log { get; set; }

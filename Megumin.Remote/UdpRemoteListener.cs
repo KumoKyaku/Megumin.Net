@@ -371,6 +371,8 @@ namespace Megumin.Remote
                 remote.ConnectIPEndPoint = endPoint;
                 remote.GUID = answer.Guid;
                 remote.Password = answer.Password;
+                remote.IsListenSide = true;
+                remote.UdpRemoteListener = this;
 
                 if (UseSendSocketInsteadRecvSocketOnListenSideRemote && SendSockets.Count > 0)
                 {
@@ -591,6 +593,18 @@ namespace Megumin.Remote
                     if (connected.TryGetValue(endPoint, out var remote))
                     {
                         remote.Recv0(endPoint);
+#pragma warning disable CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
+                        Task.Run(async () =>
+                        {
+                            //120秒后从列表中移除。
+                            await Task.Delay(120000);
+                            connected.Remove(endPoint);
+                            if (remote.GUID.HasValue)
+                            {
+                                lut.Remove(remote.GUID.Value);
+                            }
+                        });
+#pragma warning restore CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
                     }
                     return;
                 }

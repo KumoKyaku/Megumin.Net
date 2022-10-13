@@ -27,7 +27,7 @@ namespace Megumin.Remote
     /// Q：异步方法会不会延长声明周期，导致对象永不销毁？
     /// A：存疑，感觉应该不会，需要测试。异步调用会注册到IOCP线程池中。如果异步接收没收到0字节或者异常，那么对象会一直活着。
     /// </remarks>
-    public abstract class RemoteBase : ISendable
+    public abstract partial class RemoteBase : ISendable
     {
         /// <summary>
         /// 究竟要不要初始化内嵌消息.
@@ -480,6 +480,24 @@ namespace Megumin.Remote
                     DeserializeSuccess(RpcID, CMD, MessageID, bytes, options);
                 }
             }
+        }
+    }
+
+    public partial class RemoteBase:IDisconnecHandle
+    {
+        public void PreDisconnect(SocketError error, object options = null)
+        {
+            
+        }
+
+        public void OnDisconnect(SocketError error, object options = null)
+        {
+            
+        }
+
+        public void PostDisconnect(SocketError error, object options = null)
+        {
+            
         }
     }
 }

@@ -33,6 +33,12 @@ namespace Megumin.Remote
         public EndPoint RemoteEndPoint => ConnectIPEndPoint;
         public Socket Client { get; protected set; }
         public bool IsVaild { get; internal protected set; }
+        public UdpRemoteListener UdpRemoteListener { get; internal protected set; }
+        /// <summary>
+        /// 是不是监听侧Remote
+        /// </summary>
+        public bool IsListenSide { get; internal protected set; } = false;
+
         public float LastReceiveTimeFloat { get; }
         /// <summary>
         /// 为kcp预留
@@ -65,7 +71,7 @@ namespace Megumin.Remote
         //连接相关功能
 
         static byte[] conn = new byte[1];
-
+        protected SocketCloser closer = null;
         /// <summary>
         /// <inheritdoc/>
         /// <para></para>
@@ -92,6 +98,8 @@ namespace Megumin.Remote
                 {
                     Client = new Socket(AddressFamily.Value, SocketType.Dgram, ProtocolType.Udp);
                 }
+                //每个Socket可以关闭一次。
+                closer = new SocketCloser();
             }
             var localEP = AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
             Client.Bind(localEP);
@@ -138,12 +146,29 @@ namespace Megumin.Remote
 
         public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
         {
-
+            if (IsListenSide)
+            {
+                //监听侧是公用的socket，不用做处理。
+                //应该给连接端发一条特殊消息，要求连接端主动断开。
+                throw new InvalidOperationException($"监听端不应该主动调用断开。");
+            }
+            else
+            {
+                if (closer != null)
+                {
+                    closer.TraceListener = TraceListener;
+                    closer.SafeClose(Client, SocketError.Disconnecting, this, triggerOnDisConnect, waitSendQueue, options: new DisconnectOptions());
+                }
+            }
         }
 
         internal protected virtual void Recv0(IPEndPoint endPoint)
         {
-
+            if (closer != null)
+            {
+                closer.TraceListener = TraceListener;
+                closer.OnRecv0(Client, this);
+            }
         }
 
         protected static readonly SendOption HeartbeatSendOption = new SendOption()
@@ -246,8 +271,8 @@ namespace Megumin.Remote
 
             //Client.Bind(new IPEndPoint(IPAddress.Any, port));
             IsVaild = true;
-            
-            var remoteEndPoint = AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any; 
+
+            var remoteEndPoint = AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
             while (true)
             {
                 var cache = ArrayPool<byte>.Shared.Rent(0x10000);
@@ -257,6 +282,12 @@ namespace Megumin.Remote
                     var res = await Client.ReceiveFromAsync(buffer, SocketFlags.None, remoteEndPoint).ConfigureAwait(false);
                     InnerDeal(res.RemoteEndPoint as IPEndPoint, cache, 0, res.ReceivedBytes);
                 }
+                catch (ObjectDisposedException e)
+                {
+                    //断开连接时触发
+                    TraceListener?.WriteLine(e);
+                    break;
+                }
                 catch (Exception e)
                 {
                     TraceListener?.WriteLine(e);
@@ -265,6 +296,11 @@ namespace Megumin.Remote
                 {
                     ArrayPool<byte>.Shared.Return(cache);
                 }
+            }
+
+            lock (ConnectSideSocketReceiveLock)
+            {
+                IsSocketReceiving = false;
             }
         }
 
