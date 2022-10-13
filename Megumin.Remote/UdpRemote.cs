@@ -71,7 +71,7 @@ namespace Megumin.Remote
         //连接相关功能
 
         static byte[] conn = new byte[1];
-        protected SocketCloser closer = null;
+        public SocketCloser Closer { get; internal protected set; } = null;
         /// <summary>
         /// <inheritdoc/>
         /// <para></para>
@@ -99,7 +99,7 @@ namespace Megumin.Remote
                     Client = new Socket(AddressFamily.Value, SocketType.Dgram, ProtocolType.Udp);
                 }
                 //每个Socket可以关闭一次。
-                closer = new SocketCloser();
+                Closer = new SocketCloser();
             }
             var localEP = AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
             Client.Bind(localEP);
@@ -154,20 +154,24 @@ namespace Megumin.Remote
             }
             else
             {
-                if (closer != null)
+                if (Closer != null)
                 {
-                    closer.TraceListener = TraceListener;
-                    closer.SafeClose(Client, SocketError.Disconnecting, this, triggerOnDisConnect, waitSendQueue, options: new DisconnectOptions());
+                    Closer.TraceListener = TraceListener;
+                    Closer.SafeClose(Client, SocketError.Disconnecting, this, triggerOnDisConnect, waitSendQueue, options: new DisconnectOptions());
+                    IsVaild = false;
+                    Client = null;
                 }
             }
         }
 
         internal protected virtual void Recv0(IPEndPoint endPoint)
         {
-            if (closer != null)
+            if (Closer != null)
             {
-                closer.TraceListener = TraceListener;
-                closer.OnRecv0(Client, this);
+                Closer.TraceListener = TraceListener;
+                Closer.OnRecv0(Client, this);
+                IsVaild = false;
+                Client = null;
             }
         }
 
@@ -217,6 +221,21 @@ namespace Megumin.Remote
 
         public override void Send(int rpcID, object message, object options = null)
         {
+            if (Client == null || Closer?.IsDisconnecting == true)
+            {
+                //当遇到底层不能发送消息的情况下，如果时Rpc发送，直接触发Rpc异常。
+                if (rpcID > 0)
+                {
+                    //对于已经注册了Rpc的消息,直接触发异常。
+                    RpcLayer.RpcCallbackPool.TrySetException(rpcID, new SocketException(-1));
+                    return;
+                }
+                else
+                {
+                    throw new SocketException(-1);
+                }
+            }
+
             SendWriter.WriteHeader(UdpRemoteMessageDefine.UdpData);
             if (TrySerialize(SendWriter, rpcID, message, options))
             {

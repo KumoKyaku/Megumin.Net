@@ -164,6 +164,21 @@ namespace Megumin.Remote
 
         public override void Send(int rpcID, object message, object options = null)
         {
+            if (Client == null || Closer?.IsDisconnecting == true)
+            {
+                //当遇到底层不能发送消息的情况下，如果时Rpc发送，直接触发Rpc异常。
+                if (rpcID > 0)
+                {
+                    //对于已经注册了Rpc的消息,直接触发异常。
+                    RpcLayer.RpcCallbackPool.TrySetException(rpcID, new SocketException(-1));
+                    return;
+                }
+                else
+                {
+                    throw new SocketException(-1);
+                }
+            }
+
             if (options is IForceUdpDataOnKcpRemote force && force.ForceUdp)
             {
                 base.Send(rpcID, message, options);
