@@ -1,4 +1,5 @@
 ﻿using Megumin.Message;
+using Megumin.Remote.Rpc;
 using Net.Remote;
 using System;
 using System.Buffers;
@@ -98,7 +99,11 @@ namespace Megumin.Remote
             ConnectSideSocketReceive();
 
             //发送一个心跳包触发认证。
-            var (_, exception) = await Send<Heartbeat>(Heartbeat.Default, SendOption.Echo);
+            var (_, exception) = await Send<Heartbeat>(Heartbeat.Default, HeartbeatSendOption);
+            if (exception is RcpTimeoutException rcpex)
+            {
+                throw new SocketException((int)SocketError.TimedOut);
+            }
             if (exception != null)
             {
                 throw exception;
@@ -241,8 +246,8 @@ namespace Megumin.Remote
 
             //Client.Bind(new IPEndPoint(IPAddress.Any, port));
             IsVaild = true;
-            IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-
+            
+            var remoteEndPoint = AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any; 
             while (true)
             {
                 var cache = ArrayPool<byte>.Shared.Rent(0x10000);

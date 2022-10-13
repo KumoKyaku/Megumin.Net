@@ -190,7 +190,7 @@ public class OpTest : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Log($"{ex.Message}");
+            Log($"{ex}");
         }
     }
 
@@ -235,6 +235,16 @@ public class OpTest : MonoBehaviour
     {
         await MainThread.Switch();
         Console.text += $"{str}\n";
+    }
+
+    [Button]
+    public void LogExceptionTest()
+    {
+        Log(new Exception().ToString());
+        Log(new Exception("Test").ToString());
+        Log(new TimeoutException().ToString());
+        Log(new SocketException().ToString());
+        Log(new SocketException((int)SocketError.Shutdown).ToString());
     }
 
     int messageIndex = 0;
