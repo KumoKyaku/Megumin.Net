@@ -144,6 +144,7 @@ namespace Megumin.Remote
             Client.SendTo(buffer, 0, UdpAuthResponse.Length, SocketFlags.None, endPoint);
         }
 
+        static readonly byte[] Disconnect0Buffer = new byte[0];
         public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
         {
             if (IsListenSide)
@@ -154,13 +155,25 @@ namespace Megumin.Remote
             }
             else
             {
-                if (Closer != null)
-                {
-                    Closer.TraceListener = TraceListener;
-                    Closer.SafeClose(Client, SocketError.Disconnecting, this, triggerOnDisConnect, waitSendQueue, options: new DisconnectOptions());
-                    IsVaild = false;
-                    Client = null;
-                }
+                ConnectSideShutdown(triggerOnDisConnect, waitSendQueue);
+            }
+        }
+
+        /// <summary>
+        /// 连接测主动断开，shutdown，先向对面发送一个0字节消息，对面会触发Recv0。然后关闭自己一侧Socket。
+        /// </summary>
+        /// <param name="triggerOnDisConnect"></param>
+        /// <param name="waitSendQueue"></param>
+        protected virtual async ValueTask ConnectSideShutdown(bool triggerOnDisConnect, bool waitSendQueue)
+        {
+            await Client.SendToAsync(new ArraySegment<byte>(Disconnect0Buffer, 0, 0), SocketFlags.None, ConnectIPEndPoint)
+                                .ConfigureAwait(false);
+            if (Closer != null)
+            {
+                Closer.TraceListener = TraceListener;
+                Closer.SafeClose(Client, SocketError.Disconnecting, this, triggerOnDisConnect, waitSendQueue, options: new DisconnectOptions());
+                IsVaild = false;
+                Client = null;
             }
         }
 

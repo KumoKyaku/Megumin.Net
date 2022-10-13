@@ -59,22 +59,8 @@ namespace Megumin.Remote
             }
         }
 
-        static readonly Random convRandom = new Random();
-        public override Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
+        internal protected virtual void SafeCloseKcpCore()
         {
-            InitKcp(convRandom.Next(1000, 10000));
-            return base.ConnectAsync(endPoint, retryCount);
-        }
-
-        protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        {
-            base.OnDisconnect(error, activeOrPassive);
-            TraceListener?.WriteLine($"连接断开");
-        }
-
-        public override void PreDisconnect(SocketError error, object options = null)
-        {
-            base.PreDisconnect(error, options);
             Task.Run(() =>
             {
                 lock (kcpUpdateLock)
@@ -86,6 +72,31 @@ namespace Megumin.Remote
                     }
                 }
             });
+        }
+
+        static readonly Random convRandom = new Random();
+        public override Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
+        {
+            InitKcp(convRandom.Next(1000, 10000));
+            return base.ConnectAsync(endPoint, retryCount);
+        }
+
+        protected override async ValueTask ConnectSideShutdown(bool triggerOnDisConnect, bool waitSendQueue)
+        {
+            await base.ConnectSideShutdown(triggerOnDisConnect, waitSendQueue);
+            SafeCloseKcpCore();
+        }
+
+        protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        {
+            base.OnDisconnect(error, activeOrPassive);
+            TraceListener?.WriteLine($"连接断开");
+        }
+
+        public override void PreDisconnect(SocketError error, object options = null)
+        {
+            base.PreDisconnect(error, options);
+            SafeCloseKcpCore();
         }
     }
 
