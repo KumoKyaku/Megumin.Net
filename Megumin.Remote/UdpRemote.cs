@@ -38,8 +38,8 @@ namespace Megumin.Remote
         /// 是不是监听侧Remote
         /// </summary>
         public bool IsListenSide { get; internal protected set; } = false;
+        public DateTimeOffset LastReceiveTime { get; internal protected set; } = DateTimeOffset.UtcNow;
 
-        public float LastReceiveTimeFloat { get; }
         /// <summary>
         /// 为kcp预留
         /// </summary>
@@ -160,7 +160,10 @@ namespace Megumin.Remote
         }
 
         /// <summary>
-        /// 连接测主动断开，shutdown，先向对面发送一个0字节消息，对面会触发Recv0。然后关闭自己一侧Socket。
+        /// 连接测主动断开，shutdown，先向对面发送一个0字节消息，对面会触发Recv0（不保证对面能收到）。
+        /// 监听侧启动一个计时器保证安全移除。
+        /// 然后关闭自己一侧Socket。
+        /// Udp断开没有使用4次挥手来保证可靠。只是粗略进行断开。大致能用就行了。
         /// </summary>
         /// <param name="triggerOnDisConnect"></param>
         /// <param name="waitSendQueue"></param>
@@ -322,6 +325,7 @@ namespace Megumin.Remote
                 {
                     ArraySegment<byte> buffer = new ArraySegment<byte>(cache);
                     var res = await Client.ReceiveFromAsync(buffer, SocketFlags.None, remoteEndPoint).ConfigureAwait(false);
+                    LastReceiveTime = DateTimeOffset.UtcNow;
                     InnerDeal(res.RemoteEndPoint as IPEndPoint, cache, 0, res.ReceivedBytes);
                 }
                 catch (ObjectDisposedException e)

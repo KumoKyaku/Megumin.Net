@@ -453,6 +453,7 @@ namespace Megumin.Remote
                         pipeWriter.Advance(count);
                     }
 
+                    LastReceiveTime = DateTimeOffset.UtcNow;
                     IsSocketReceiving = false;
                 }
                 catch (SocketException e)
@@ -567,8 +568,6 @@ namespace Megumin.Remote
             }
         }
 
-
-        /// <remarks>留给Unity用的。在unity中赋值</remarks>
-        public float LastReceiveTimeFloat { get; protected set; } = float.MaxValue;
+        public DateTimeOffset LastReceiveTime { get; protected set; } = DateTimeOffset.UtcNow;
     }
 }

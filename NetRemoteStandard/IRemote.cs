@@ -31,6 +31,7 @@ namespace Net.Remote
         /// <para>如果没有重映射, 返回<see cref="Socket.RemoteEndPoint"/> </para>
         /// </summary>
         EndPoint RemappedEndPoint { get; }
+        EndPoint RemoteEndPoint { get; }
     }
 
     /// <summary>
@@ -177,7 +178,7 @@ namespace Net.Remote
         /// <summary>
         /// 最后一次收到消息的时间戳,因为Unity中时间戳是float
         /// </summary>
-        float LastReceiveTimeFloat { get; }
+        DateTimeOffset LastReceiveTime { get; }
         /// <summary>
         /// 设置接受回调是个失败的设计，实际使用中无论如何都要从要给实现中继承，重写部分函数。
         /// </summary>

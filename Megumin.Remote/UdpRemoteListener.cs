@@ -294,6 +294,9 @@ namespace Megumin.Remote
         public AddressFamily? AddressFamily { get; set; } = null;
         protected readonly UdpAuthHelper authHelper = new UdpAuthHelper();
 
+        /// <summary>
+        /// TODO: Recv0不保证能收到，应该启动一个计时器保证安全移除，防止内存泄露。每次收到消息延长生命周期。
+        /// </summary>
         protected readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
         protected readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
 
@@ -623,6 +626,7 @@ namespace Megumin.Remote
                             var remote = await FindRemote(endPoint).ConfigureAwait(false);
                             if (remote != null)
                             {
+                                remote.LastReceiveTime = DateTimeOffset.UtcNow;
                                 remote.RecvLLData(endPoint, recvbuffer.Span.Slice(1, receivedBytes - 1));
                             }
                         }
@@ -632,6 +636,7 @@ namespace Megumin.Remote
                             var remote = await FindRemote(endPoint).ConfigureAwait(false);
                             if (remote != null)
                             {
+                                remote.LastReceiveTime = DateTimeOffset.UtcNow;
                                 remote.RecvUdpData(endPoint, recvbuffer.Span.Slice(1, receivedBytes - 1));
                             }
                         }
@@ -642,6 +647,7 @@ namespace Megumin.Remote
                             var remote = await FindRemote(endPoint).ConfigureAwait(false);
                             if (remote != null)
                             {
+                                remote.LastReceiveTime = DateTimeOffset.UtcNow;
                                 remote.RecvKcpData(endPoint, recvbuffer.Span.Slice(1, receivedBytes - 1));
                             }
                         }
