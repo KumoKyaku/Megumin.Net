@@ -378,12 +378,19 @@ public class TestRemote : TcpRemote, ITestRemote
         base.ProcessBody(bodyBytes, RpcID, CMD, MessageID, options);
     }
 
-    protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+    public override void OnDisconnect(SocketError error, object options = null)
     {
         disCount++;
         log.Dispatcher.Invoke(() =>
         {
-            log.Content += $"\n 网络已断开。调用次数{disCount} \n {error} -- {activeOrPassive}";
+            if (options is DisconnectOptions disconnect)
+            {
+                log.Content += $"\n 网络已断开。调用次数{disCount} \n {error} -- {disconnect.ActiveOrPassive}";
+            }
+            else
+            {
+                log.Content += $"\n 网络已断开。调用次数{disCount} \n {error}";
+            }
         });
     }
 }
@@ -459,12 +466,19 @@ public class TestUdpRemote : UdpRemote, ITestRemote
         base.ProcessBody(bodyBytes, RpcID, CMD, MessageID, options);
     }
 
-    protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+    public override void OnDisconnect(SocketError error, object options = null)
     {
         disCount++;
         log.Dispatcher.Invoke(() =>
         {
-            log.Content += $"\n 网络已断开。调用次数{disCount} \n {error} -- {activeOrPassive}";
+            if (options is DisconnectOptions disconnect)
+            {
+                log.Content += $"\n 网络已断开。调用次数{disCount} \n {error} -- {disconnect.ActiveOrPassive}";
+            }
+            else
+            {
+                log.Content += $"\n 网络已断开。调用次数{disCount} \n {error}";
+            }
         });
     }
 
@@ -552,12 +566,19 @@ public class TestKcpRemote : KcpRemote, ITestRemote
         base.ProcessBody(bodyBytes, RpcID, CMD, MessageID, options);
     }
 
-    protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+    public override void OnDisconnect(SocketError error, object options = null)
     {
         disCount++;
         log.Dispatcher.Invoke(() =>
         {
-            log.Content += $"\n 网络已断开。调用次数{disCount} \n {error} -- {activeOrPassive}";
+            if (options is DisconnectOptions disconnect)
+            {
+                log.Content += $"\n 网络已断开。调用次数{disCount} \n {error} -- {disconnect.ActiveOrPassive}";
+            }
+            else
+            {
+                log.Content += $"\n 网络已断开。调用次数{disCount} \n {error}";
+            }
         });
     }
 

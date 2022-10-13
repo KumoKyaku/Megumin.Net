@@ -225,9 +225,9 @@ namespace Megumin.Remote
                 {
                     MissHearCount = 0;
                     //触发断开。TODO
-                    PreDisconnect(SocketError.TimedOut, ActiveOrPassive.Passive);
-                    OnDisconnect(SocketError.TimedOut, ActiveOrPassive.Passive);
-                    PostDisconnect(SocketError.TimedOut, ActiveOrPassive.Passive);
+                    PreDisconnect(SocketError.TimedOut, null);
+                    OnDisconnect(SocketError.TimedOut, null);
+                    PostDisconnect(SocketError.TimedOut, null);
                     break;
                 }
                 await Task.Delay(intervalMS);

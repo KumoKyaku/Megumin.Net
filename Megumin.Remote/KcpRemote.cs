@@ -87,14 +87,9 @@ namespace Megumin.Remote
             SafeCloseKcpCore();
         }
 
-        protected override void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        {
-            base.OnDisconnect(error, activeOrPassive);
-            TraceListener?.WriteLine($"连接断开");
-        }
-
         public override void PreDisconnect(SocketError error, object options = null)
         {
+            TraceListener?.WriteLine($"连接断开");
             base.PreDisconnect(error, options);
             SafeCloseKcpCore();
         }

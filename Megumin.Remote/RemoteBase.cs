@@ -51,6 +51,7 @@ namespace Megumin.Remote
         /// <param name="error"></param>
         /// <param name="activeOrPassive">主动断开还是被动断开</param>
         /// <remarks>主要用于通知外部停止继续发送</remarks>
+        [Obsolete("Use xxDisconnect(SocketError error, object options = null) instead.", true)]
         protected virtual void PreDisconnect(
             SocketError error = SocketError.SocketError,
             ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
@@ -65,6 +66,7 @@ namespace Megumin.Remote
         /// /// <param name="error"></param>
         /// <param name="activeOrPassive">主动断开还是被动断开</param>
         /// <remarks>可以用于触发重连，并将现有发送缓冲区转移到心得连接中</remarks>
+        [Obsolete("Use xxDisconnect(SocketError error, object options = null) instead.", true)]
         protected virtual void OnDisconnect(
             SocketError error = SocketError.SocketError,
             ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
@@ -78,6 +80,7 @@ namespace Megumin.Remote
         /// </summary>
         /// /// <param name="error"></param>
         /// <param name="activeOrPassive">主动断开还是被动断开</param>
+        [Obsolete("Use xxDisconnect(SocketError error, object options = null) instead.", true)]
         protected virtual void PostDisconnect(
            SocketError error = SocketError.SocketError,
            ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
@@ -483,21 +486,21 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class RemoteBase:IDisconnecHandle
+    public partial class RemoteBase : IDisconnecHandle
     {
         public virtual void PreDisconnect(SocketError error, object options = null)
         {
-            
+
         }
 
         public virtual void OnDisconnect(SocketError error, object options = null)
         {
-            
+
         }
 
         public virtual void PostDisconnect(SocketError error, object options = null)
         {
-            
+
         }
     }
 }

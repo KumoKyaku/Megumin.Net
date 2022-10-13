@@ -252,7 +252,7 @@ public class OpTest : MonoBehaviour
     {
         var send = string.Format(SendMessageText.text, messageIndex);
         Interlocked.Increment(ref messageIndex);
-        Log($"发送：{send}");
+        Log($"client{client.ID} 发送：{send}");
         var resp = await client.SendSafeAwait<string>(send);
         Log($"返回：{resp}");
     }
@@ -321,7 +321,10 @@ public class OpTest : MonoBehaviour
     {
         await MainThread.Switch();
         Log($"\n OnDisconnect {error} : {activeOrPassive}");
-        ReConnect();
+        if (activeOrPassive == ActiveOrPassive.Passive)
+        {
+            ReConnect();
+        }
     }
 
     public void CancelReconnect()
@@ -407,7 +410,7 @@ public class OpTest : MonoBehaviour
                     {
                         //使用旧的remote的rpclayer，sendpipe。
                         client2.ReConnectFrom(oldTcpRemote);
-                        oldTcpRemote = client2;
+                        client = client2;
 
                         RTT.SetTarget(oldTcpRemote);
                         //重连成功
@@ -451,8 +454,9 @@ public class OpTest : MonoBehaviour
             Test.Log($"接收：{finnalException}");
         }
 
-        protected override async void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        public override async void OnDisconnect(SocketError error, object options = null)
         {
+            base.OnDisconnect(error, options);
 #if UNITY_EDITOR
             await MainThread.Switch();
             if (UnityEditor.EditorApplication.isPlaying == false)
@@ -461,7 +465,14 @@ public class OpTest : MonoBehaviour
                 return;
             }
 #endif
-            Test.OnDisconnect(error, activeOrPassive);
+            if (options is DisconnectOptions disconnect)
+            {
+                Test.OnDisconnect(error, disconnect.ActiveOrPassive);
+            }
+            else
+            {
+                Test.OnDisconnect(error, ActiveOrPassive.Passive);
+            }
         }
     }
 
@@ -487,8 +498,9 @@ public class OpTest : MonoBehaviour
             Test.Log($"接收：{finnalException}");
         }
 
-        protected override async void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
+        public override async void OnDisconnect(SocketError error, object options = null)
         {
+            base.OnDisconnect(error, options);
 #if UNITY_EDITOR
             await MainThread.Switch();
             if (UnityEditor.EditorApplication.isPlaying == false)
@@ -497,7 +509,14 @@ public class OpTest : MonoBehaviour
                 return;
             }
 #endif
-            Test.OnDisconnect(error, activeOrPassive);
+            if (options is DisconnectOptions disconnect)
+            {
+                Test.OnDisconnect(error, disconnect.ActiveOrPassive);
+            }
+            else
+            {
+                Test.OnDisconnect(error, ActiveOrPassive.Passive);
+            }
         }
     }
 
@@ -534,6 +553,27 @@ public class OpTest : MonoBehaviour
             }
 #endif
             Test.OnDisconnect(error, activeOrPassive);
+        }
+
+        public override async void OnDisconnect(SocketError error, object options = null)
+        {
+            base.OnDisconnect(error, options);
+#if UNITY_EDITOR
+            await MainThread.Switch();
+            if (UnityEditor.EditorApplication.isPlaying == false)
+            {
+                //防止编辑器停止播放时触发断线重连
+                return;
+            }
+#endif
+            if (options is DisconnectOptions disconnect)
+            {
+                Test.OnDisconnect(error, disconnect.ActiveOrPassive);
+            }
+            else
+            {
+                Test.OnDisconnect(error, ActiveOrPassive.Passive);
+            }
         }
     }
 }

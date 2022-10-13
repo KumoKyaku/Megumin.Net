@@ -45,7 +45,7 @@ namespace Megumin.Remote
             {
                 try
                 {
-                    tcpRemote.PreDisconnect(error, aop);
+                    tcpRemote.PreDisconnect(error, null);
                     tcpRemote.RemoteState = WorkState.StopingAll;
                     //停止收发。
                     tcpRemote.Client.Shutdown(SocketShutdown.Both);
@@ -79,7 +79,7 @@ namespace Megumin.Remote
                             tcpRemote.Client.Close();
                             //触发回调
                             tcpRemote.RemoteState = WorkState.Stoped;
-                            tcpRemote.OnDisconnect(error, aop);
+                            tcpRemote.OnDisconnect(error, null);
                         }
                         catch (Exception e)
                         {
@@ -88,7 +88,7 @@ namespace Megumin.Remote
                         }
                         finally
                         {
-                            tcpRemote.PostDisconnect(error, aop);
+                            tcpRemote.PostDisconnect(error, null);
                         }
                     }
                 }
@@ -133,13 +133,13 @@ namespace Megumin.Remote
 
                     IsDisconnecting = true;
                 }
-
+                var options = new DisconnectOptions() { ActiveOrPassive = ActiveOrPassive.Active };
                 try
                 {
                     //进入断开流程，不允许外部继续Send
                     if (triggerOnDisConnect)
                     {
-                        tcpRemote.PreDisconnect(SocketError.Disconnecting, ActiveOrPassive.Active);
+                        tcpRemote.PreDisconnect(SocketError.Disconnecting, options);
                     }
                     tcpRemote.RemoteState = WorkState.StopingWaitQueueSending;
 
@@ -181,7 +181,7 @@ namespace Megumin.Remote
                             if (triggerOnDisConnect)
                             {
                                 //触发回调
-                                tcpRemote.OnDisconnect(SocketError.Disconnecting, ActiveOrPassive.Active);
+                                tcpRemote.OnDisconnect(SocketError.Disconnecting, options);
                             }
                         }
                         catch (Exception e)
@@ -194,7 +194,7 @@ namespace Megumin.Remote
                             if (triggerOnDisConnect)
                             {
                                 //触发回调
-                                tcpRemote.PostDisconnect(SocketError.Shutdown, ActiveOrPassive.Passive);
+                                tcpRemote.PostDisconnect(SocketError.Shutdown, options);
                             }
                         }
                     }
