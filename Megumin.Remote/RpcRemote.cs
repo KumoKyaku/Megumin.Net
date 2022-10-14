@@ -110,7 +110,7 @@ namespace Megumin.Remote
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void DeserializeSuccess(int rpcID, short cmd, int messageID, object message, object options = null)
+        public override void DeserializeSuccess(int rpcID, short cmd, int messageID, object message, object options = null)
         {
             ///分流普通消息和RPC回复消息
 

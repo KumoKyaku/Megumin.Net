@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 namespace Megumin.Remote
 {
     /// <summary>
+    /// protected 改为 public，准备与传输层拆分。protected强行不让别人调用也没啥必要。
+    /// <para></para>
     /// 逻辑流程定义。
     /// 这个类用来定义Remote功能需要有哪些必要回调函数。
     /// 不定义在<see cref="IRemote"/>是因为这些函数都不应该是public的。
@@ -29,64 +31,7 @@ namespace Megumin.Remote
     /// </remarks>
     public abstract partial class RemoteBase : ISendable
     {
-        /// <summary>
-        /// 究竟要不要初始化内嵌消息.
-        /// </summary>
-        static RemoteBase()
-        {
-            //MessageLUT.Regist(Heartbeat.Default);
-        }
-
-        /// <summary>
-        /// 记录器
-        /// </summary>
-        [Obsolete("Use TraceListener instead.", true)]
-        public IMeguminRemoteLogger Logger { get; set; }
         public System.Diagnostics.TraceListener TraceListener { get; set; }
-
-        /// <summary>
-        /// 当网络连接已经断开, 发送和接受可能有一个没有完全停止。
-        /// <para>todo 这个函数没有处理线程转换</para>
-        /// </summary>
-        /// <param name="error"></param>
-        /// <param name="activeOrPassive">主动断开还是被动断开</param>
-        /// <remarks>主要用于通知外部停止继续发送</remarks>
-        [Obsolete("Use xxDisconnect(SocketError error, object options = null) instead.", true)]
-        protected virtual void PreDisconnect(
-            SocketError error = SocketError.SocketError,
-            ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        {
-
-        }
-
-        /// <summary>
-        /// 断开连接之后
-        /// <para>todo 这个函数没有处理线程转换</para>
-        /// </summary>
-        /// /// <param name="error"></param>
-        /// <param name="activeOrPassive">主动断开还是被动断开</param>
-        /// <remarks>可以用于触发重连，并将现有发送缓冲区转移到心得连接中</remarks>
-        [Obsolete("Use xxDisconnect(SocketError error, object options = null) instead.", true)]
-        protected virtual void OnDisconnect(
-            SocketError error = SocketError.SocketError,
-            ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        {
-
-        }
-
-        /// <summary>
-        /// 断开连接之后
-        /// <para>todo 这个函数没有处理线程转换</para>
-        /// </summary>
-        /// /// <param name="error"></param>
-        /// <param name="activeOrPassive">主动断开还是被动断开</param>
-        [Obsolete("Use xxDisconnect(SocketError error, object options = null) instead.", true)]
-        protected virtual void PostDisconnect(
-           SocketError error = SocketError.SocketError,
-           ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        {
-
-        }
 
         /// <summary>
         /// 序列化消息
@@ -99,7 +44,7 @@ namespace Megumin.Remote
         /// <param name="options"></param>
         /// <returns></returns>
         /// <remarks>只处理 RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
-        protected virtual bool TrySerialize(IBufferWriter<byte> writer, int rpcID, object message, object options = null)
+        public virtual bool TrySerialize(IBufferWriter<byte> writer, int rpcID, object message, object options = null)
         {
             IMeguminFormater formater;
             ///优先使用MessageLut，因为MessageLut是主动注册的。
@@ -146,7 +91,7 @@ namespace Megumin.Remote
         /// <param name="options"></param>
         /// <returns></returns>
         /// <remarks> RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
-        protected virtual bool TrySerialize(IBufferWriter<byte> writer, int rpcID, in ReadOnlySequence<byte> sequence, object options = null)
+        public virtual bool TrySerialize(IBufferWriter<byte> writer, int rpcID, in ReadOnlySequence<byte> sequence, object options = null)
         {
             try
             {
@@ -172,7 +117,7 @@ namespace Megumin.Remote
         /// <param name="writer"></param>
         /// <param name="rpcID"></param>
         /// <param name="options"></param>
-        protected virtual void WriteRpcIDCMD(IBufferWriter<byte> writer, int rpcID, object options = null)
+        public virtual void WriteRpcIDCMD(IBufferWriter<byte> writer, int rpcID, object options = null)
         {
             //写入rpcID CMD
             var span = writer.GetSpan(6);
@@ -195,7 +140,7 @@ namespace Megumin.Remote
         /// <param name="options"></param>
         /// <returns></returns>
         /// <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
-        protected virtual bool TryDeserialize
+        public virtual bool TryDeserialize
             (int messageID, in ReadOnlySequence<byte> byteSequence,
             out object message, object options = null)
         {
@@ -221,7 +166,7 @@ namespace Megumin.Remote
         /// <param name="options"></param>
         /// <returns></returns>
         /// <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
-        protected virtual bool TryDeserialize
+        public virtual bool TryDeserialize
             (int messageID, in ReadOnlyMemory<byte> byteSequence,
             out object message, object options = null)
         {
@@ -247,7 +192,7 @@ namespace Megumin.Remote
         /// <param name="options"></param>
         /// <returns></returns>
         /// <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
-        protected virtual bool TryDeserialize
+        public virtual bool TryDeserialize
             (int messageID, in ReadOnlySpan<byte> byteSequence,
             out object message, object options = null)
         {
@@ -292,7 +237,7 @@ namespace Megumin.Remote
         /// <returns></returns>
         /// <remarks>在Unity中也可以重写这个函数，判断调用线程是不是unity主线程，如果是则不需要转化线程</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual bool UseThreadSchedule(int rpcID, short cmd, int messageID, object message)
+        public virtual bool UseThreadSchedule(int rpcID, short cmd, int messageID, object message)
         {
             if (message is IReceiveThreadControlable controlable && controlable.ReceiveThreadPost2ThreadScheduler.HasValue)
             {
@@ -304,7 +249,7 @@ namespace Megumin.Remote
         /// <summary>
         /// 返回一个空对象，在没有返回时使用。同步完成。
         /// </summary>
-        internal protected static readonly ValueTask<object> NullResult
+        public static readonly ValueTask<object> NullResult
             = new ValueTask<object>(result: null);
 
         /// <summary>
@@ -318,7 +263,7 @@ namespace Megumin.Remote
         /// <param name="message"></param>
         /// <param name="stopReceive"></param>
         /// <returns></returns>
-        protected virtual ValueTask<object> PreReceive(short cmd, int messageID, object message, out bool stopReceive)
+        public virtual ValueTask<object> PreReceive(short cmd, int messageID, object message, out bool stopReceive)
         {
             stopReceive = true;
 
@@ -361,7 +306,7 @@ namespace Megumin.Remote
         /// 由于具体业务逻辑不同，这个函数的签名可能有很多中变化，不能标准化。
         /// <para/> 既然不能标准化，所以也不能声明委托事件，会导致控制流更加复杂。
         /// </remarks>
-        protected virtual ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        public virtual ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
             return NullResult;
         }
@@ -374,7 +319,7 @@ namespace Megumin.Remote
         /// <param name="messageID"></param>
         /// <param name="message"></param>
         /// <param name="options"></param>
-        protected abstract void DeserializeSuccess(int rpcID, short cmd, int messageID, object message, object options = null);
+        public abstract void DeserializeSuccess(int rpcID, short cmd, int messageID, object message, object options = null);
 
         /// <summary>
         /// 处理一个完整的消息包，未解析报头
@@ -382,7 +327,7 @@ namespace Megumin.Remote
         /// <remarks>
         /// 如果想要实现反序列化前转发，重写此方法。
         /// </remarks>
-        protected virtual void ProcessBody(in ReadOnlySequence<byte> byteSequence,
+        public virtual void ProcessBody(in ReadOnlySequence<byte> byteSequence,
                                            object options = null)
         {
             //读取RpcID 和 消息ID
@@ -390,7 +335,7 @@ namespace Megumin.Remote
             ProcessBody(byteSequence.Slice(10), RpcID, CMD, MessageID, options);
         }
 
-        protected virtual void ProcessBody(in ReadOnlySpan<byte> byteSequence,
+        public virtual void ProcessBody(in ReadOnlySpan<byte> byteSequence,
                                            object options = null)
         {
             //读取RpcID 和 消息ID
@@ -398,7 +343,7 @@ namespace Megumin.Remote
             ProcessBody(byteSequence.Slice(10), RpcID, CMD, MessageID, options);
         }
 
-        protected virtual void ProcessBody(in ReadOnlyMemory<byte> byteSequence,
+        public virtual void ProcessBody(in ReadOnlyMemory<byte> byteSequence,
                                            object options = null)
         {
             //读取RpcID 和 消息ID
@@ -413,7 +358,7 @@ namespace Megumin.Remote
         /// <summary>
         /// 处理一个完整的消息包，已分离报头
         /// </summary>
-        protected virtual void ProcessBody(in ReadOnlySequence<byte> bodyBytes,
+        public virtual void ProcessBody(in ReadOnlySequence<byte> bodyBytes,
                                            int RpcID,
                                            short CMD,
                                            int MessageID,
@@ -438,7 +383,7 @@ namespace Megumin.Remote
         /// <summary>
         /// 处理一个完整的消息包，已分离报头
         /// </summary>
-        protected virtual void ProcessBody(in ReadOnlySpan<byte> bodyBytes,
+        public virtual void ProcessBody(in ReadOnlySpan<byte> bodyBytes,
                                            int RpcID,
                                            short CMD,
                                            int MessageID,
@@ -463,7 +408,7 @@ namespace Megumin.Remote
         /// <summary>
         /// 处理一个完整的消息包，已分离报头
         /// </summary>
-        protected virtual void ProcessBody(in ReadOnlyMemory<byte> bodyBytes,
+        public virtual void ProcessBody(in ReadOnlyMemory<byte> bodyBytes,
                                            int RpcID,
                                            short CMD,
                                            int MessageID,

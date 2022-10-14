@@ -165,5 +165,16 @@ namespace Megumin.Remote
             TraceListener?.WriteLine(e.ToString());
             tcpListener = null;
         }
+
+        //public async ValueTask ReadAsync(TcpTransporter trans, UniversalRemote remote)
+        //{
+        //    var socket = await sockets.ReadAsync().ConfigureAwait(false);
+
+        //    remote.Transporter = trans;
+        //    trans.RemoteCore = remote;
+
+        //    trans.SetSocket(socket);
+        //    trans.StartWork();
+        //}
     }
 }

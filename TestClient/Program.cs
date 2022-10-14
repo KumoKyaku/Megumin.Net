@@ -258,19 +258,19 @@ namespace TestClient
     public sealed class TestTcpRemote : TcpRemote
     {
         public Dealer Dealer = new Dealer();
-        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);
+        public override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);
     }
 
     public sealed class TestUdpRemote : UdpRemote
     {
         public Dealer Dealer = new Dealer();
-        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);
+        public override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);
     }
 
     public sealed class TestKcpRemote : KcpRemote
     {
         public Dealer Dealer = new Dealer();
-        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);
+        public override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);
     }
 }
 

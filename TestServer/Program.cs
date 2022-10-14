@@ -246,7 +246,7 @@ namespace TestServer
     {
         static int totalCount;
         int myRecvCount = 0;
-        protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        public async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
             Interlocked.Increment(ref totalCount);
             myRecvCount++;
@@ -273,7 +273,7 @@ namespace TestServer
     {
         static int totalCount;
         int myRecvCount = 0;
-        protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        public async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
             Interlocked.Increment(ref totalCount);
             myRecvCount++;
@@ -300,7 +300,7 @@ namespace TestServer
     {
         static int totalCount;
         int myRecvCount = 0;
-        protected async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        public async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
             Interlocked.Increment(ref totalCount);
             myRecvCount++;

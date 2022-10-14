@@ -314,7 +314,7 @@ public class TestRemote : TcpRemote, ITestRemote
     public bool LogRecvBytes { get; set; }
 
     int disCount = 0;
-    protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+    public override ValueTask<object> OnReceive(short cmd, int messageID, object message)
     {
         log.Dispatcher.Invoke(() =>
         {
@@ -364,7 +364,7 @@ public class TestRemote : TcpRemote, ITestRemote
         return NullResult;
     }
 
-    protected override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, int RpcID, short CMD, int MessageID, object options)
+    public override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, int RpcID, short CMD, int MessageID, object options)
     {
         if (LogRecvBytes)
         {
@@ -402,7 +402,7 @@ public class TestUdpRemote : UdpRemote, ITestRemote
     public bool LogRecvBytes { get; set; }
 
     int disCount = 0;
-    protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+    public override ValueTask<object> OnReceive(short cmd, int messageID, object message)
     {
         log.Dispatcher.Invoke(() =>
         {
@@ -452,7 +452,7 @@ public class TestUdpRemote : UdpRemote, ITestRemote
         return NullResult;
     }
 
-    protected override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, int RpcID, short CMD, int MessageID, object options)
+    public override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, int RpcID, short CMD, int MessageID, object options)
     {
         if (LogRecvBytes)
         {
@@ -502,7 +502,7 @@ public class TestKcpRemote : KcpRemote, ITestRemote
     public bool LogRecvBytes { get; set; }
 
     int disCount = 0;
-    protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+    public override ValueTask<object> OnReceive(short cmd, int messageID, object message)
     {
         log.Dispatcher.Invoke(() =>
         {
@@ -552,7 +552,7 @@ public class TestKcpRemote : KcpRemote, ITestRemote
         return NullResult;
     }
 
-    protected override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, int RpcID, short CMD, int MessageID, object options)
+    public override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, int RpcID, short CMD, int MessageID, object options)
     {
         if (LogRecvBytes)
         {
