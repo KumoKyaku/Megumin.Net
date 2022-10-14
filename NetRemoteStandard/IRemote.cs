@@ -46,10 +46,10 @@ namespace Net.Remote
         /// <param name="retryCount">重试次数，失败会返回最后一次的异常</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
+        /// <remarks>没有timeout参数，可以调用<see cref="CancellationTokenSource.CancelAfter(TimeSpan)"/></remarks>
         Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default);
-        //todo 超时API设计
+        //超时API设计
         //Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, int timeoutMillonseconds = 30000);
-        //Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken token = default);
     }
 
     public interface IDisconnectable
@@ -119,7 +119,19 @@ namespace Net.Remote
     /// <summary>
     /// 可以发送一个消息并期待一个指定类型的返回值
     /// </summary>
-    /// <remarks>为了通用性和框架兼容性，object导致值类型装箱是可以妥协的。</remarks>
+    /// <remarks>
+    /// 为了通用性和框架兼容性，object message导致值类型装箱是可以妥协的。
+    /// RpcResult已经是泛型了，如果message也使用泛型，则需要使用2个泛型，调用出没办法自动类型推导，需要明确指定，严重影响易用性。
+    /// <para/> --------
+    /// <para/> 在这里吐槽几句，可能有人觉得这两个API比较像Go。https://www.zhihu.com/question/451484968
+    /// <para/> 其实本质含义不一样,设计初衷是禁止异常抛出到Send处。
+    ///         基于异步的业务逻辑应该是顺畅的，不应该写try-catch。总不能每个Send位置都去catch SocketException。
+    /// <para/> 但是在网络模块底层拦截所有异常也是不行的，某些业务逻辑有可能需要明确知道异常是什么。
+    ///         所以折衷将异常以返回值的形式传递回调用者处。
+    /// <para/> 这里的精髓是，当后续代码读取结果时，结果一定符合预期，如果不符合预期，后续代码则不会被执行。
+    ///         当出现异常时，允许不触发异步延续，后续代码执行全被吃掉，这是Go所不具备的。
+    /// <para/> SendSafeAwait才是设计的最终目的。而ValueTask(RpcResult result, Exception exception) Send只是对特殊需求的补丁API。
+    /// </remarks>
     public interface ISendCanAwaitable
     {
         /// <summary>
