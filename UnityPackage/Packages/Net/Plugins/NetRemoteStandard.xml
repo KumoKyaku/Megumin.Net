@@ -35,12 +35,13 @@
             可连接的
             </summary>
         </member>
-        <member name="M:Net.Remote.IConnectable.ConnectAsync(System.Net.IPEndPoint,System.Int32)">
+        <member name="M:Net.Remote.IConnectable.ConnectAsync(System.Net.IPEndPoint,System.Int32,System.Threading.CancellationToken)">
             <summary>
             尝试连接。可以重写具体实现并将Auth过程合并在一起。
             </summary>
             <param name="endPoint"></param>
             <param name="retryCount">重试次数，失败会返回最后一次的异常</param>
+            <param name="cancellationToken"></param>
             <returns></returns>
         </member>
         <member name="M:Net.Remote.IDisconnectable.Disconnect(System.Boolean,System.Boolean)">
@@ -49,6 +50,37 @@
             </summary>
             <param name="triggerOnDisConnect">是否触发OnDisConnect</param>
             <param name="waitSendQueue">是否等待发送队列发送完成，如果等待会，具体实现应该触发异步，不应该阻塞</param>
+        </member>
+        <member name="T:Net.Remote.IDisconnectHandler">
+            <summary>
+            Tcp 由数据网络切换到WiFi网络时，会触发一个ConnectReset。
+            </summary>
+        </member>
+        <member name="M:Net.Remote.IDisconnectHandler.PreDisconnect(System.Net.Sockets.SocketError,System.Object)">
+            <summary>
+            当网络连接已经断开, 发送和接受可能有一个没有完全停止。
+            <para>todo 这个函数没有处理线程转换</para>
+            </summary>
+            <param name="error"></param>
+            <param name="options"></param>
+            <remarks>主要用于通知外部停止继续发送</remarks>
+        </member>
+        <member name="M:Net.Remote.IDisconnectHandler.OnDisconnect(System.Net.Sockets.SocketError,System.Object)">
+            <summary>
+            断开连接之后
+            <para>todo 这个函数没有处理线程转换</para>
+            </summary>
+            /// <param name="error"></param>
+            <param name="options"></param>
+            <remarks>可以用于触发重连，并将现有发送缓冲区转移到心得连接中</remarks>
+        </member>
+        <member name="M:Net.Remote.IDisconnectHandler.PostDisconnect(System.Net.Sockets.SocketError,System.Object)">
+            <summary>
+            断开连接之后
+            <para>todo 这个函数没有处理线程转换</para>
+            </summary>
+            /// <param name="error"></param>
+            <param name="options"></param>
         </member>
         <member name="T:Net.Remote.ISendable">
             <summary>
@@ -110,7 +142,7 @@
             </summary>
             <remarks>不要定义OnReceive函数，由于具体业务逻辑不同，这个函数的签名可能有很多中变化，不能标准化。</remarks>
         </member>
-        <member name="P:Net.Remote.IReceiveMessage.LastReceiveTimeFloat">
+        <member name="P:Net.Remote.IReceiveMessage.LastReceiveTime">
             <summary>
             最后一次收到消息的时间戳,因为Unity中时间戳是float
             </summary>
@@ -156,6 +188,11 @@
             指定毫秒后超时，-1表示永不超时。
             </summary>
         </member>
+        <member name="P:Net.Remote.IRpcTimeoutOption.MillisecondsTimeout">
+            <summary>
+            指定毫秒后超时，-1表示永不超时。
+            </summary>
+        </member>
         <member name="P:Net.Remote.ICmdOption.Cmd">
             <summary>
             <![CDATA[
@@ -187,6 +224,18 @@
         <member name="P:Net.Remote.IReconnetCallback.ReTryTimes">
             <summary>
             重试次数
+            </summary>
+        </member>
+        <member name="T:Net.Remote.ISocketSendable">
+            <summary>
+            对Socket进行控制。
+            不一定所有remote都支持。大多时候用于调试
+            </summary>
+        </member>
+        <member name="T:Net.Remote.ISocketReceiveable">
+            <summary>
+            对Socket进行控制。
+            不一定所有remote都支持。大多时候用于调试
             </summary>
         </member>
     </members>

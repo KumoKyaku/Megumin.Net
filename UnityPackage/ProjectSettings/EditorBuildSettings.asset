@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/UdpPortTest.unity
+    path: Assets/RemoteTest.unity
     guid: 17922ab8cd383334781f54dc06b07ca0
   m_configObjects: {}

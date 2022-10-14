@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 增加内置类型序列化
 - 网卡详细信息面板
 - 打包真机测试
+- 增加UDP Kcp支持。
 ### Changed  
 - Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default);
 ### Fixed  

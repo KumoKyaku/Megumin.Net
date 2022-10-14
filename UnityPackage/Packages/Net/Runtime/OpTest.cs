@@ -542,19 +542,6 @@ public class OpTest : MonoBehaviour
             Test.Log($"接收：{finnalException}");
         }
 
-        protected override async void OnDisconnect(SocketError error = SocketError.SocketError, ActiveOrPassive activeOrPassive = ActiveOrPassive.Passive)
-        {
-#if UNITY_EDITOR
-            await MainThread.Switch();
-            if (UnityEditor.EditorApplication.isPlaying == false)
-            {
-                //防止编辑器停止播放时触发断线重连
-                return;
-            }
-#endif
-            Test.OnDisconnect(error, activeOrPassive);
-        }
-
         public override async void OnDisconnect(SocketError error, object options = null)
         {
             base.OnDisconnect(error, options);

@@ -4,18 +4,40 @@
         <name>Megumin.Remote</name>
     </assembly>
     <members>
-        <member name="T:Megumin.Remote.Simple.EchoTcp">
-            <summary>
-            Tcp回声远端
-            </summary>
-        </member>
         <member name="T:Megumin.Remote.KcpRemote">
             <summary>
-            todo 连接kcpid
+            测试发送消息 1000个 1024*10消息，多次发送，有几率假死。
+            debug发现发送的Kcpdata和接收的Kcpdata对不上。发送一个data，接收到的是旧的数据。
+            新的数据不知道去了那里。感觉像卡在系统的接收数据缓冲里。可能是UDP底层出了问题。
+            有可能是数据量过大IOCP出现了假死，UdpClient.ReceiveAsync异步触发出了问题。
+            实在找不到问题所在。暂时搁置。
+            目前处理方法是使用发送心跳包方式保活。收不到直接就进入断线流程。
+            <para></para>
+            工程实践中由于消息是不间断的，总是出现打嗝卡顿，后续消息会触发fastack。假死现象要比测试少一点。
             </summary>
         </member>
         <member name="F:Megumin.Remote.KcpRemote.kcprecv">
             接收===================================================================
+        </member>
+        <member name="T:Megumin.Remote.KcpRemoteListenerOld">
+            <summary>
+            Kcp测试10000连接没有成功。5000也不性。推测应该是UdpListenner一个端口无法处理这么大流量，大量丢包。
+            500个Listener还是有错误发生 deadlink。有的kcp发生断联。
+            其实和连接多少没关系，还是数据量大小的问题。一个UdpRemoteListener不应该处理过多的连接。
+            300个比较合适。
+            工程实践中使用多个端口负载均衡比较好。
+            <para></para>
+            测试发现，当发生打嗝卡顿是，rto迅速增大。启用新的连接rto也会直接增大。
+            所以问题出在接收侧，接收端口无法处理过大的数据量。
+            但是用UDP测试，不能复现这种一个UdpRemoteListener不应该处理过多的连接的情况。尽管丢包现象明显。
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.KcpRemoteListener">
+            <summary>
+            <inheritdoc cref="T:Megumin.Remote.KcpRemoteListenerOld"/>
+            <para>--------</para>
+            新的UdpRemoteListener优化了接收循环，勉强能处理3000个连接。打嗝假死现象减弱了。
+            </summary>
         </member>
         <member name="T:Megumin.Remote.IMessageHeader">
             <summary>
@@ -43,7 +65,7 @@
             处理object消息 消费者接口
             </summary>
         </member>
-        <member name="M:Megumin.Remote.IDealMessageable.Deal(System.Int32,System.Int16,System.Int32,System.Object)">
+        <member name="M:Megumin.Remote.IDealMessageable.Deal(System.Int32,System.Int16,System.Int32,System.Object,System.Object)">
             <summary>
             处理消息实例
             </summary>
@@ -51,6 +73,7 @@
             <param name="cmd"></param>
             <param name="messageID"></param>
             <param name="message"></param>
+            <param name="options"></param>
         </member>
         <member name="T:Megumin.Remote.IDealMessageable`1">
             <summary>
@@ -89,15 +112,16 @@
             <returns></returns>
             <exception cref="T:System.ArgumentNullException"></exception>
         </member>
-        <member name="M:Megumin.Remote.MessageThreadTransducer.Push(System.Int32,System.Int16,System.Int32,System.Object,Megumin.Remote.IDealMessageable)">
+        <member name="M:Megumin.Remote.MessageThreadTransducer.Push(Megumin.Remote.IDealMessageable,System.Int32,System.Int16,System.Int32,System.Object,System.Object)">
             <summary>
             专用函数,比<see cref="M:Megumin.Remote.MessageThreadTransducer.Switch"/>性能高,但是通用性不好
             </summary>
+            <param name="r"></param>
             <param name="rpcID"></param>
             <param name="cmd"></param>
             <param name="messageID"></param>
             <param name="message"></param>
-            <param name="r"></param>
+            <param name="options"></param>
             <exception cref="T:System.ArgumentNullException"></exception>
         </member>
         <member name="M:Megumin.Remote.MessageThreadTransducer.Push``1(``0,System.Object,Megumin.Remote.IDealMessageable{``0})">
@@ -195,14 +219,23 @@
             记录器
             </summary>
         </member>
-        <member name="M:Megumin.Remote.RemoteBase.OnDisconnect(System.Net.Sockets.SocketError,Megumin.Remote.ActiveOrPassive)">
+        <member name="M:Megumin.Remote.RemoteBase.PreDisconnect(System.Net.Sockets.SocketError,Megumin.Remote.ActiveOrPassive)">
             <summary>
-            当网络连接已经断开
+            当网络连接已经断开, 发送和接受可能有一个没有完全停止。
             <para>todo 这个函数没有处理线程转换</para>
             </summary>
             <param name="error"></param>
             <param name="activeOrPassive">主动断开还是被动断开</param>
-            <remarks>主要用于通知外部停止继续发送，在这个函数被动调用前，允许Send，在这个函数调用后，不在允许Send</remarks>
+            <remarks>主要用于通知外部停止继续发送</remarks>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.OnDisconnect(System.Net.Sockets.SocketError,Megumin.Remote.ActiveOrPassive)">
+            <summary>
+            断开连接之后
+            <para>todo 这个函数没有处理线程转换</para>
+            </summary>
+            /// <param name="error"></param>
+            <param name="activeOrPassive">主动断开还是被动断开</param>
+            <remarks>可以用于触发重连，并将现有发送缓冲区转移到心得连接中</remarks>
         </member>
         <member name="M:Megumin.Remote.RemoteBase.PostDisconnect(System.Net.Sockets.SocketError,Megumin.Remote.ActiveOrPassive)">
             <summary>
@@ -211,7 +244,6 @@
             </summary>
             /// <param name="error"></param>
             <param name="activeOrPassive">主动断开还是被动断开</param>
-            <remarks>可以用于触发重连，并将现有发送缓冲区转移到心得连接中</remarks>
         </member>
         <member name="M:Megumin.Remote.RemoteBase.TrySerialize(System.Buffers.IBufferWriter{System.Byte},System.Int32,System.Object,System.Object)">
             <summary>
@@ -246,6 +278,28 @@
             <param name="options"></param>
         </member>
         <member name="M:Megumin.Remote.RemoteBase.TryDeserialize(System.Int32,System.Buffers.ReadOnlySequence{System.Byte}@,System.Object@,System.Object)">
+            <summary>
+            尝试反序列化
+            </summary>
+            <param name="messageID"></param>
+            <param name="byteSequence"></param>
+            <param name="message"></param>
+            <param name="options"></param>
+            <returns></returns>
+            <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.TryDeserialize(System.Int32,System.ReadOnlyMemory{System.Byte}@,System.Object@,System.Object)">
+            <summary>
+            尝试反序列化
+            </summary>
+            <param name="messageID"></param>
+            <param name="byteSequence"></param>
+            <param name="message"></param>
+            <param name="options"></param>
+            <returns></returns>
+            <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.TryDeserialize(System.Int32,System.ReadOnlySpan{System.Byte}@,System.Object@,System.Object)">
             <summary>
             尝试反序列化
             </summary>
@@ -312,7 +366,7 @@
             <para/> 既然不能标准化，所以也不能声明委托事件，会导致控制流更加复杂。
             </remarks>
         </member>
-        <member name="M:Megumin.Remote.RemoteBase.DeserializeSuccess(System.Int32,System.Int16,System.Int32,System.Object)">
+        <member name="M:Megumin.Remote.RemoteBase.DeserializeSuccess(System.Int32,System.Int16,System.Int32,System.Object,System.Object)">
             <summary>
             解析消息成功
             </summary>
@@ -320,21 +374,47 @@
             <param name="cmd"></param>
             <param name="messageID"></param>
             <param name="message"></param>
+            <param name="options"></param>
         </member>
         <member name="M:Megumin.Remote.RemoteBase.ProcessBody(System.Buffers.ReadOnlySequence{System.Byte}@,System.Object)">
             <summary>
             处理一个完整的消息包，未解析报头
             </summary>
+            <remarks>
+            如果想要实现反序列化前转发，重写此方法。
+            </remarks>
         </member>
         <member name="F:Megumin.Remote.RemoteBase.UseByteArrayOnDeserializeError">
             <summary>
             反序列化失败时，是否将直接字节数组传递到上层。
             </summary>
         </member>
-        <member name="M:Megumin.Remote.RemoteBase.ProcessBody(System.Buffers.ReadOnlySequence{System.Byte}@,System.Object,System.Int32,System.Int16,System.Int32)">
+        <member name="M:Megumin.Remote.RemoteBase.ProcessBody(System.Buffers.ReadOnlySequence{System.Byte}@,System.Int32,System.Int16,System.Int32,System.Object)">
             <summary>
             处理一个完整的消息包，已分离报头
             </summary>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.ProcessBody(System.ReadOnlySpan{System.Byte}@,System.Int32,System.Int16,System.Int32,System.Object)">
+            <summary>
+            处理一个完整的消息包，已分离报头
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.ProcessBody(System.ReadOnlyMemory{System.Byte}@,System.Int32,System.Int16,System.Int32,System.Object)">
+            <summary>
+            处理一个完整的消息包，已分离报头
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.RemoteExtension.Rtt(Net.Remote.ISendCanAwaitable)">
+            <summary>
+            测试往返时间。
+            <para></para>
+            这里不用ConfigureAwait(false);将线程调度消耗的时间计算在Rtt内。
+            </summary>
+            <param name="send"></param>
+            <returns>
+            往返时间毫秒数。
+            负数表示无法联通。
+            </returns>
         </member>
         <member name="T:Megumin.Remote.RpcRemote">
             <summary>
@@ -354,7 +434,7 @@
             <param name="rpcID"></param>
             <param name="reply"></param>
         </member>
-        <member name="M:Megumin.Remote.RpcRemote.Push2MessageThreadTransducer(System.Int32,System.Int16,System.Int32,System.Object)">
+        <member name="M:Megumin.Remote.RpcRemote.Push2MessageThreadTransducer(System.Int32,System.Int16,System.Int32,System.Object,System.Object)">
             <summary>
             推到线程转化器中
             </summary>
@@ -362,7 +442,8 @@
             <param name="cmd"></param>
             <param name="messageID"></param>
             <param name="message"></param>
-            <remarks>独立一个函数，不然<see cref="M:Megumin.Remote.MessageThreadTransducer.Push(System.Int32,System.Int16,System.Int32,System.Object,Megumin.Remote.IDealMessageable)"/>继承者无法调用</remarks>
+            <param name="options"></param>
+            <remarks>独立一个函数，不然<see cref="M:Megumin.Remote.MessageThreadTransducer.Push(Megumin.Remote.IDealMessageable,System.Int32,System.Int16,System.Int32,System.Object,System.Object)"/>继承者无法调用</remarks>
         </member>
         <member name="T:Megumin.Remote.Rpc.RcpTimeoutException">
             <summary>
@@ -489,6 +570,16 @@
             <para/> null表示不控制，由其他设置决定;
             </summary>
         </member>
+        <member name="P:Megumin.Remote.IForceUdpDataOnKcpRemote.ForceUdp">
+            <summary>
+            rpc时只能自己这面能UDP，对面返回时还是Kcp
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.SocketCloser">
+            <summary>
+            安全关闭一个socket很麻烦，根本搞不清楚调用那个函数会抛出异常。
+            </summary>
+        </member>
         <member name="T:Megumin.Remote.TcpRemote">
             <summary>
             
@@ -499,7 +590,13 @@
         <member name="T:Megumin.Remote.TcpRemote.Disconnector">
             <summary>
             断开器
-            file:///E:\Git\Megumin.Net\Doc\如何正确处理网络断开.md
+            file:///W:\Git\Megumin.Net\Doc\如何正确处理网络断开.md
+            https://stackoverflow.com/questions/35229143/what-exactly-do-sockets-shutdown-disconnect-close-and-dispose-do
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.TcpRemote.Disconnector.IsDisconnecting">
+            <summary>
+            设置为true后，不需要重置为false，因为设计上一个remote只能触发断开一次。
             </summary>
         </member>
         <member name="M:Megumin.Remote.TcpRemote.Disconnector.OnRecv0">
@@ -549,13 +646,9 @@
             当前状态,使用此标记控制 底层发送 底层接收 接收数据处理三个循环正确退出。
             </summary>
         </member>
-        <member name="M:Megumin.Remote.TcpRemote.#ctor">
-            <summary>
-            Mono/IL2CPP 请使用中使用<see cref="M:Megumin.Remote.TcpRemote.#ctor(System.Net.Sockets.AddressFamily)"/>
-            </summary>
-        </member>
         <member name="M:Megumin.Remote.TcpRemote.#ctor(System.Net.Sockets.AddressFamily)">
             <remarks>
+            明确指定使用IPV4还是IPV6
             <para>SocketException: Protocol option not supported</para>
             http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
             </remarks>
@@ -569,7 +662,7 @@
         </member>
         <member name="M:Megumin.Remote.TcpRemote.StartWork">
             <summary>
-            开始发送接收
+            开始发送接收 TODO,拆分成4个函数
             </summary>
         </member>
         <member name="F:Megumin.Remote.TcpRemote._connectlock">
@@ -581,6 +674,19 @@
             <summary>
             正在连接
             </summary>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemote.ReConnectFrom(Megumin.Remote.TcpRemote)">
+            <summary>
+            将oldRemote的SendPipe和RpcLayer赋值给当前remote。
+            </summary>
+            <remarks>
+            断线重连三种方式：
+            <para/> 1: 新创建一个Socket，设置到旧的remote中。
+            <para/> 2：新建一个remote，并使用旧的remote的rpclayer，sendpipe。
+            <para/> 3：新建一个remote，旧的remote使用 新remote的socket revepipe,重新激活旧的remote
+            <para/> 只有方法2成立。重连后需要进行验证流程，需要收发消息甚至rpc功能，需要使用remote功能，所以1不成立。
+            <para/> 收发消息后，socket ReceiveAsync已经挂起，socket已经和remote绑定，不能切换socket，所以方法3不成立。
+            </remarks>
         </member>
         <member name="P:Megumin.Remote.TcpRemote.SendPipe">
             <summary>
@@ -607,7 +713,26 @@
             <para/>https://source.dot.net/#System.IO.Pipelines/System/IO/Pipelines/PipeAwaitable.cs,115
             </remarks>
         </member>
+        <member name="P:Megumin.Remote.TcpRemote.RecvPipe">
+            <summary>
+            不使用线程同步上下文，全部推送到线程池调用。useSynchronizationContext 用来保证await前后线程一致。
+            <para/>
+            FlushAsync后，另一头的触发是通过ThreadPoolScheduler来触发的，不是调用FlushAsync的线程，
+            所以useSynchronizationContext = false时，不用担心 IOCP线程 执行pipeReader，反序列化等造成IOCP线程阻塞问题。
+            </summary>
+            <remarks>
+            <para/>useSynchronizationContext 如果为true的话，
+            <para/>那么pipe read write 异步后续只会在调用线程执行。
+            <para/>构造 连接 StartWork调用链通常导致pipe异步后续在unity中会被锁定在主线程。
+            <para/>https://source.dot.net/#System.IO.Pipelines/System/IO/Pipelines/PipeAwaitable.cs,115
+            </remarks>
+        </member>
         <member name="P:Megumin.Remote.TcpRemote.IsReceiving">
+            <summary>
+            当前socket是不是在接收。
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.TcpRemote.IsSocketReceiving">
             <summary>
             当前socket是不是在接收。
             </summary>
@@ -618,7 +743,17 @@
             </summary>
             <param name="pipeWriter"></param>
         </member>
+        <member name="M:Megumin.Remote.TcpRemote.StopMessageReceive">
+            <summary>
+            此方法没有经过测试
+            </summary>
+        </member>
         <member name="P:Megumin.Remote.TcpRemote.IsDealReceiving">
+            <summary>
+            正在处理消息
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.TcpRemote.IsMessageReceiving">
             <summary>
             正在处理消息
             </summary>
@@ -629,10 +764,7 @@
             </summary>
             <param name="pipeReader"></param>
         </member>
-        <member name="P:Megumin.Remote.TcpRemote.LastReceiveTimeFloat">
-            <remarks>留给Unity用的。在unity中赋值</remarks>
-        </member>
-        <member name="M:Megumin.Remote.TcpRemoteListener.ListenAsync``1(System.Func{``0})">
+        <member name="M:Megumin.Remote.TcpRemoteListenerOld.ListenAsync``1(System.Func{``0})">
             <summary>
             创建TCPRemote并开始接收
             </summary>
@@ -646,11 +778,6 @@
         <member name="M:Megumin.Remote.ISendBlock.SendSuccess">
             <summary>
             发送成功
-            </summary>
-        </member>
-        <member name="M:Megumin.Remote.ISendBlock.NeedToResend">
-            <summary>
-            当前消息需要重写发送
             </summary>
         </member>
         <member name="P:Megumin.Remote.ISendBlock.SendMemory">
@@ -672,12 +799,6 @@
             <summary>
             放弃发送，废弃当前写入器
             </summary>
-        </member>
-        <member name="M:Megumin.Remote.IWriter.PackSuccess">
-            <summary>
-            消息打包成功
-            </summary>
-            <returns>消息总长度</returns>
         </member>
         <member name="M:Megumin.Remote.IWriter.WriteLengthOnHeader">
             <summary>
@@ -701,16 +822,6 @@
             </summary>
             <param name="sizeHint"></param>
         </member>
-        <member name="M:Megumin.Remote.TcpSendPipe.Writer.NeedToResend">
-            <summary>
-            TODO: BUG,这里需要重新发送的消息应该防止开始位置保证消息的有序性.要保证ReadNext时返回这个消息.
-            </summary>
-        </member>
-        <member name="F:Megumin.Remote.TcpSendPipe.sendFailQueue">
-            <summary>
-            发送失败队列
-            </summary>
-        </member>
         <member name="M:Megumin.Remote.TcpSendPipe.GetWriter">
             <summary>
             取得一个可用写入器
@@ -723,12 +834,31 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Megumin.Remote.TcpSendPipe.CancelPendingRead">
+            <summary>
+            取消正在挂起的ReadNext
+            </summary>
+            <remarks>
+            会导致Socket发送循环中断，需要重新调用ReadSendPipe。
+            用于断线重连时，将旧的Remote的SendPipe，赋值给新的Remote，并取消旧的Remote的pending。
+            </remarks>
+        </member>
         <member name="T:Megumin.Remote.TimeStampSynchronization">
             <summary>
             时间戳同步
             </summary>
         </member>
-        <member name="F:Megumin.Remote.UdpRemoteMessageDefine.LLMsg">
+        <member name="M:Megumin.Remote.TimeStampSynchronization.Sync(Net.Remote.ISendCanAwaitable,System.Int32,System.Int32)">
+            <summary>
+            实测受到延迟和丢包率影响。延迟对结果影响不大。丢包率在5%误差100ms左右
+            <para>count 10-20 interval 50ms-100比较合适</para>
+            </summary>
+            <param name="remote"></param>
+            <param name="count"></param>
+            <param name="interval"></param>
+            <returns></returns>
+        </member>
+        <member name="F:Megumin.Remote.UdpRemoteMessageDefine.LLData">
             <summary>
             低级别消息，没有rpc等高级功能，不经过Kcp等附加协议，直接处理
             </summary>
@@ -738,10 +868,70 @@
             Udp认证请求
             </summary>
         </member>
+        <member name="T:Megumin.Remote.UdpAuthHelper">
+            <summary>
+            https://zhuanlan.zhihu.com/p/152590226
+            用于Udp传输层级别认证和重连。
+            应对切换网卡，切换网络出口，WiFi和数据网络切换时自动认证。而无需触发应用层断线重连机制。
+            具体表现是，用户手机离开和进入WiFi时，Udp和Kcp，不会断连。
+            <para></para>
+            Tcp协议无法实现此功能，tcp切换网络出口，必定触发断开。
+            但是数据网络切换基站，不会触发断开，网络供应商不会因为切换基站就改变你的IP，即使你坐在高铁上。
+            </summary>
+        </member>
         <member name="T:Megumin.Remote.UdpAuthResponse">
             <summary>
             Udp认证应答
             </summary>
+        </member>
+        <member name="M:Megumin.Remote.UdpBufferWriter.Pop">
+            <summary>
+            弹出一个序列化完毕的缓冲。
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Remote.UdpBufferWriter.Ensure(System.Int32)">
+            <summary>
+            确保当前buffer足够大
+            </summary>
+            <param name="sizeHint"></param>
+        </member>
+        <member name="T:Megumin.Remote.UdpRemote">
+            <summary>
+            <inheritdoc/>
+            <para></para>
+            Unity中必须,明确指定使用IPV4还是IPV6。无论什么平台。可能是mono的问题。
+            <para>SocketException: Protocol option not supported</para>
+            http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.UdpRemote.IsListenSide">
+            <summary>
+            是不是监听侧Remote
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.UdpRemote.KcpIOChannel">
+            <summary>
+            为kcp预留
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.UdpRemote.SetSocket(System.Net.Sockets.Socket,System.Boolean)">
+            <summary>
+            设置Client Socket
+            </summary>
+            <param name="socket"></param>
+            <param name="reconnectForce"></param>
+        </member>
+        <member name="M:Megumin.Remote.UdpRemote.ConnectAsync(System.Net.IPEndPoint,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            <inheritdoc/>
+            <para></para>
+            Unity中必须明确指定使用IPV4还是IPV6。无论什么平台。可能是mono的问题。
+            </summary>
+            <param name="endPoint"></param>
+            <param name="retryCount"></param>
+            <param name="cancellationToken"></param>
+            <returns></returns>
         </member>
         <member name="M:Megumin.Remote.UdpRemote.DealAuthBuffer(System.Net.IPEndPoint,System.Byte[])">
             <summary>
@@ -750,11 +940,15 @@
             <param name="endPoint"></param>
             <param name="recvbuffer"></param>
         </member>
-        <member name="M:Megumin.Remote.UdpRemote.Writer.Pop">
+        <member name="M:Megumin.Remote.UdpRemote.ConnectSideShutdown(System.Boolean,System.Boolean)">
             <summary>
-            弹出一个序列化完毕的缓冲。
+            连接测主动断开，shutdown，先向对面发送一个0字节消息，对面会触发Recv0（不保证对面能收到）。
+            监听侧启动一个计时器保证安全移除。
+            然后关闭自己一侧Socket。
+            Udp断开没有使用4次挥手来保证可靠。只是粗略进行断开。大致能用就行了。
             </summary>
-            <returns></returns>
+            <param name="triggerOnDisConnect"></param>
+            <param name="waitSendQueue"></param>
         </member>
         <member name="M:Megumin.Remote.UdpRemote.SocketSend(System.Buffers.IMemoryOwner{System.Byte},System.Int32)">
             <summary>
@@ -763,32 +957,23 @@
             <param name="buffer"></param>
             <param name="lenght"></param>
         </member>
-        <member name="M:Megumin.Remote.UdpRemote.ClientSideRecv">
+        <member name="M:Megumin.Remote.UdpRemote.ConnectSideSocketReceive">
             <summary>
             主动侧需要手动开启接收，被动侧由listener接收然后分发
             </summary>
             <param name="port"></param>
         </member>
-        <member name="M:Megumin.Remote.UdpRemote.ServerSideRecv(System.Net.IPEndPoint,System.Byte[],System.Int32,System.Int32)">
-            <summary>
-            主动侧需要手动开启接收，被动侧由listener接收然后分发
-            </summary>
-            <param name="endPoint"></param>
-            <param name="buffer"></param>
-            <param name="offset"></param>
-            <param name="count"></param>
-        </member>
-        <member name="T:Megumin.Remote.UdpRemoteListener">
+        <member name="T:Megumin.Remote.UdpRemoteListenerOld">
             <summary>
             2018年时IPV4 IPV6 udp中不能混用，不知道现在情况
             </summary>
         </member>
-        <member name="F:Megumin.Remote.UdpRemoteListener.UdpReceives">
+        <member name="F:Megumin.Remote.UdpRemoteListenerOld.UdpReceives">
             <remarks>
             Q:要不要用同步队列，预计有多个线程入队，只有一个线程出队，会不会有线程安全问题？
             </remarks>
         </member>
-        <member name="F:Megumin.Remote.UdpRemoteListener.SendSockets">
+        <member name="F:Megumin.Remote.UdpRemoteListenerOld.SendSockets">
              <summary>
              服务端使用20个Socket向客户端发送.
              <para/> TODO NAT情况复杂，可能无法发送 https://www.cnblogs.com/mq0036/p/4644776.html
@@ -801,14 +986,41 @@
              最开始可以先用listen端口发送，异步测试是否支持，等到能支持时转到SendSockets发送。，不支持必须使用 listen端口发送。
              </summary>
         </member>
-        <member name="M:Megumin.Remote.UdpRemoteListener.AcceptAsync">
+        <member name="M:Megumin.Remote.UdpRemoteListenerOld.AcceptAsync">
             <remarks>
             Q：如果同时调用多次ReceiveAsync有没有实际意义？能不能达到加速接收的目的？
             </remarks>
         </member>
-        <member name="M:Megumin.Remote.UdpRemoteListener.Deal">
+        <member name="M:Megumin.Remote.UdpRemoteListenerOld.Deal">
             <summary>
             接收和处理分开
+            </summary>
+        </member>
+        <member name="F:Megumin.Remote.UdpRemoteListener.connected">
+            <summary>
+            TODO: Recv0不保证能收到，应该启动一个计时器保证安全移除，防止内存泄露。每次收到消息延长生命周期。
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.UdpRemoteListener.#ctor(System.Int32,System.Nullable{System.Net.Sockets.AddressFamily})">
+            <summary>
+            Unity中必须明确指定使用IPV4还是IPV6。无论什么平台。可能是mono的问题。
+            </summary>
+            <param name="port"></param>
+            <param name="addressFamily"></param>
+        </member>
+        <member name="M:Megumin.Remote.UdpRemoteListener.DelayRemove(System.Net.IPEndPoint,Megumin.Remote.UdpRemote)">
+            <summary>
+            用于主动或被动断开连接后，从查询列表中移除。
+            </summary>
+            <param name="endPoint"></param>
+            <param name="remote"></param>
+        </member>
+        <member name="F:Megumin.Remote.UdpRemoteListener.recvBuffer">
+            <summary>
+            0x10000 = 65535 Udp报头len占16位。
+            UDP允许传输的最大长度理论上2^16 - udp head - iphead（ 65507 字节 = 65535 - 20 - 8）
+            https://blog.csdn.net/flybirddizi/article/details/73065667
+            https://source.dot.net/#System.Net.Sockets/System/Net/Sockets/UDPClient.cs,16
             </summary>
         </member>
         <member name="T:Megumin.Remote.ActiveOrPassive">
@@ -840,6 +1052,18 @@
             <summary>
             预留给用户使用的ID，（用户自己赋值ID，自己管理引用，框架不做处理）
             </summary>
+        </member>
+        <member name="T:Megumin.Remote.QueuePipe`1">
+            <summary>
+            <inheritdoc cref="!:IPipe&lt;T&gt;"/>
+            <para></para>这是个简单的实现,更复杂使用微软官方实现<see cref="!:System.Threading.Channels.Channel.CreateBounded&lt;T&gt;(int)"/>
+            </summary>
+            <typeparam name="T"></typeparam>
+            <remarks>
+            <para/> 如果能用 while(true),就不要用递归。
+            <para/> 在捕捉上下文时，while(true)堆栈更少更清晰，逻辑上复合直觉，不容易爆栈。
+            <para/> 递归还会导致方法引用计数增加，阅读代码时制造混乱。
+            </remarks>
         </member>
         <member name="T:System.Threading.Tasks.MiniTask`1">
             <summary>

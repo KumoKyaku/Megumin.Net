@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.megumin.explosion4unity": "file:W:/Git/Megumin.Explosion/Megumin.UnityPackage/Packages/megumin.explosion4unity",
+    "com.megumin.explosion4unity": "https://github.com/KumoKyaku/Megumin.Explosion.git?path=Megumin.UnityPackage/Packages/megumin.explosion4unity",
     "com.tayx.graphy": "https://github.com/Tayx94/graphy.git",
     "com.unity.2d.animation": "8.0.3",
     "com.unity.2d.pixel-perfect": "5.0.1",
