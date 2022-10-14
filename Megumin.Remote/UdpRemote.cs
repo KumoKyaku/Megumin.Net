@@ -390,32 +390,17 @@ namespace Megumin.Remote
                     //主动侧不处理验证应答。
                     break;
                 case UdpRemoteMessageDefine.LLData:
-                    RecvLLData(endPoint, recvbuffer, start + 1, count - 1);
+                    RecvLLData(endPoint, new ReadOnlySpan<byte>(recvbuffer, start + 1, count - 1));
                     break;
                 case UdpRemoteMessageDefine.UdpData:
-                    RecvUdpData(endPoint, recvbuffer, start + 1, count - 1);
+                    RecvUdpData(endPoint, new ReadOnlySpan<byte>(recvbuffer, start + 1, count - 1));
                     break;
                 case UdpRemoteMessageDefine.KcpData:
-                    RecvKcpData(endPoint, recvbuffer, start + 1, count - 1);
+                    RecvKcpData(endPoint, new ReadOnlySpan<byte>(recvbuffer, start + 1, count - 1));
                     break;
                 default:
                     break;
             }
-        }
-
-        internal protected virtual void RecvLLData(IPEndPoint endPoint, byte[] buffer, int start, int count)
-        {
-            ProcessBody(new ReadOnlySequence<byte>(buffer, start, count));
-        }
-
-        internal protected virtual void RecvUdpData(IPEndPoint endPoint, byte[] buffer, int start, int count)
-        {
-            ProcessBody(new ReadOnlySequence<byte>(buffer, start, count));
-        }
-
-        internal protected virtual void RecvKcpData(IPEndPoint endPoint, byte[] buffer, int start, int count)
-        {
-
         }
 
         internal protected virtual void RecvLLData(IPEndPoint endPoint, ReadOnlySpan<byte> buffer)

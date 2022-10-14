@@ -151,7 +151,7 @@ namespace Megumin.Remote
                         var remote = await FindRemote(endPoint).ConfigureAwait(false);
                         if (remote != null)
                         {
-                            remote.RecvLLData(endPoint, recvbuffer, 1, recvbuffer.Length - 1);
+                            remote.RecvLLData(endPoint, new ReadOnlySpan<byte>(recvbuffer, 1, recvbuffer.Length - 1));
                         }
                     }
                     break;
@@ -160,7 +160,7 @@ namespace Megumin.Remote
                         var remote = await FindRemote(endPoint).ConfigureAwait(false);
                         if (remote != null)
                         {
-                            remote.RecvUdpData(endPoint, recvbuffer, 1, recvbuffer.Length - 1);
+                            remote.RecvUdpData(endPoint, new ReadOnlySpan<byte>(recvbuffer, 1, recvbuffer.Length - 1));
                         }
                     }
 
@@ -170,7 +170,7 @@ namespace Megumin.Remote
                         var remote = await FindRemote(endPoint).ConfigureAwait(false);
                         if (remote != null)
                         {
-                            remote.RecvKcpData(endPoint, recvbuffer, 1, recvbuffer.Length - 1);
+                            remote.RecvKcpData(endPoint, new ReadOnlySpan<byte>(recvbuffer, 1, recvbuffer.Length - 1));
                         }
                     }
                     break;

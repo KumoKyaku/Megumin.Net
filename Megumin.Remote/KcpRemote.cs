@@ -248,15 +248,6 @@ namespace Megumin.Remote
         }
 
         //readonly object lockobj = new object();
-        internal protected override void RecvKcpData(IPEndPoint endPoint, byte[] buffer, int start, int count)
-        {
-            //lock (lockobj)
-            {
-                //由于FindRemote 是异步，可能挂起多个RecvKcpData，当异步恢复时，可能导致多线程同时调用此处。
-                KcpCore.Input(new ReadOnlySpan<byte>(buffer, start, count));
-            }
-        }
-
         protected internal override void RecvKcpData(IPEndPoint endPoint, ReadOnlySpan<byte> buffer)
         {
             //lock (lockobj)
