@@ -149,9 +149,26 @@ namespace Megumin.Remote
         {
             if (IsListenSide)
             {
-                //监听侧是公用的socket，不用做处理。
-                //应该给连接端发一条特殊消息，要求连接端主动断开。
-                throw new InvalidOperationException($"监听端不应该主动调用断开。");
+                if (UdpRemoteListener != null)
+                {
+                    //监听侧是公用的socket，不用做处理。
+                    UdpRemoteListener.DelayRemove(ConnectIPEndPoint, this);
+                    //给连接端发一条特殊消息
+                    Client.SendToAsync(new ArraySegment<byte>(Disconnect0Buffer, 0, 0), SocketFlags.None, ConnectIPEndPoint)
+                                .ConfigureAwait(false);
+                    var options = new DisconnectOptions() { ActiveOrPassive = ActiveOrPassive.Active };
+                    if (triggerOnDisConnect)
+                    {
+                        PreDisconnect(SocketError.Disconnecting, options);
+                        OnDisconnect(SocketError.Disconnecting, options);
+                        PostDisconnect(SocketError.Disconnecting, options);
+                    }
+                    IsVaild = false;
+                }
+                else
+                {
+                    throw new NotSupportedException("UdpRemoteListener == null");
+                }
             }
             else
             {
@@ -352,6 +369,12 @@ namespace Megumin.Remote
 
         protected virtual void InnerDeal(IPEndPoint endPoint, byte[] recvbuffer, int start, int count)
         {
+            if (recvbuffer.Length == 0 || count == 0)
+            {
+                Recv0(endPoint);
+                return;
+            }
+
             byte messageType = recvbuffer[start];
             switch (messageType)
             {

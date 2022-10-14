@@ -299,7 +299,7 @@ namespace Megumin.Remote
         /// </summary>
         protected readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
         protected readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
-
+        public TraceListener TraceListener { get; set; }
         public Socket ListenerSocket { get; protected set; }
         public int SendSocketCount { get; set; } = 10;
         public List<Socket> SendSockets = new List<Socket>();
@@ -404,7 +404,26 @@ namespace Megumin.Remote
             return remote;
         }
 
-        public TraceListener TraceListener { get; set; }
+        /// <summary>
+        /// 用于主动或被动断开连接后，从查询列表中移除。
+        /// </summary>
+        /// <param name="endPoint"></param>
+        /// <param name="remote"></param>
+        public void DelayRemove(IPEndPoint endPoint, UdpRemote remote)
+        {
+            Task.Run(async () =>
+            {
+                //120秒后从列表中移除。
+                /// Q:为什么不立刻移除？
+                /// A:Udp是不保证顺序的，可能断开的短时间内还有之前发送的包收到。如果立刻移除会触发重新认证。
+                await Task.Delay(120000);
+                connected.Remove(endPoint);
+                if (remote.GUID.HasValue)
+                {
+                    lut.Remove(remote.GUID.Value);
+                }
+            });
+        }
     }
 
     public partial class UdpRemoteListener
@@ -597,18 +616,7 @@ namespace Megumin.Remote
                     if (connected.TryGetValue(endPoint, out var remote))
                     {
                         remote.Recv0(endPoint);
-#pragma warning disable CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
-                        Task.Run(async () =>
-                        {
-                            //120秒后从列表中移除。
-                            await Task.Delay(120000);
-                            connected.Remove(endPoint);
-                            if (remote.GUID.HasValue)
-                            {
-                                lut.Remove(remote.GUID.Value);
-                            }
-                        });
-#pragma warning restore CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
+                        DelayRemove(endPoint, remote);
                     }
                     return;
                 }
@@ -658,7 +666,6 @@ namespace Megumin.Remote
                 }
             }
         }
-
     }
 }
 
