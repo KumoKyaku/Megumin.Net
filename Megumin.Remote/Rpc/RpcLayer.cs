@@ -10,7 +10,7 @@ namespace Megumin.Remote.Rpc
     {
         void Send(K rpcID, object message, object options = null);
         /// <summary>
-        ///  <see cref="ISendCanAwaitable.SendSafeAwait{RpcResult}(object, Action{Exception}, object)"/>收到obj response后，如果是异常，处理异常的逻辑。
+        ///  <see cref="ISendCanAwaitable.SendSafeAwait{RpcResult}(object, object, Action{Exception})"/>收到obj response后，如果是异常，处理异常的逻辑。
         /// </summary>
         /// <param name="request"></param>
         /// <param name="response"></param>
@@ -135,7 +135,7 @@ namespace Megumin.Remote.Rpc
         }
 
         public virtual async ValueTask<RpcResult> SendSafeAwait<RpcResult>
-             (object message, IRpcCallback<int> callback, Action<Exception> onException = null, object options = null)
+             (object message, IRpcCallback<int> callback, object options = null, Action<Exception> onException = null)
         {
             var (tempresp, tempex) = await InnerRpcSend(message, callback, options);
 
