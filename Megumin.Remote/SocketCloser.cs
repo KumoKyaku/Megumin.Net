@@ -1,41 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Net.Remote;
+using System;
 using System.Diagnostics;
 using System.Net.Sockets;
-using static Megumin.Remote.TcpRemote;
 
 namespace Megumin.Remote
 {
-    public interface IDisconnecHandle
-    {
-        /// <summary>
-        /// 当网络连接已经断开, 发送和接受可能有一个没有完全停止。
-        /// <para>todo 这个函数没有处理线程转换</para>
-        /// </summary>
-        /// <param name="error"></param>
-        /// <param name="options"></param>
-        /// <remarks>主要用于通知外部停止继续发送</remarks>
-        void PreDisconnect(SocketError error, object options = null);
-
-        /// <summary>
-        /// 断开连接之后
-        /// <para>todo 这个函数没有处理线程转换</para>
-        /// </summary>
-        /// /// <param name="error"></param>
-        /// <param name="options"></param>
-        /// <remarks>可以用于触发重连，并将现有发送缓冲区转移到心得连接中</remarks>
-        void OnDisconnect(SocketError error, object options = null);
-
-        /// <summary>
-        /// 断开连接之后
-        /// <para>todo 这个函数没有处理线程转换</para>
-        /// </summary>
-        /// /// <param name="error"></param>
-        /// <param name="options"></param>
-        void PostDisconnect(SocketError error, object options = null);
-    }
-
     /// <summary>
     /// 安全关闭一个socket很麻烦，根本搞不清楚调用那个函数会抛出异常。
     /// </summary>
@@ -46,7 +15,7 @@ namespace Megumin.Remote
         public bool IsDisconnecting { get; internal protected set; } = false;
         public void SafeClose(Socket socket,
                               SocketError error,
-                              IDisconnecHandle tcpRemote,
+                              IDisconnectHandler tcpRemote,
                               bool triggerDisConnectHandle = false,
                               bool waitSendQueue = false,
                               object options = null)
@@ -119,7 +88,7 @@ namespace Megumin.Remote
             }
         }
 
-        public void OnRecv0(Socket client, IDisconnecHandle udpRemote)
+        public void OnRecv0(Socket client, IDisconnectHandler udpRemote)
         {
             SafeClose(client, SocketError.Shutdown, udpRemote, true);
         }

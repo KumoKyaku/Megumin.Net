@@ -63,6 +63,39 @@ namespace Net.Remote
     }
 
     /// <summary>
+    /// Tcp 由数据网络切换到WiFi网络时，会触发一个ConnectReset。
+    /// </summary>
+    public interface IDisconnectHandler
+    {
+        /// <summary>
+        /// 当网络连接已经断开, 发送和接受可能有一个没有完全停止。
+        /// <para>todo 这个函数没有处理线程转换</para>
+        /// </summary>
+        /// <param name="error"></param>
+        /// <param name="options"></param>
+        /// <remarks>主要用于通知外部停止继续发送</remarks>
+        void PreDisconnect(SocketError error, object options = null);
+
+        /// <summary>
+        /// 断开连接之后
+        /// <para>todo 这个函数没有处理线程转换</para>
+        /// </summary>
+        /// /// <param name="error"></param>
+        /// <param name="options"></param>
+        /// <remarks>可以用于触发重连，并将现有发送缓冲区转移到心得连接中</remarks>
+        void OnDisconnect(SocketError error, object options = null);
+
+        /// <summary>
+        /// 断开连接之后
+        /// <para>todo 这个函数没有处理线程转换</para>
+        /// </summary>
+        /// /// <param name="error"></param>
+        /// <param name="options"></param>
+        void PostDisconnect(SocketError error, object options = null);
+    }
+
+
+    /// <summary>
     /// 发送任意对象，只要它能被MessageLUT解析。
     /// </summary>
     public interface ISendable

@@ -49,6 +49,15 @@ namespace Megumin.Remote
         }
     }
 
+    /// <summary>
+    /// https://zhuanlan.zhihu.com/p/152590226
+    /// 用于Udp传输层级别认证和重连。
+    /// 应对切换网卡，切换网络出口，WiFi和数据网络切换时自动认证。而无需触发应用层断线重连机制。
+    /// 具体表现是，用户手机离开和进入WiFi时，Udp和Kcp，不会断连。
+    /// <para></para>
+    /// Tcp协议无法实现此功能，tcp切换网络出口，必定触发断开。
+    /// 但是数据网络切换基站，不会触发断开，网络供应商不会因为切换基站就改变你的IP，即使你坐在高铁上。
+    /// </summary>
     public class UdpAuthHelper
     {
         public readonly Dictionary<IPEndPoint, TaskCompletionSource<UdpAuthResponse>> authing

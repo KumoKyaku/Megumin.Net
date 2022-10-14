@@ -486,7 +486,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class RemoteBase : IDisconnecHandle
+    public partial class RemoteBase : IDisconnectHandler
     {
         public virtual void PreDisconnect(SocketError error, object options = null)
         {
