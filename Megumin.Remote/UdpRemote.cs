@@ -5,12 +5,9 @@ using System;
 using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.XPath;
-using static Megumin.Remote.TcpRemote;
 using static Megumin.Remote.UdpRemoteListener;
 
 namespace Megumin.Remote
@@ -72,6 +69,7 @@ namespace Megumin.Remote
 
         static byte[] conn = new byte[1];
         public SocketCloser Closer { get; internal protected set; } = null;
+        public IDisconnectHandler DisconnectHandler { get; set; }
         /// <summary>
         /// <inheritdoc/>
         /// <para></para>
@@ -145,7 +143,7 @@ namespace Megumin.Remote
         }
 
         static readonly byte[] Disconnect0Buffer = new byte[0];
-        public void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
+        public virtual void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
         {
             if (IsListenSide)
             {
@@ -159,9 +157,9 @@ namespace Megumin.Remote
                     var options = new DisconnectOptions() { ActiveOrPassive = ActiveOrPassive.Active };
                     if (triggerOnDisConnect)
                     {
-                        PreDisconnect(SocketError.Disconnecting, options);
-                        OnDisconnect(SocketError.Disconnecting, options);
-                        PostDisconnect(SocketError.Disconnecting, options);
+                        DisconnectHandler?.PreDisconnect(SocketError.Disconnecting, options);
+                        DisconnectHandler?.OnDisconnect(SocketError.Disconnecting, options);
+                        DisconnectHandler?.PostDisconnect(SocketError.Disconnecting, options);
                     }
                     IsVaild = false;
                 }
@@ -190,8 +188,13 @@ namespace Megumin.Remote
                                 .ConfigureAwait(false);
             if (Closer != null)
             {
-                Closer.TraceListener = TraceListener;
-                Closer.SafeClose(Client, SocketError.Disconnecting, this, triggerOnDisConnect, waitSendQueue, options: new DisconnectOptions());
+                Closer.SafeClose(Client,
+                                 SocketError.Disconnecting,
+                                 DisconnectHandler,
+                                 triggerOnDisConnect,
+                                 waitSendQueue,
+                                 options: new DisconnectOptions(),
+                                 TraceListener);
                 IsVaild = false;
                 Client = null;
             }
@@ -202,16 +205,15 @@ namespace Megumin.Remote
             if (IsListenSide)
             {
                 //监听侧是公用的socket，不用做处理。
-                PreDisconnect(SocketError.Shutdown, null);
-                OnDisconnect(SocketError.Shutdown, null);
-                PostDisconnect(SocketError.Shutdown, null);
+                DisconnectHandler?.PreDisconnect(SocketError.Shutdown, null);
+                DisconnectHandler?.OnDisconnect(SocketError.Shutdown, null);
+                DisconnectHandler?.PostDisconnect(SocketError.Shutdown, null);
             }
             else
             {
                 if (Closer != null)
                 {
-                    Closer.TraceListener = TraceListener;
-                    Closer.OnRecv0(Client, this);
+                    Closer.OnRecv0(Client, DisconnectHandler, TraceListener);
                     IsVaild = false;
                     Client = null;
                 }
@@ -226,7 +228,7 @@ namespace Megumin.Remote
             ForceUdp = true,
         };
 
-        public async void SendBeat(int intervalMS = 2000, CancellationToken token = default)
+        public async void SendBeat(int intervalMS = 2000, int limitMissCount = 7, CancellationToken token = default)
         {
             int MissHearCount = 0;
             while (true)
@@ -235,16 +237,15 @@ namespace Megumin.Remote
                 var (_, exception) = await Send<Heartbeat>(Heartbeat.Default, HeartbeatSendOption);
                 if (exception == null)
                 {
+                    //正常收到心跳，重置MissHearCount
                     MissHearCount = 0;
                 }
 
-                if (MissHearCount >= 5)
+                if (MissHearCount >= limitMissCount)
                 {
                     MissHearCount = 0;
-                    //触发断开。TODO
-                    PreDisconnect(SocketError.TimedOut, null);
-                    OnDisconnect(SocketError.TimedOut, null);
-                    PostDisconnect(SocketError.TimedOut, null);
+                    //触发断开。
+                    Recv0(ConnectIPEndPoint);
                     break;
                 }
                 await Task.Delay(intervalMS);
@@ -337,6 +338,10 @@ namespace Megumin.Remote
             var remoteEndPoint = AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? IPEndPointStatics.Any : IPEndPointStatics.IPv6Any;
             while (true)
             {
+                if (Client == null)
+                {
+                    break;
+                }
                 var cache = ArrayPool<byte>.Shared.Rent(0x10000);
                 try
                 {

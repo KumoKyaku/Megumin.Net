@@ -10,15 +10,15 @@ namespace Megumin.Remote
     /// </summary>
     public class SocketCloser
     {
-        public TraceListener TraceListener { get; set; }
         readonly object innerlock = new object();
         public bool IsDisconnecting { get; internal protected set; } = false;
         public void SafeClose(Socket socket,
                               SocketError error,
-                              IDisconnectHandler tcpRemote,
+                              IDisconnectHandler handler,
                               bool triggerDisConnectHandle = false,
                               bool waitSendQueue = false,
-                              object options = null)
+                              object options = null,
+                              TraceListener traceListener = null)
         {
             lock (innerlock)
             {
@@ -35,7 +35,7 @@ namespace Megumin.Remote
             {
                 if (triggerDisConnectHandle)
                 {
-                    tcpRemote.PreDisconnect(error, options);
+                    handler?.PreDisconnect(error, options);
                 }
                 //停止收发。
                 socket.Shutdown(SocketShutdown.Both);
@@ -43,7 +43,7 @@ namespace Megumin.Remote
             catch (Exception e)
             {
                 //忽略  
-                TraceListener?.WriteLine(e);
+                traceListener?.WriteLine(e);
             }
             finally
             {
@@ -59,7 +59,7 @@ namespace Megumin.Remote
                 catch (Exception e)
                 {
                     //忽略  
-                    TraceListener?.WriteLine(e);
+                    traceListener?.WriteLine(e);
                 }
                 finally
                 {
@@ -69,28 +69,28 @@ namespace Megumin.Remote
                         if (triggerDisConnectHandle)
                         {
                             //触发回调
-                            tcpRemote.OnDisconnect(error, options);
+                            handler?.OnDisconnect(error, options);
                         }
                     }
                     catch (Exception e)
                     {
                         //忽略  
-                        TraceListener?.WriteLine(e.ToString());
+                        traceListener?.WriteLine(e.ToString());
                     }
                     finally
                     {
                         if (triggerDisConnectHandle)
                         {
-                            tcpRemote.PostDisconnect(error, options);
+                            handler?.PostDisconnect(error, options);
                         }
                     }
                 }
             }
         }
 
-        public void OnRecv0(Socket client, IDisconnectHandler udpRemote)
+        public void OnRecv0(Socket client, IDisconnectHandler handler, TraceListener traceListener = null)
         {
-            SafeClose(client, SocketError.Shutdown, udpRemote, true);
+            SafeClose(client, SocketError.Shutdown, handler, true, traceListener: traceListener);
         }
     }
 

@@ -81,16 +81,15 @@ namespace Megumin.Remote
             return base.ConnectAsync(endPoint, retryCount);
         }
 
-        protected override async ValueTask ConnectSideShutdown(bool triggerOnDisConnect, bool waitSendQueue)
+        public override void Disconnect(bool triggerOnDisConnect = false, bool waitSendQueue = false)
         {
-            await base.ConnectSideShutdown(triggerOnDisConnect, waitSendQueue);
+            base.Disconnect(triggerOnDisConnect, waitSendQueue);
             SafeCloseKcpCore();
         }
 
-        public override void PreDisconnect(SocketError error, object options = null)
+        protected internal override void Recv0(IPEndPoint endPoint)
         {
-            TraceListener?.WriteLine($"连接断开");
-            base.PreDisconnect(error, options);
+            base.Recv0(endPoint);
             SafeCloseKcpCore();
         }
     }

@@ -67,7 +67,8 @@ namespace TestWPF
             {
                 var accept = await listener.ReadAsync(() =>
                 {
-                    var r = new TestRemote() { log = this.Serverlog };
+                    var dh = new DisconnectHandle() { log = this.Serverlog, };
+                    var r = new TestRemote() { log = this.Serverlog, DisconnectHandler = dh };
                     return r;
                 });
 
@@ -91,7 +92,8 @@ namespace TestWPF
             {
                 var accept = await UdpRemoteListener.ReadAsync(() =>
                 {
-                    var r = new TestUdpRemote() { log = this.Serverlog };
+                    var dh = new DisconnectHandle() { log = this.Serverlog, };
+                    var r = new TestUdpRemote() { log = this.Serverlog, DisconnectHandler = dh };
                     return r;
                 });
 
@@ -118,7 +120,8 @@ namespace TestWPF
             {
                 var accept = await KcpRemoteListener.ReadAsync(() =>
                 {
-                    var r = new TestKcpRemote() { log = this.Serverlog };
+                    var dh = new DisconnectHandle() { log = this.Serverlog, };
+                    var r = new TestKcpRemote() { log = this.Serverlog, DisconnectHandler = dh };
                     return r;
                 }).ConfigureAwait(true);
 
@@ -148,17 +151,19 @@ namespace TestWPF
             IPAddress targetIP = IPAddress.Loopback;
             IPAddress.TryParse(TargetIP.Text, out targetIP);
 
+            var dh = new DisconnectHandle() { log = this.ClientLog, };
+
             if (ProtocolType == Megumin.Remote.Protocol.Tcp)
             {
-                client = new TestRemote();
+                client = new TestRemote() { DisconnectHandler = dh };
             }
             else if (ProtocolType == Megumin.Remote.Protocol.Udp)
             {
-                client = new TestUdpRemote();
+                client = new TestUdpRemote() { DisconnectHandler = dh };
             }
             else if (ProtocolType == Megumin.Remote.Protocol.Kcp)
             {
-                client = new TestKcpRemote();
+                client = new TestKcpRemote() { DisconnectHandler = dh };
             }
 
             client.log = this.ClientLog;
@@ -377,22 +382,6 @@ public class TestRemote : TcpRemote, ITestRemote
 
         base.ProcessBody(bodyBytes, RpcID, CMD, MessageID, options);
     }
-
-    public override void OnDisconnect(SocketError error, object options = null)
-    {
-        disCount++;
-        log.Dispatcher.Invoke(() =>
-        {
-            if (options is DisconnectOptions disconnect)
-            {
-                log.Content += $"\n 网络已断开。调用次数{disCount} \n {error} -- {disconnect.ActiveOrPassive}";
-            }
-            else
-            {
-                log.Content += $"\n 网络已断开。调用次数{disCount} \n {error}";
-            }
-        });
-    }
 }
 
 public class TestUdpRemote : UdpRemote, ITestRemote
@@ -464,22 +453,6 @@ public class TestUdpRemote : UdpRemote, ITestRemote
         }
 
         base.ProcessBody(bodyBytes, RpcID, CMD, MessageID, options);
-    }
-
-    public override void OnDisconnect(SocketError error, object options = null)
-    {
-        disCount++;
-        log.Dispatcher.Invoke(() =>
-        {
-            if (options is DisconnectOptions disconnect)
-            {
-                log.Content += $"\n 网络已断开。调用次数{disCount} \n {error} -- {disconnect.ActiveOrPassive}";
-            }
-            else
-            {
-                log.Content += $"\n 网络已断开。调用次数{disCount} \n {error}";
-            }
-        });
     }
 
     public bool IsSocketSending { get; }
@@ -566,22 +539,6 @@ public class TestKcpRemote : KcpRemote, ITestRemote
         base.ProcessBody(bodyBytes, RpcID, CMD, MessageID, options);
     }
 
-    public override void OnDisconnect(SocketError error, object options = null)
-    {
-        disCount++;
-        log.Dispatcher.Invoke(() =>
-        {
-            if (options is DisconnectOptions disconnect)
-            {
-                log.Content += $"\n 网络已断开。调用次数{disCount} \n {error} -- {disconnect.ActiveOrPassive}";
-            }
-            else
-            {
-                log.Content += $"\n 网络已断开。调用次数{disCount} \n {error}";
-            }
-        });
-    }
-
     public bool IsSocketSending { get; }
 
     public void StartSocketSend()
@@ -592,5 +549,36 @@ public class TestKcpRemote : KcpRemote, ITestRemote
     public void StopSocketSend()
     {
         throw new NotImplementedException();
+    }
+}
+
+public class DisconnectHandle : IDisconnectHandler
+{
+    public Label log { get; set; }
+    int disCount = 0;
+    public void PreDisconnect(SocketError error, object options = null)
+    {
+
+    }
+
+    public void OnDisconnect(SocketError error, object options = null)
+    {
+        disCount++;
+        log.Dispatcher.Invoke(() =>
+        {
+            if (options is DisconnectOptions disconnect)
+            {
+                log.Content += $"\n 网络已断开。调用次数{disCount} {error} -- {disconnect.ActiveOrPassive}";
+            }
+            else
+            {
+                log.Content += $"\n 网络已断开。调用次数{disCount} {error}";
+            }
+        });
+    }
+
+    public void PostDisconnect(SocketError error, object options = null)
+    {
+
     }
 }
