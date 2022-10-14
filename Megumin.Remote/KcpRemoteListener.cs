@@ -19,6 +19,7 @@ namespace Megumin.Remote
     /// 所以问题出在接收侧，接收端口无法处理过大的数据量。
     /// 但是用UDP测试，不能复现这种一个UdpRemoteListener不应该处理过多的连接的情况。尽管丢包现象明显。
     /// </summary>
+    [Obsolete("", true)]
     public class KcpRemoteListenerOld : UdpRemoteListenerOld, IListenerOld<KcpRemote>
     {
         public KcpRemoteListenerOld(int port)

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Megumin.Remote
 {
-
+    [Obsolete("", true)]
     public class TcpRemoteListenerOld : IListenerOld<TcpRemote>
     {
         private TcpListener tcpListener;

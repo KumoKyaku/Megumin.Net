@@ -22,31 +22,31 @@ namespace UnitTest
         //[TestMethod]
         public void TestUdpRemote()
         {
-            const int port = 65432;
-            UdpRemoteListenerOld listener = new UdpRemoteListenerOld(port);
-            listener.ListenAsync(CreateUdp);
+            //const int port = 65432;
+            //UdpRemoteListenerOld listener = new UdpRemoteListenerOld(port);
+            //listener.ListenAsync(CreateUdp);
 
-            UdpRemote client = new UdpRemote();
-            client.ConnectIPEndPoint = new IPEndPoint(IPAddress.Loopback, port);
-            client.ConnectSideSocketReceive();
-            EchoTest(client);
-            listener.Stop();
+            //UdpRemote client = new UdpRemote();
+            //client.ConnectIPEndPoint = new IPEndPoint(IPAddress.Loopback, port);
+            //client.ConnectSideSocketReceive();
+            //EchoTest(client);
+            //listener.Stop();
         }
 
 
         //[TestMethod]
         public void TestKcpRemote()
         {
-            const int port = 55432;
-            KcpRemoteListenerOld listener = new KcpRemoteListenerOld(port);
-            listener.ListenAsync(CreateKcp);
+            //const int port = 55432;
+            //KcpRemoteListenerOld listener = new KcpRemoteListenerOld(port);
+            //listener.ListenAsync(CreateKcp);
 
-            KcpRemote client = new KcpRemote();
-            client.InitKcp(1001);
-            client.ConnectIPEndPoint = new IPEndPoint(IPAddress.Loopback, port);
-            client.ConnectSideSocketReceive();
-            EchoTest(client);
-            listener.Stop();
+            //KcpRemote client = new KcpRemote();
+            //client.InitKcp(1001);
+            //client.ConnectIPEndPoint = new IPEndPoint(IPAddress.Loopback, port);
+            //client.ConnectSideSocketReceive();
+            //EchoTest(client);
+            //listener.Stop();
         }
 
         public void EchoTest(IRemote remote)

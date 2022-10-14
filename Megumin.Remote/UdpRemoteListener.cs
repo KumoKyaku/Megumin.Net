@@ -22,6 +22,7 @@ namespace Megumin.Remote
     /// <summary>
     /// 2018年时IPV4 IPV6 udp中不能混用，不知道现在情况
     /// </summary>
+    [Obsolete("",true)]
     public class UdpRemoteListenerOld : UdpClient, IListenerOld<UdpRemote>
     {
         public IPEndPoint ConnectIPEndPoint { get; set; }

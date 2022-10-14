@@ -158,32 +158,32 @@ namespace TestServer
             }
             else
             {
-                switch (PMode)
-                {
-                    case Mode.TCP:
-                        {
-                            TcpRemoteListenerOld remote = new TcpRemoteListenerOld(Port);
-                            remote.TraceListener = new ConsoleTraceListener();
-                            Listen(remote);
-                        }
-                        break;
-                    case Mode.UDP:
-                        {
-                            UdpRemoteListenerOld remote = new UdpRemoteListenerOld(Port);
-                            remote.TraceListener = new ConsoleTraceListener();
-                            Listen(remote);
-                        }
-                        break;
-                    case Mode.KCP:
-                        {
-                            KcpRemoteListenerOld remote = new KcpRemoteListenerOld(Port);
-                            remote.TraceListener = new ConsoleTraceListener();
-                            ListenKcp(remote);
-                        }
-                        break;
-                    default:
-                        break;
-                }
+                //switch (PMode)
+                //{
+                //    case Mode.TCP:
+                //        {
+                //            TcpRemoteListenerOld remote = new TcpRemoteListenerOld(Port);
+                //            remote.TraceListener = new ConsoleTraceListener();
+                //            Listen(remote);
+                //        }
+                //        break;
+                //    case Mode.UDP:
+                //        {
+                //            UdpRemoteListenerOld remote = new UdpRemoteListenerOld(Port);
+                //            remote.TraceListener = new ConsoleTraceListener();
+                //            Listen(remote);
+                //        }
+                //        break;
+                //    case Mode.KCP:
+                //        {
+                //            KcpRemoteListenerOld remote = new KcpRemoteListenerOld(Port);
+                //            remote.TraceListener = new ConsoleTraceListener();
+                //            ListenKcp(remote);
+                //        }
+                //        break;
+                //    default:
+                //        break;
+                //}
             }
         }
 

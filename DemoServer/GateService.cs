@@ -11,7 +11,7 @@ namespace DemoServer
     {
         public int GUID { get; set; }
 
-        TcpRemoteListenerOld listener = new TcpRemoteListenerOld(Config.MainPort);
+        //TcpRemoteListenerOld listener = new TcpRemoteListenerOld(Config.MainPort);
 
         public void Start()
         {
@@ -20,9 +20,9 @@ namespace DemoServer
 
         public async void StartListenAsync()
         {
-            var remote = await listener.ListenAsync(Create);
-            StartListenAsync();
-            Console.WriteLine($"建立连接");
+            //var remote = await listener.ListenAsync(Create);
+            //StartListenAsync();
+            //Console.WriteLine($"建立连接");
         }
 
         GateRemote Create()
@@ -54,7 +54,7 @@ namespace DemoServer
 
         public void Update(double deltaTime)
         {
-            
+
         }
     }
 }
