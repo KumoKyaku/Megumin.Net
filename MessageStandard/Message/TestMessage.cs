@@ -225,13 +225,15 @@ namespace Megumin.Message
 
     public class TestPacket4 : IMeguminFormater, IMeguminFormater<TestPacket4>
     {
-        public string Value { get; set; } = "Test String!!";
+        public string StringValue { get; set; } = "Test String!!";
+        public int Value { get; set; } = MSGID.TestPacket4;
         ///<inheritdoc/>
         public int MessageID => MSGID.TestPacket4;
         public Type BindType => this.GetType();
 
         public void Serialize(IBufferWriter<byte> writer, TestPacket4 value, object options = null)
         {
+            MessageLUT.Serialize(writer, value.StringValue, options);
             MessageLUT.Serialize(writer, value.Value, options);
         }
 
@@ -242,20 +244,38 @@ namespace Megumin.Message
 
         public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
-            var str = MessageLUT.Deserialize<string>(source, options);
-            return new TestPacket4() { Value = str };
+            var myptions = DeserializeLengthHelper.Default;
+            var str = MessageLUT.Deserialize<string>(source, DeserializeLengthHelper.Default);
+            var intValue = source.Slice(myptions.Length, 4).ReadInt();
+            if (options is IDeserializeLengthWriter writer)
+            {
+                writer.Length = myptions.Length + 4;
+            }
+            return new TestPacket4() { StringValue = str, Value = intValue };
         }
 
         public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
         {
-            var str = MessageLUT.Deserialize<string>(source, options);
-            return new TestPacket4() { Value = str };
+            var myptions = DeserializeLengthHelper.Default;
+            var str = MessageLUT.Deserialize<string>(source, DeserializeLengthHelper.Default);
+            var intValue = source.Slice(myptions.Length, 4).ReadInt();
+            if (options is IDeserializeLengthWriter writer)
+            {
+                writer.Length = myptions.Length + 4;
+            }
+            return new TestPacket4() { StringValue = str, Value = intValue };
         }
 
         public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
         {
-            var str = MessageLUT.Deserialize<string>(source, options);
-            return new TestPacket4() { Value = str };
+            var myptions = DeserializeLengthHelper.Default;
+            var str = MessageLUT.Deserialize<string>(source, DeserializeLengthHelper.Default);
+            var intValue = source.Slice(myptions.Length, 4).ReadInt();
+            if (options is IDeserializeLengthWriter writer)
+            {
+                writer.Length = myptions.Length + 4;
+            }
+            return new TestPacket4() { StringValue = str, Value = intValue };
         }
     }
 }

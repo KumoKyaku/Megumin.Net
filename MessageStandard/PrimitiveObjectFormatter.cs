@@ -10,6 +10,7 @@ namespace Megumin.Message
 {
     /// <summary>
     /// 内置UTF8 string 格式化器，性能低没有优化
+    /// 对动态长度的类型，先用ushort写入总长度，在写入正文，实现复杂类型字段切分。实现复杂类型嵌套序列化。
     /// </summary>
     internal class StringFormatter : IMeguminFormater<string>
     {
@@ -17,6 +18,9 @@ namespace Megumin.Message
         public void Serialize(IBufferWriter<byte> writer, string value, object options = null)
         {
             var bytes = UTF8.GetBytes(value);
+            var headerSpan = writer.GetSpan(2);
+            headerSpan.Write((ushort)(bytes.Length + 2));
+            writer.Advance(2);
             writer.Write(bytes);
         }
 
@@ -30,28 +34,49 @@ namespace Megumin.Message
 
         public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
+            var len = source.ReadUShort();
+            var body = source.Slice(2, len - 2);
+            if (options is IDeserializeLengthWriter writer)
+            {
+                writer.Length = len;
+            }
+
 #if NET5_0_OR_GREATER
-            return UTF8.GetString(source);
+            return UTF8.GetString(body);
 #else
-            return UTF8.GetString(source.ToArray());
+            return UTF8.GetString(body.ToArray());
 #endif
         }
 
         public object Deserialize(in ReadOnlySpan<byte> source, object options = null)
         {
+            var len = source.ReadUShort();
+            var body = source.Slice(2, len - 2);
+            if (options is IDeserializeLengthWriter writer)
+            {
+                writer.Length = len;
+            }
+
 #if NET5_0_OR_GREATER
-            return UTF8.GetString(source);
+            return UTF8.GetString(body);
 #else
-            return UTF8.GetString(source.ToArray());
+            return UTF8.GetString(body.ToArray());
 #endif
         }
 
         public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
         {
+            var len = source.ReadUShort();
+            var body = source.Slice(2, len - 2);
+            if (options is IDeserializeLengthWriter writer)
+            {
+                writer.Length = len;
+            }
+
 #if NET5_0_OR_GREATER
-            return UTF8.GetString(source.Span);
+            return UTF8.GetString(body.Span);
 #else
-            return UTF8.GetString(source.ToArray());
+            return UTF8.GetString(body.ToArray());
 #endif
         }
     }

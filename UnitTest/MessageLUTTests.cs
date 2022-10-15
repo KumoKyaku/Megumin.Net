@@ -29,6 +29,16 @@ namespace Megumin.Remote.Tests
             TestPacket3 testPacket3 = new TestPacket3() { Value = 200 };
             var dtestPacket3 = MessageLUT.TestType(testPacket3);
             Assert.AreEqual(testPacket3.Value, dtestPacket3.Value);
+
+            object testPacket = new TestPacket1() { Value = 200 };
+            MessageLUTTestBuffer wr = new MessageLUTTestBuffer();
+            MessageLUT.Serialize(wr, testPacket);
+            TestPacket1 dtestPacket = MessageLUT.Deserialize<TestPacket1>(wr.ReadOnlySpan) as TestPacket1;
+            Assert.AreEqual(((TestPacket1)testPacket).Value, dtestPacket.Value);
+
+            TestPacket4 testPacket4 = new TestPacket4() { Value = -104, StringValue = "Test4" };
+            var dtestPacket4 = MessageLUT.TestType(testPacket4);
+            Assert.AreEqual(testPacket4.Value, dtestPacket4.Value);
         }
 
         private static void Test<T>(T original)

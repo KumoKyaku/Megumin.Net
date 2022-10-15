@@ -210,25 +210,6 @@ namespace Megumin.Remote
         }
 
         /// <summary>
-        /// 序列化一个对象到指定writer
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="value"></param>
-        /// <param name="options"></param>
-        /// <returns>消息ID</returns>
-        /// <remarks>序列化函数不在提供序列化多少字节，需要在writer中自己统计</remarks>
-        /// <exception cref="KeyNotFoundException"></exception>
-        /// <exception cref="ArgumentNullException"></exception>
-        public static int Serialize(IBufferWriter<byte> writer, object value, object options = null)
-        {
-            var type = value.GetType();
-            var formater = TypeDic[type];
-            formater.Serialize(writer, value, options);
-            return formater.MessageID;
-        }
-
-
-        /// <summary>
         /// 查找消息类型
         /// </summary>
         /// <param name="messageID"></param>
@@ -325,6 +306,57 @@ namespace Megumin.Remote
         public static bool TryGetFormater(int messageID, out IMeguminFormater formater)
         {
             return IDDic.TryGetValue(messageID, out formater);
+        }
+    }
+
+    public partial class MessageLUT
+    {
+        ///// <summary>
+        ///// 序列化一个对象到指定writer
+        ///// </summary>
+        ///// <param name="writer"></param>
+        ///// <param name="value"></param>
+        ///// <param name="options"></param>
+        ///// <returns>消息ID</returns>
+        ///// <remarks>序列化函数不在提供序列化多少字节，需要在writer中自己统计</remarks>
+        ///// <exception cref="KeyNotFoundException"></exception>
+        ///// <exception cref="ArgumentNullException"></exception>
+        //public static int Serialize(IBufferWriter<byte> writer, object value, object options = null)
+        //{
+        //    var type = value.GetType();
+        //    var formater = TypeDic[type];
+        //    formater.Serialize(writer, value, options);
+        //    return formater.MessageID;
+        //}
+
+        /// <summary>
+        /// 序列化一个对象到指定writer
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="value"></param>
+        /// <param name="options"></param>
+        /// <returns>消息ID</returns>
+        /// <remarks>序列化函数不在提供序列化多少字节，需要在writer中自己统计</remarks>
+        /// <exception cref="KeyNotFoundException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static int Serialize<T>(IBufferWriter<byte> writer, T value, object options = null)
+        {
+            //这里一定要从value获取真实类型，防止类型隐式转型导致类型推导不正确，所以不能用typeof(T)。
+            //使用泛型的目的时尽可能的减少装箱。
+            //var testtype = typeof(T);
+            var type = value.GetType();
+
+            var formater = TypeDic[type];
+            if (formater is IMeguminFormater<T> gFor)
+            {
+                gFor.Serialize(writer, value, options);
+            }
+            else
+            {
+                formater.Serialize(writer, value, options);
+            }
+
+            return formater.MessageID;
         }
     }
 
@@ -441,6 +473,24 @@ namespace Megumin.Remote
             MessageLUT.Serialize(wr, original);
             return MessageLUT.Deserialize<T>(wr.ReadOnlySpan);
         }
+    }
+
+    /// <summary>
+    /// 用于反序列化时获取长度
+    /// </summary>
+    public interface IDeserializeLengthWriter
+    {
+        int Length { set; }
+    }
+
+    /// <summary>
+    /// 用于反序列化时获取长度
+    /// </summary>
+    public class DeserializeLengthHelper : IDeserializeLengthWriter
+    {
+        [ThreadStatic]
+        public static readonly DeserializeLengthHelper Default = new DeserializeLengthHelper();
+        public int Length { get; set; }
     }
 
     /// <summary>
