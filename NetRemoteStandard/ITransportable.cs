@@ -16,6 +16,11 @@ namespace Net.Remote
         /// 实际连接的Socket
         /// </summary>
         Socket Client { get; }
+
+        /// <summary>
+        /// 当前是否正常工作
+        /// </summary>
+        bool IsVaild { get; }
     }
 }
 

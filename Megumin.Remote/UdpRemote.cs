@@ -21,7 +21,6 @@ namespace Megumin.Remote
     /// </summary>
     public partial class UdpTransport : BaseTransport, ITransportable
     {
-        public int ID { get; } = InterlockedID<IRemoteID>.NewID();
         public AddressFamily? AddressFamily { get; set; } = null;
         public Guid? GUID { get; internal set; } = null;
         public int? Password { get; set; } = null;

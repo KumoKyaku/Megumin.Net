@@ -17,7 +17,6 @@ namespace Megumin.Remote
     /// Lenght(总长度，包含自身报头) [int] [4] + RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
     public partial class TcpTransport : BaseTransport, ITransportable
     {
-        public int ID { get; } = InterlockedID<IRemoteID>.NewID();
 
         public bool IsVaild => RemoteState == WorkState.Working;
         public IPEndPoint ConnectIPEndPoint { get; set; }

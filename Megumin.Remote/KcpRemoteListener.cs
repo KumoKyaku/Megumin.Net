@@ -77,14 +77,16 @@ namespace Megumin.Remote
         {
         }
 
-        //public new ValueTask<R> ReadAsync<R>(Func<R> createFunc) where R : KcpRemote
-        //{
-        //    return base.ReadAsync(createFunc);
-        //}
-
-        public ValueTask ReadAsync(KcpTransport transport)
+        public new ValueTask ReadAsync(IRemote remote)
         {
-            return base.ReadAsync(transport);
+            if (remote.Transport is KcpTransport transport)
+            {
+                return base.ReadAsync(transport);
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
         }
     }
 }

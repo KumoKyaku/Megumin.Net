@@ -529,6 +529,18 @@ namespace Megumin.Remote
             ));
             await source.Task;
         }
+
+        public ValueTask ReadAsync(IRemote remote)
+        {
+            if (remote.Transport is UdpTransport transport)
+            {
+                return ReadAsync(transport);
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
+        }
     }
 
     public partial class UdpRemoteListener

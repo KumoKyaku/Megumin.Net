@@ -35,13 +35,7 @@ namespace Megumin.Remote
             }
         }
 
-        public Socket Client { get; }
-        public bool IsVaild { get; set; }
-        public IPEndPoint ConnectIPEndPoint { get; set; }
-        public EndPoint RemappedEndPoint { get; }
-        public EndPoint RemoteEndPoint { get; }
-        public DateTimeOffset LastReceiveTime { get; }
-        public int ID { get; }
+        public int ID { get; } = InterlockedID<IRemoteID>.NewID();
     }
 
 }

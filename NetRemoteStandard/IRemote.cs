@@ -237,13 +237,9 @@ namespace Net.Remote
     /// 对于接收端，收到时就是已连接的，所以IConnectable是次要的。</para>
     /// </summary>
     /// <inheritdoc/>
-    public interface IRemote : IRemoteEndPoint, ISendable, IReceiveMessage, IRemoteID
-        , ISendCanAwaitable
+    public interface IRemote : ISendable, IRemoteID, ISendCanAwaitable
     {
-        /// <summary>
-        /// 当前是否正常工作
-        /// </summary>
-        bool IsVaild { get; }
+        ITransportable Transport { get; }
     }
 
     /// <summary>

@@ -68,11 +68,11 @@ namespace TestWPF
                 TestWPFRemote remote = new TestWPFRemote() { log = Serverlog };
                 var trans = new TcpTransport() { DisconnectHandler = dh };
                 remote.SetTransport(trans);
-                await listener.ReadAsync(trans);
+                await listener.ReadAsync(remote);
                 if (remote != null)
                 {
                     remote.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
-                    this.Serverlog.Content += $"\n 收到连接 {remote.RemoteEndPoint} ";
+                    this.Serverlog.Content += $"\n 收到连接 {remote.Transport.RemoteEndPoint} ";
                     server = remote;
                 }
             }
@@ -91,11 +91,11 @@ namespace TestWPF
                 TestWPFRemote remote = new TestWPFRemote() { log = Serverlog };
                 var trans = new UdpTransport() { DisconnectHandler = dh };
                 remote.SetTransport(trans);
-                await UdpRemoteListener.ReadAsync(trans);
+                await UdpRemoteListener.ReadAsync(remote);
                 if (remote != null)
                 {
                     remote.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
-                    this.Serverlog.Content += $"\n 收到连接 {remote.RemoteEndPoint} ";
+                    this.Serverlog.Content += $"\n 收到连接 {remote.Transport.RemoteEndPoint} ";
                     server = remote;
                 }
             }
@@ -114,11 +114,11 @@ namespace TestWPF
                 TestWPFRemote remote = new TestWPFRemote() { log = Serverlog };
                 var trans = new KcpTransport() { DisconnectHandler = dh };
                 remote.SetTransport(trans);
-                await KcpRemoteListener.ReadAsync(trans);
+                await KcpRemoteListener.ReadAsync(remote);
                 if (remote != null)
                 {
                     remote.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
-                    this.Serverlog.Content += $"\n 收到连接 {remote.RemoteEndPoint} ";
+                    this.Serverlog.Content += $"\n 收到连接 {remote.Transport.RemoteEndPoint} ";
                     server = remote;
                 }
             }
@@ -330,7 +330,7 @@ public class TestWPFRemote : UniversalRemote
                     log.Content += $"\n 收到{nameof(Authentication)} Token:{auth.Token}";
                     break;
                 default:
-                    log.Content += $"\n 收到{message.GetType().Name} value:{message} {RemoteEndPoint}";
+                    log.Content += $"\n 收到{message.GetType().Name} value:{message} {Transport.RemoteEndPoint}";
                     break;
             }
         });

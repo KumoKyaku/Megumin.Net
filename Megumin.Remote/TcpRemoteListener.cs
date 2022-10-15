@@ -172,5 +172,17 @@ namespace Megumin.Remote
             transport.SetSocket(socket);
             transport.StartWork();
         }
+
+        public ValueTask ReadAsync(IRemote remote)
+        {
+            if (remote.Transport is TcpTransport transport)
+            {
+                return ReadAsync(transport);
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
+        }
     }
 }
