@@ -29,8 +29,9 @@ namespace Megumin.Remote
     /// Q：异步方法会不会延长声明周期，导致对象永不销毁？
     /// A：存疑，感觉应该不会，需要测试。异步调用会注册到IOCP线程池中。如果异步接收没收到0字节或者异常，那么对象会一直活着。
     /// </remarks>
-    public abstract partial class RemoteBase : ISendable
+    public abstract partial class RemoteBase : ISendable, IRemoteID
     {
+        public int ID { get; } = InterlockedID<IRemoteID>.NewID();
         public System.Diagnostics.TraceListener TraceListener { get; set; }
 
         /// <summary>
@@ -216,16 +217,24 @@ namespace Megumin.Remote
             }
         }
 
+        public ITransportable Transport { get; protected set; }
+
         /// <summary>
         /// 发送rpcID和消息
         /// </summary>
-        public abstract void Send(int rpcID, object message, object options = null);
+        public virtual void Send(int rpcID, object message, object options = null)
+        {
+            Transport?.Send(rpcID, message, options);
+        }
 
         public void Send(object message, object options = null)
         {
             Send(0, message, options);
         }
+    }
 
+    public partial class RemoteBase
+    {
         /// <summary>
         /// 默认关闭线程转换<see cref="MessageThreadTransducer.Update(double)"/>
         /// </summary>

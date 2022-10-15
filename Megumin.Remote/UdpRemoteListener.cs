@@ -282,7 +282,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class UdpRemoteListener /*: IListener<UdpRemote>*/
+    public partial class UdpRemoteListener : IListener
     {
         internal protected static class IPEndPointStatics
         {

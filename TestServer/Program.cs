@@ -93,10 +93,9 @@ namespace TestServer
                             while (true)
                             {
                                 TestServerRemote re = new TestServerRemote() { UID = connectCount };
-                                var trans = new TcpTransport();
-                                re.SetTransport(trans);
+                                re.SetTransport(new TcpTransport() { TraceListener = new ConsoleTraceListener()});
                                 /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-                                await listener2.ReadAsync(trans).ConfigureAwait(false);
+                                await listener2.ReadAsync(re).ConfigureAwait(false);
                                 Console.WriteLine($"总接收到连接{connectCount}");
                                 Interlocked.Increment(ref connectCount);
                             }
@@ -110,9 +109,8 @@ namespace TestServer
                             while (true)
                             {
                                 TestServerRemote re = new TestServerRemote() { UID = connectCount };
-                                var trans = new UdpTransport();
-                                re.SetTransport(trans);
-                                await listener2.ReadAsync(trans).ConfigureAwait(false);
+                                re.SetTransport(new UdpTransport());
+                                await listener2.ReadAsync(re).ConfigureAwait(false);
                                 Console.WriteLine($"总接收到连接{connectCount}");
                                 Interlocked.Increment(ref connectCount);
                             }
@@ -126,9 +124,8 @@ namespace TestServer
                             while (true)
                             {
                                 TestServerRemote re = new TestServerRemote() { UID = connectCount };
-                                var trans = new KcpTransport();
-                                re.SetTransport(trans);
-                                await listener2.ReadAsync(trans).ConfigureAwait(false);
+                                re.SetTransport(new KcpTransport());
+                                await listener2.ReadAsync(re).ConfigureAwait(false);
                                 Console.WriteLine($"总接收到连接{connectCount}");
                                 //re.KcpCore.TraceListener = new ConsoleTraceListener();
                                 Interlocked.Increment(ref connectCount);
@@ -225,7 +222,7 @@ namespace TestServer
         //}
     }
 
-    public sealed class TestServerRemote : UniversalRemote
+    public sealed class TestServerRemote : RpcRemote
     {
         static int totalCount;
         int myRecvCount = 0;

@@ -15,10 +15,16 @@ namespace Megumin.Remote
     /// 没有设计成扩展函数或者静态函数是方便子类重写。
     /// </summary>
     /// <remarks>一些与RPC支持相关的函数写在这里。</remarks>
-    public abstract class RpcRemote : RemoteBase, IDealMessageable, ISendCanAwaitable, IRemoteUID<int>, IRpcCallback<int>
+    public class RpcRemote : RemoteBase, IDealMessageable, ISendCanAwaitable, IRemoteUID<int>, IRpcCallback<int>, IRemote
     {
         public virtual int UID { get; set; }
-        public RpcLayer RpcLayer = new RpcLayer();
+        public RpcLayer RpcLayer { get; set; } = new RpcLayer();
+
+        public void SetTransport<T>(T transport) where T : BaseTransport, ITransportable
+        {
+            transport.RemoteCore = this;
+            Transport = transport;
+        }
 
         protected virtual async void ProcessRecevie(int rpcID, short cmd, int messageID, object message, object options = null)
         {

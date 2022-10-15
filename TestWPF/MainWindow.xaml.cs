@@ -22,9 +22,7 @@ namespace TestWPF
     {
         private TestWPFRemote client;
         private TestWPFRemote server;
-        private TcpRemoteListener listener;
-        private UdpRemoteListener UdpRemoteListener;
-        private KcpRemoteListener KcpRemoteListener;
+        private IListener listener;
 
         static Protocol ProtocolType = Megumin.Remote.Protocol.Tcp;
 
@@ -66,8 +64,7 @@ namespace TestWPF
             {
                 var dh = new DisconnectHandle() { log = this.Serverlog, };
                 TestWPFRemote remote = new TestWPFRemote() { log = Serverlog };
-                var trans = new TcpTransport() { DisconnectHandler = dh };
-                remote.SetTransport(trans);
+                remote.SetTransport(new TcpTransport() { DisconnectHandler = dh });
                 await listener.ReadAsync(remote);
                 if (remote != null)
                 {
@@ -82,16 +79,15 @@ namespace TestWPF
         {
             int port = 54321;
             int.TryParse(ListenPort.Text, out port);
-            UdpRemoteListener = new UdpRemoteListener(port);
-            UdpRemoteListener.Start();
+            listener = new UdpRemoteListener(port);
+            listener.Start();
 
             while (true)
             {
                 var dh = new DisconnectHandle() { log = this.Serverlog, };
                 TestWPFRemote remote = new TestWPFRemote() { log = Serverlog };
-                var trans = new UdpTransport() { DisconnectHandler = dh };
-                remote.SetTransport(trans);
-                await UdpRemoteListener.ReadAsync(remote);
+                remote.SetTransport(new UdpTransport() { DisconnectHandler = dh });
+                await listener.ReadAsync(remote);
                 if (remote != null)
                 {
                     remote.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
@@ -105,16 +101,15 @@ namespace TestWPF
         {
             int port = 54321;
             int.TryParse(ListenPort.Text, out port);
-            KcpRemoteListener = new KcpRemoteListener(port);
-            KcpRemoteListener.Start();
+            listener = new KcpRemoteListener(port);
+            listener.Start();
 
             while (true)
             {
                 var dh = new DisconnectHandle() { log = this.Serverlog, };
                 TestWPFRemote remote = new TestWPFRemote() { log = Serverlog };
-                var trans = new KcpTransport() { DisconnectHandler = dh };
-                remote.SetTransport(trans);
-                await KcpRemoteListener.ReadAsync(remote);
+                remote.SetTransport(new KcpTransport() { DisconnectHandler = dh });
+                await listener.ReadAsync(remote);
                 if (remote != null)
                 {
                     remote.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
@@ -127,8 +122,6 @@ namespace TestWPF
         private void StopListen_Click(object sender, RoutedEventArgs e)
         {
             listener?.Stop();
-            UdpRemoteListener?.Stop();
-            KcpRemoteListener?.Stop();
         }
 
         private void CreateClient(object sender, RoutedEventArgs e)
@@ -143,20 +136,17 @@ namespace TestWPF
             if (ProtocolType == Megumin.Remote.Protocol.Tcp)
             {
                 client = new TestWPFRemote();
-                var trans = new TcpTransport() { DisconnectHandler = dh };
-                client.SetTransport(trans);
+                client.SetTransport(new TcpTransport() { DisconnectHandler = dh });
             }
             else if (ProtocolType == Megumin.Remote.Protocol.Udp)
             {
                 client = new TestWPFRemote();
-                var trans = new UdpTransport() { DisconnectHandler = dh };
-                client.SetTransport(trans);
+                client.SetTransport(new UdpTransport() { DisconnectHandler = dh });
             }
             else if (ProtocolType == Megumin.Remote.Protocol.Kcp)
             {
                 client = new TestWPFRemote();
-                var trans = new KcpTransport() { DisconnectHandler = dh };
-                client.SetTransport(trans);
+                client.SetTransport(new KcpTransport() { DisconnectHandler = dh });
             }
 
             client.log = this.ClientLog;
@@ -305,7 +295,7 @@ public interface ITestRemote : IRemote, IConnectable, ISocketSendable
     bool LogRecvBytes { get; set; }
 }
 
-public class TestWPFRemote : UniversalRemote
+public class TestWPFRemote : RpcRemote
 {
     static Dictionary<string, TestWPFRemote> AllClient = new Dictionary<string, TestWPFRemote>();
     public Label log { get; set; }

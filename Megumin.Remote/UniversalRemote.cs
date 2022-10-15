@@ -13,31 +13,10 @@ using System.ComponentModel;
 
 namespace Megumin.Remote
 {
-    public class UniversalRemote : RpcRemote, IRemote
+    public sealed class UniversalRemote : RpcRemote
     {
-        public override void Send(int rpcID, object message, object options = null)
-        {
-            Transport?.Send(rpcID, message, options);
-        }
-
-        public ITransportable Transport { get; private set; }
-
-        public void SetTransport(BaseTransport transport)
-        {
-            transport.RemoteCore = this;
-            if (transport is ITransportable transportable)
-            {
-                Transport = transportable;
-            }
-            else
-            {
-                throw new Exception();
-            }
-        }
-
-        public int ID { get; } = InterlockedID<IRemoteID>.NewID();
+        
     }
-
 }
 
 

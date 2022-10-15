@@ -92,7 +92,7 @@ namespace Megumin.Remote
 
     }
 
-    public class TcpRemoteListener
+    public class TcpRemoteListener : IListener
     {
         private TcpListener tcpListener;
         public IPEndPoint ConnectIPEndPoint { get; set; }
