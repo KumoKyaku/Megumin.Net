@@ -44,7 +44,7 @@ namespace Megumin.Remote
         /// <param name="options"></param>
         /// <returns></returns>
         /// <remarks>只处理 RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
-        public virtual bool TrySerialize(IBufferWriter<byte> writer, int rpcID, object message, object options = null)
+        public virtual bool TrySerialize<T>(IBufferWriter<byte> writer, int rpcID, T message, object options = null)
         {
             IMeguminFormater formater;
             ///优先使用MessageLut，因为MessageLut是主动注册的。
@@ -65,7 +65,14 @@ namespace Megumin.Remote
 
                 try
                 {
-                    formater.Serialize(writer, message, options);
+                    if (formater is IMeguminFormater<T> gformater)
+                    {
+                        gformater.Serialize(writer, message, options);
+                    }
+                    else
+                    {
+                        formater.Serialize(writer, message, options);
+                    }
                 }
                 catch (Exception e)
                 {

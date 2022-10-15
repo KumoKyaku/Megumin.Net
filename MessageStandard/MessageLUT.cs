@@ -80,6 +80,10 @@ namespace Megumin.Remote
         object Deserialize(in ReadOnlyMemory<byte> source, object options = null);
     }
 
+    /// <summary>
+    /// 不要使用协变，会导致序列化错误
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public interface IMeguminFormater<T> : IMeguminFormater
     {
         /// <summary>
@@ -347,9 +351,9 @@ namespace Megumin.Remote
             var type = value.GetType();
 
             var formater = TypeDic[type];
-            if (formater is IMeguminFormater<T> gFor)
+            if (formater is IMeguminFormater<T> gformater)
             {
-                gFor.Serialize(writer, value, options);
+                gformater.Serialize(writer, value, options);
             }
             else
             {
