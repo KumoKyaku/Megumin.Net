@@ -363,6 +363,9 @@ namespace Megumin.Remote
         /// <para/>
         /// FlushAsync后，另一头的触发是通过ThreadPoolScheduler来触发的，不是调用FlushAsync的线程，
         /// 所以useSynchronizationContext = false时，不用担心 IOCP线程 执行pipeReader，反序列化等造成IOCP线程阻塞问题。
+        /// <para>--------</para>
+        /// 背压和流量控制,根据项目需要在PipeOptions中设置参数。
+        /// https://www.cnblogs.com/xxfy1/p/9290235.html
         /// </summary>
         /// <remarks>
         /// <para/>useSynchronizationContext 如果为true的话，
@@ -453,7 +456,13 @@ namespace Megumin.Remote
                     }
 
                     LastReceiveTime = DateTimeOffset.UtcNow;
+                    // Make the data available to the PipeReader
+                    FlushResult result = await pipeWriter.FlushAsync().ConfigureAwait(false);
                     IsSocketReceiving = false;
+                    if (result.IsCompleted)
+                    {
+                        break;
+                    }
                 }
                 catch (SocketException e)
                 {
@@ -462,13 +471,7 @@ namespace Megumin.Remote
                     return;
                 }
 
-                // Make the data available to the PipeReader
-                FlushResult result = await pipeWriter.FlushAsync().ConfigureAwait(false);
 
-                if (result.IsCompleted)
-                {
-                    break;
-                }
             }
         }
 
@@ -555,7 +558,11 @@ namespace Megumin.Remote
 
                 //标记已使用数据，要先使用在标记，不然数据可能就被释放了
                 var pos = result.Buffer.GetPosition(offset);
-                pipeReader.AdvanceTo(pos);
+                //这里必须标记已检查位置到Buffer.End，
+                //不然如果遇到半包，Socket又迟迟收不到新数据的情况，
+                //会导致pipeReader.ReadAsync()同步完成造成死循环。
+                //从而冻结线程池，CPU会100%，冻结整个程序。
+                pipeReader.AdvanceTo(pos, result.Buffer.End);
 
                 IsMessageReceiving = false;
 
