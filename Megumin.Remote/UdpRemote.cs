@@ -19,7 +19,7 @@ namespace Megumin.Remote
     /// <para>SocketException: Protocol option not supported</para>
     /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
     /// </summary>
-    public partial class UdpRemote : RpcRemote, IRemoteEndPoint, IRemote, IConnectable
+    public partial class UdpRemote : BaseTransporter, ITransportable
     {
         public int ID { get; } = InterlockedID<IRemoteID>.NewID();
         public AddressFamily? AddressFamily { get; set; } = null;
@@ -60,6 +60,12 @@ namespace Megumin.Remote
             }
 
             this.Client = socket;
+        }
+
+        public virtual void SetUdpAuthResponse(UdpAuthResponse response)
+        {
+            GUID = response.Guid;
+            Password = response.Password;
         }
     }
 
@@ -105,7 +111,7 @@ namespace Megumin.Remote
             ConnectSideSocketReceive();
 
             //发送一个心跳包触发认证。
-            var (_, exception) = await Send<Heartbeat>(Heartbeat.Default, HeartbeatSendOption);
+            var (_, exception) = await RemoteCore.Send<Heartbeat>(Heartbeat.Default, HeartbeatSendOption);
             if (exception is RcpTimeoutException rcpex)
             {
                 throw new SocketException((int)SocketError.TimedOut);
@@ -234,7 +240,7 @@ namespace Megumin.Remote
             while (true)
             {
                 MissHearCount += 1;
-                var (_, exception) = await Send<Heartbeat>(Heartbeat.Default, HeartbeatSendOption);
+                var (_, exception) = await RemoteCore.Send<Heartbeat>(Heartbeat.Default, HeartbeatSendOption);
                 if (exception == null)
                 {
                     //正常收到心跳，重置MissHearCount
@@ -257,13 +263,13 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class UdpRemote
+    public partial class UdpRemote : ISocketSendable
     {
         //发送==========================================================
 
         protected virtual UdpBufferWriter SendWriter { get; } = new UdpBufferWriter(8192 * 4);
 
-        public override void Send(int rpcID, object message, object options = null)
+        public virtual void Send(int rpcID, object message, object options = null)
         {
             if (Client == null || Closer?.IsDisconnecting == true)
             {
@@ -271,7 +277,7 @@ namespace Megumin.Remote
                 if (rpcID > 0)
                 {
                     //对于已经注册了Rpc的消息,直接触发异常。
-                    RpcLayer.RpcCallbackPool.TrySetException(rpcID, new SocketException(-1));
+                    RemoteCore.RpcLayer.RpcCallbackPool.TrySetException(rpcID, new SocketException(-1));
                     return;
                 }
                 else
@@ -281,7 +287,7 @@ namespace Megumin.Remote
             }
 
             SendWriter.WriteHeader(UdpRemoteMessageDefine.UdpData);
-            if (TrySerialize(SendWriter, rpcID, message, options))
+            if (RemoteCore.TrySerialize(SendWriter, rpcID, message, options))
             {
                 var (buffer, lenght) = SendWriter.Pop();
                 SocketSend(buffer, lenght);
@@ -308,6 +314,18 @@ namespace Megumin.Remote
             }
 
             buffer.Dispose();
+        }
+
+        public bool IsSocketSending { get; }
+
+        public void StartSocketSend()
+        {
+            //throw new NotImplementedException();
+        }
+
+        public void StopSocketSend()
+        {
+            //throw new NotImplementedException();
         }
     }
 
@@ -405,12 +423,12 @@ namespace Megumin.Remote
 
         internal protected virtual void RecvLLData(IPEndPoint endPoint, ReadOnlySpan<byte> buffer)
         {
-            ProcessBody(buffer);
+            RemoteCore.ProcessBody(buffer);
         }
 
         internal protected virtual void RecvUdpData(IPEndPoint endPoint, ReadOnlySpan<byte> buffer)
         {
-            ProcessBody(buffer);
+            RemoteCore.ProcessBody(buffer);
         }
 
         internal protected virtual void RecvKcpData(IPEndPoint endPoint, ReadOnlySpan<byte> buffer)

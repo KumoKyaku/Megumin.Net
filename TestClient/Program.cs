@@ -25,7 +25,7 @@ public static class TestConfig
     /// Upd 测试5000连接比较稳定。
     /// Kcp测试10000连接没有成功。5000也不性。推测应该是UdpListenner一个端口无法处理这么大流量，大量丢包。
     /// </summary>
-    public static int RemoteCount = 100;
+    public static int RemoteCount = 1000;
 }
 
 namespace TestClient
@@ -144,34 +144,37 @@ namespace TestClient
 
         private static async Task NewRemote(int clientIndex)
         {
-            IRemote remote = null;
+            TestRemote remote = null;
 
             switch (PMode)
             {
                 case Mode.TCP:
                     {
-                        TestTcpRemote testR = new TestTcpRemote();
-                        testR.Dealer.Index = clientIndex;
-                        testR.Dealer.MessageCount = MessageCount;
+                        TestRemote testR = new TestRemote();
+                        testR.Index = clientIndex;
+                        testR.MessageCount = MessageCount;
                         testR.TraceListener = new ConsoleTraceListener();
+                        testR.SetTransport(new TcpRemote());
                         remote = testR;
                     }
                     break;
                 case Mode.UDP:
                     {
-                        TestUdpRemote testR = new TestUdpRemote();
-                        testR.Dealer.Index = clientIndex;
-                        testR.Dealer.MessageCount = MessageCount;
+                        TestRemote testR = new TestRemote();
+                        testR.Index = clientIndex;
+                        testR.MessageCount = MessageCount;
                         testR.TraceListener = new ConsoleTraceListener();
+                        testR.SetTransport(new UdpRemote());
                         remote = testR;
                     }
                     break;
                 case Mode.KCP:
                     {
-                        TestKcpRemote testR = new TestKcpRemote();
-                        testR.Dealer.Index = clientIndex;
-                        testR.Dealer.MessageCount = MessageCount;
+                        TestRemote testR = new TestRemote();
+                        testR.Index = clientIndex;
+                        testR.MessageCount = MessageCount;
                         testR.TraceListener = new ConsoleTraceListener();
+                        testR.SetTransport(new KcpRemote());
                         remote = testR;
                     }
                     break;
@@ -181,11 +184,11 @@ namespace TestClient
 
             try
             {
-                if (remote is IConnectable conn)
+                if (remote.Transport is IConnectable conn)
                 {
                     await conn.ConnectAsync(new IPEndPoint(IPAddress.Loopback, Port));
                     Console.WriteLine($"Remote{clientIndex} 连接成功。");
-                    if (remote is KcpRemote kcp)
+                    if (remote.Transport is KcpRemote kcp)
                     {
                         //kcp.KcpCore.TraceListener = new ConsoleTraceListener();
                         kcp.SendBeat();
@@ -220,14 +223,13 @@ namespace TestClient
         #endregion
     }
 
-    public class Dealer
+    public sealed class TestRemote : UniversalRemote
     {
         public int Index { get; set; }
         public int MessageCount { get; set; }
         Stopwatch stopwatch = new Stopwatch();
 
-        public async ValueTask<object>
-            OnReceive(short cmd, int messageID, object message)
+        public async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
             switch (message)
             {
@@ -253,24 +255,6 @@ namespace TestClient
             }
             return null;
         }
-    }
-
-    public sealed class TestTcpRemote : TcpRemote
-    {
-        public Dealer Dealer = new Dealer();
-        public override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);
-    }
-
-    public sealed class TestUdpRemote : UdpRemote
-    {
-        public Dealer Dealer = new Dealer();
-        public override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);
-    }
-
-    public sealed class TestKcpRemote : KcpRemote
-    {
-        public Dealer Dealer = new Dealer();
-        public override ValueTask<object> OnReceive(short cmd, int messageID, object message) => Dealer.OnReceive(cmd, messageID, message);
     }
 }
 

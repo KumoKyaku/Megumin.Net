@@ -20,7 +20,7 @@ namespace Megumin.Remote
     /// 但是用UDP测试，不能复现这种一个UdpRemoteListener不应该处理过多的连接的情况。尽管丢包现象明显。
     /// </summary>
     [Obsolete("", true)]
-    public class KcpRemoteListenerOld : UdpRemoteListenerOld, IListenerOld<KcpRemote>
+    public class KcpRemoteListenerOld : UdpRemoteListenerOld/*, IListenerOld<KcpRemote>*/
     {
         public KcpRemoteListenerOld(int port)
             : base(port)
@@ -60,10 +60,10 @@ namespace Megumin.Remote
             return null;
         }
 
-        ValueTask<R> IListenerOld<KcpRemote>.ListenAsync<R>(Func<R> createFunc)
-        {
-            return ListenAsync(createFunc);
-        }
+        //ValueTask<R> IListenerOld<KcpRemote>.ListenAsync<R>(Func<R> createFunc)
+        //{
+        //    return ListenAsync(createFunc);
+        //}
     }
 
     /// <summary>
@@ -71,52 +71,20 @@ namespace Megumin.Remote
     /// <para>--------</para>
     /// 新的UdpRemoteListener优化了接收循环，勉强能处理3000个连接。打嗝假死现象减弱了。
     /// </summary>
-    public class KcpRemoteListener : UdpRemoteListener, IListener<KcpRemote>
+    public class KcpRemoteListener : UdpRemoteListener/*, IListener<KcpRemote>*/
     {
         public KcpRemoteListener(int port, AddressFamily? addressFamily = null) : base(port, addressFamily)
         {
         }
 
-        protected override async ValueTask<UdpRemote> CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
+        //public new ValueTask<R> ReadAsync<R>(Func<R> createFunc) where R : KcpRemote
+        //{
+        //    return base.ReadAsync(createFunc);
+        //}
+
+        public ValueTask ReadAsync(KcpRemote trans)
         {
-            //Todo 超时2000ms
-            var (CreateRemote, OnComplete) = await remoteCreators.ReadAsync().ConfigureAwait(false);
-
-            var udp = CreateRemote?.Invoke();
-
-            if (udp is KcpRemote remote)
-            {
-                remote.InitKcp(answer.KcpChannel);
-                remote.IsVaild = true;
-                remote.ConnectIPEndPoint = endPoint;
-                remote.GUID = answer.Guid;
-                remote.Password = answer.Password;
-                remote.IsListenSide = true;
-                remote.UdpRemoteListener = this;
-
-                if (UseSendSocketInsteadRecvSocketOnListenSideRemote && SendSockets.Count > 0)
-                {
-                    //监听侧使用特定的Socket发送，不使用接收端口发送减少发送压力。
-                    //但是NAT情况可能会导致接收端数据直接被丢弃。
-                    var sendSocket = SendSockets[connected.Count % SendSockets.Count];
-                    remote.SetSocket(sendSocket);
-                }
-                else
-                {
-                    remote.SetSocket(ListenerSocket);
-                }
-
-                lut.Add(remote.GUID.Value, remote);
-                connected.Add(endPoint, remote);
-            }
-
-            OnComplete?.Invoke(udp);
-            return udp;
-        }
-
-        public new ValueTask<R> ReadAsync<R>(Func<R> createFunc) where R : KcpRemote
-        {
-            return base.ReadAsync(createFunc);
+            return base.ReadAsync(trans);
         }
     }
 }

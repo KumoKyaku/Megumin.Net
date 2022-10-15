@@ -59,6 +59,12 @@ namespace Megumin.Remote
             }
         }
 
+        public override void SetUdpAuthResponse(UdpAuthResponse response)
+        {
+            InitKcp(response.KcpChannel);
+            base.SetUdpAuthResponse(response);
+        }
+
         internal protected virtual void SafeCloseKcpCore()
         {
             Task.Run(() =>
@@ -191,7 +197,7 @@ namespace Megumin.Remote
                 if (rpcID > 0)
                 {
                     //对于已经注册了Rpc的消息,直接触发异常。
-                    RpcLayer.RpcCallbackPool.TrySetException(rpcID, new SocketException(-1));
+                    RemoteCore.RpcLayer.RpcCallbackPool.TrySetException(rpcID, new SocketException(-1));
                     return;
                 }
                 else
@@ -206,7 +212,7 @@ namespace Megumin.Remote
             }
             else
             {
-                if (TrySerialize(SendWriter, rpcID, message, options))
+                if (RemoteCore.TrySerialize(SendWriter, rpcID, message, options))
                 {
                     var (buffer, lenght) = SendWriter.Pop();
                     KcpCore.Send(buffer.Memory.Span.Slice(0, lenght));
@@ -236,7 +242,7 @@ namespace Megumin.Remote
                 {
                     try
                     {
-                        ProcessBody(new ReadOnlySequence<byte>(segment.Array, 0, lenght));
+                        RemoteCore.ProcessBody(new ReadOnlySequence<byte>(segment.Array, 0, lenght));
                     }
                     catch (Exception e)
                     {

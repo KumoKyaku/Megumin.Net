@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Megumin.Remote
 {
     [Obsolete("", true)]
-    public class TcpRemoteListenerOld : IListenerOld<TcpRemote>
+    public class TcpRemoteListenerOld /*: IListenerOld<TcpRemote>*/
     {
         private TcpListener tcpListener;
         public IPEndPoint ConnectIPEndPoint { get; set; }
@@ -92,7 +92,7 @@ namespace Megumin.Remote
 
     }
 
-    public class TcpRemoteListener : IListener<TcpRemote>
+    public class TcpRemoteListener
     {
         private TcpListener tcpListener;
         public IPEndPoint ConnectIPEndPoint { get; set; }
@@ -102,7 +102,7 @@ namespace Megumin.Remote
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None, port);
         }
 
-        protected QueuePipe<Socket> sockets = new QueuePipe<Socket>();
+        public QueuePipe<Socket> AcceptedSockets { get; protected set; } = new QueuePipe<Socket>();
         public void Start(object option = null)
         {
             if (tcpListener == null)
@@ -135,7 +135,7 @@ namespace Megumin.Remote
                     var socket = await tcpListener.AcceptSocketAsync().ConfigureAwait(false);
 
 #pragma warning disable CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
-                    Task.Run(() => { sockets.Write(socket); });
+                    Task.Run(() => { AcceptedSockets.Write(socket); });
 #pragma warning restore CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
                 }
             }
@@ -150,15 +150,15 @@ namespace Megumin.Remote
             }
         }
 
-        public async ValueTask<R> ReadAsync<R>(Func<R> createFunc)
-            where R : TcpRemote
-        {
-            var socket = await sockets.ReadAsync().ConfigureAwait(false);
-            var remote = createFunc.Invoke();
-            remote.SetSocket(socket);
-            remote.StartWork();
-            return remote;
-        }
+        //public async ValueTask<R> ReadAsync<R>(Func<R> createFunc)
+        //    where R : TcpRemote
+        //{
+        //    var socket = await AcceptedSockets.ReadAsync().ConfigureAwait(false);
+        //    var remote = createFunc.Invoke();
+        //    remote.SetSocket(socket);
+        //    remote.StartWork();
+        //    return remote;
+        //}
 
         protected virtual void OnAcceptException(Exception e)
         {
@@ -166,15 +166,11 @@ namespace Megumin.Remote
             tcpListener = null;
         }
 
-        //public async ValueTask ReadAsync(TcpTransporter trans, UniversalRemote remote)
-        //{
-        //    var socket = await sockets.ReadAsync().ConfigureAwait(false);
-
-        //    remote.Transporter = trans;
-        //    trans.RemoteCore = remote;
-
-        //    trans.SetSocket(socket);
-        //    trans.StartWork();
-        //}
+        public async ValueTask ReadAsync(TcpRemote trans)
+        {
+            var socket = await AcceptedSockets.ReadAsync().ConfigureAwait(false);
+            trans.SetSocket(socket);
+            trans.StartWork();
+        }
     }
 }

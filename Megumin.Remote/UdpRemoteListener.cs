@@ -22,8 +22,8 @@ namespace Megumin.Remote
     /// <summary>
     /// 2018年时IPV4 IPV6 udp中不能混用，不知道现在情况
     /// </summary>
-    [Obsolete("",true)]
-    public class UdpRemoteListenerOld : UdpClient, IListenerOld<UdpRemote>
+    [Obsolete("", true)]
+    public class UdpRemoteListenerOld : UdpClient/*, IListenerOld<UdpRemote>*/
     {
         public IPEndPoint ConnectIPEndPoint { get; set; }
 
@@ -282,7 +282,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class UdpRemoteListener : IListener<UdpRemote>
+    public partial class UdpRemoteListener /*: IListener<UdpRemote>*/
     {
         internal protected static class IPEndPointStatics
         {
@@ -365,18 +365,16 @@ namespace Megumin.Remote
         protected virtual async ValueTask<UdpRemote> CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
         {
             //Todo 超时2000ms
-            var (CreateRemote, OnComplete) = await remoteCreators.ReadAsync().ConfigureAwait(false);
+            (UdpRemote transporter, Action OnComplete)
+                = await remoteCreators.ReadAsync().ConfigureAwait(false);
 
-            var remote = CreateRemote?.Invoke();
-
-            if (remote != null)
+            if (transporter != null)
             {
-                remote.IsVaild = true;
-                remote.ConnectIPEndPoint = endPoint;
-                remote.GUID = answer.Guid;
-                remote.Password = answer.Password;
-                remote.IsListenSide = true;
-                remote.UdpRemoteListener = this;
+                transporter.SetUdpAuthResponse(answer);
+                transporter.IsVaild = true;
+                transporter.ConnectIPEndPoint = endPoint;
+                transporter.IsListenSide = true;
+                transporter.UdpRemoteListener = this;
 
                 if (UseSendSocketInsteadRecvSocketOnListenSideRemote && SendSockets.Count > 0)
                 {
@@ -385,24 +383,24 @@ namespace Megumin.Remote
                     var sendSocket = SendSockets[connected.Count % SendSockets.Count];
                     if (sendSocket != null)
                     {
-                        remote.SetSocket(sendSocket);
+                        transporter.SetSocket(sendSocket);
                     }
                     else
                     {
-                        remote.SetSocket(ListenerSocket);
+                        transporter.SetSocket(ListenerSocket);
                     }
                 }
                 else
                 {
-                    remote.SetSocket(ListenerSocket);
+                    transporter.SetSocket(ListenerSocket);
                 }
 
-                lut.Add(remote.GUID.Value, remote);
-                connected.Add(endPoint, remote);
+                lut.Add(transporter.GUID.Value, transporter);
+                connected.Add(endPoint, transporter);
             }
 
-            OnComplete?.Invoke(remote);
-            return remote;
+            OnComplete?.Invoke();
+            return transporter;
         }
 
         /// <summary>
@@ -504,19 +502,32 @@ namespace Megumin.Remote
             SendSockets?.Clear();
         }
 
-        protected QueuePipe<(Func<UdpRemote> CreateRemote, Action<UdpRemote> OnComplete)> remoteCreators
-            = new QueuePipe<(Func<UdpRemote> CreateRemote, Action<UdpRemote> OnComplete)>();
+        //protected QueuePipe<(Func<UdpRemote> CreateRemote, Action<UdpRemote> OnComplete)> remoteCreators
+        //    = new QueuePipe<(Func<UdpRemote> CreateRemote, Action<UdpRemote> OnComplete)>();
 
+        protected QueuePipe<(UdpRemote Trans, Action OnComplete)> remoteCreators
+            = new QueuePipe<(UdpRemote Trans, Action OnComplete)>();
 
-        public ValueTask<R> ReadAsync<R>(Func<R> createFunc) where R : UdpRemote
+        //public ValueTask<R> ReadAsync<R>(Func<R> createFunc) where R : UdpRemote
+        //{
+        //    TaskCompletionSource<R> source = new TaskCompletionSource<R>();
+        //    remoteCreators.Write((createFunc, (remote) =>
+        //    {
+        //        source.TrySetResult(remote as R);
+        //    }
+        //    ));
+        //    return new ValueTask<R>(source.Task);
+        //}
+
+        public async ValueTask ReadAsync(UdpRemote trans)
         {
-            TaskCompletionSource<R> source = new TaskCompletionSource<R>();
-            remoteCreators.Write((createFunc, (remote) =>
+            TaskCompletionSource<int> source = new TaskCompletionSource<int>();
+            remoteCreators.Write((trans,() =>
             {
-                source.TrySetResult(remote as R);
+                source.TrySetResult(0);
             }
             ));
-            return new ValueTask<R>(source.Task);
+            await source.Task;
         }
     }
 

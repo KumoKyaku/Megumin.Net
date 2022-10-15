@@ -86,7 +86,7 @@ namespace Megumin.DCS
 
         private DCSContainer() { }
 
-        public IRemote Remote { get; private set; } = new TcpRemote();
+        //public IRemote Remote { get; private set; } = new TcpRemote();
         /// <summary>
         /// 起始端口
         /// </summary>

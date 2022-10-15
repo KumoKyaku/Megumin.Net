@@ -15,7 +15,7 @@ namespace Megumin.Remote
     /// </summary>
     /// <remarks>消息报头结构：
     /// Lenght(总长度，包含自身报头) [int] [4] + RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
-    public partial class TcpRemote : RpcRemote, IRemote
+    public partial class TcpRemote : BaseTransporter, ITransportable
     {
         public int ID { get; } = InterlockedID<IRemoteID>.NewID();
 
@@ -204,14 +204,14 @@ namespace Megumin.Remote
             oldRemote.StopSocketSend();
             this.StopSocketSend();
             SendPipe = oldRemote.SendPipe;
-            RpcLayer = oldRemote.RpcLayer;
+            RemoteCore = oldRemote.RemoteCore;
             StartSocketSend();
         }
     }
 
-    public partial class TcpRemote : ISendable, ISendCanAwaitable
+    public partial class TcpRemote
     {
-        public override void Send(int rpcID, object message, object options = null)
+        public virtual void Send(int rpcID, object message, object options = null)
         {
             //todo 检查当前是否允许发送，可能已经处于断开阶段，不在允许新消息进入发送缓存区
             var allowSend = RemoteState == WorkState.Working || RemoteState == WorkState.NotStart;
@@ -221,7 +221,7 @@ namespace Megumin.Remote
                 if (rpcID > 0)
                 {
                     //对于已经注册了Rpc的消息,直接触发异常。
-                    RpcLayer.RpcCallbackPool.TrySetException(rpcID, new SocketException(-1));
+                    RemoteCore.RpcLayer.RpcCallbackPool.TrySetException(rpcID, new SocketException(-1));
                     return;
                 }
                 else
@@ -231,7 +231,7 @@ namespace Megumin.Remote
             }
 
             var writer = SendPipe.GetWriter();
-            if (TrySerialize(writer, rpcID, message, options))
+            if (RemoteCore.TrySerialize(writer, rpcID, message, options))
             {
                 //序列化成功
                 var len = writer.WriteLengthOnHeader();
@@ -535,7 +535,7 @@ namespace Megumin.Remote
                             //先计数后处理，如果某个数据段出现错误可以略过该段
                             unReadLenght -= nextSegmentLength;
                             offset += nextSegmentLength;
-                            ProcessBody(body);
+                            RemoteCore.ProcessBody(body);
                         }
                         else
                         {

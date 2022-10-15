@@ -1,6 +1,5 @@
 ﻿using Megumin.Message;
 using Megumin.Remote;
-using Megumin.Remote.Simple;
 using Megumin.Remote.Test;
 using System;
 using System.Buffers;
@@ -21,8 +20,8 @@ namespace TestWPF
     /// </summary>
     public partial class MainWindow : Window
     {
-        private ITestRemote client;
-        private ITestRemote server;
+        private TestWPFRemote client;
+        private TestWPFRemote server;
         private TcpRemoteListener listener;
         private UdpRemoteListener UdpRemoteListener;
         private KcpRemoteListener KcpRemoteListener;
@@ -65,18 +64,16 @@ namespace TestWPF
 
             while (true)
             {
-                var accept = await listener.ReadAsync(() =>
+                var dh = new DisconnectHandle() { log = this.Serverlog, };
+                TestWPFRemote remote = new TestWPFRemote() { log = Serverlog };
+                var trans = new TcpRemote() { DisconnectHandler = dh };
+                remote.SetTransport(trans);
+                await listener.ReadAsync(trans);
+                if (remote != null)
                 {
-                    var dh = new DisconnectHandle() { log = this.Serverlog, };
-                    var r = new TestRemote() { log = this.Serverlog, DisconnectHandler = dh };
-                    return r;
-                });
-
-                if (accept != null)
-                {
-                    accept.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
-                    this.Serverlog.Content += $"\n 收到连接 {accept.RemoteEndPoint} ";
-                    server = accept;
+                    remote.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
+                    this.Serverlog.Content += $"\n 收到连接 {remote.RemoteEndPoint} ";
+                    server = remote;
                 }
             }
         }
@@ -90,21 +87,16 @@ namespace TestWPF
 
             while (true)
             {
-                var accept = await UdpRemoteListener.ReadAsync(() =>
+                var dh = new DisconnectHandle() { log = this.Serverlog, };
+                TestWPFRemote remote = new TestWPFRemote() { log = Serverlog };
+                var trans = new UdpRemote() { DisconnectHandler = dh };
+                remote.SetTransport(trans);
+                await UdpRemoteListener.ReadAsync(trans);
+                if (remote != null)
                 {
-                    var dh = new DisconnectHandle() { log = this.Serverlog, };
-                    var r = new TestUdpRemote() { log = this.Serverlog, DisconnectHandler = dh };
-                    return r;
-                });
-
-                if (accept != null)
-                {
-                    accept.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
-                    this.Serverlog.Dispatcher.Invoke(new Action(() =>
-                    {
-                        this.Serverlog.Content += $"\n 收到连接 {accept.RemoteEndPoint} ";
-                    }));
-                    server = accept;
+                    remote.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
+                    this.Serverlog.Content += $"\n 收到连接 {remote.RemoteEndPoint} ";
+                    server = remote;
                 }
             }
         }
@@ -118,21 +110,16 @@ namespace TestWPF
 
             while (true)
             {
-                var accept = await KcpRemoteListener.ReadAsync(() =>
+                var dh = new DisconnectHandle() { log = this.Serverlog, };
+                TestWPFRemote remote = new TestWPFRemote() { log = Serverlog };
+                var trans = new KcpRemote() { DisconnectHandler = dh };
+                remote.SetTransport(trans);
+                await KcpRemoteListener.ReadAsync(trans);
+                if (remote != null)
                 {
-                    var dh = new DisconnectHandle() { log = this.Serverlog, };
-                    var r = new TestKcpRemote() { log = this.Serverlog, DisconnectHandler = dh };
-                    return r;
-                }).ConfigureAwait(true);
-
-                if (accept != null)
-                {
-                    accept.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
-                    this.Serverlog.Dispatcher.Invoke(new Action(() =>
-                    {
-                        this.Serverlog.Content += $"\n 收到连接 {accept.RemoteEndPoint} ";
-                    }));
-                    server = accept;
+                    remote.LogRecvBytes = this.LogRecvBytes.IsChecked ?? false;
+                    this.Serverlog.Content += $"\n 收到连接 {remote.RemoteEndPoint} ";
+                    server = remote;
                 }
             }
         }
@@ -155,15 +142,21 @@ namespace TestWPF
 
             if (ProtocolType == Megumin.Remote.Protocol.Tcp)
             {
-                client = new TestRemote() { DisconnectHandler = dh };
+                client = new TestWPFRemote();
+                var trans = new TcpRemote() { DisconnectHandler = dh };
+                client.SetTransport(trans);
             }
             else if (ProtocolType == Megumin.Remote.Protocol.Udp)
             {
-                client = new TestUdpRemote() { DisconnectHandler = dh };
+                client = new TestWPFRemote();
+                var trans = new UdpRemote() { DisconnectHandler = dh };
+                client.SetTransport(trans);
             }
             else if (ProtocolType == Megumin.Remote.Protocol.Kcp)
             {
-                client = new TestKcpRemote() { DisconnectHandler = dh };
+                client = new TestWPFRemote();
+                var trans = new KcpRemote() { DisconnectHandler = dh };
+                client.SetTransport(trans);
             }
 
             client.log = this.ClientLog;
@@ -175,7 +168,7 @@ namespace TestWPF
         {
             try
             {
-                await client.ConnectAsync(new IPEndPoint(targetIP, port));
+                await client.Transport.ConnectAsync(new IPEndPoint(targetIP, port));
                 ClientLog.Content += $"\n 连接成功";
             }
             catch (Exception ex)
@@ -204,17 +197,17 @@ namespace TestWPF
 
         private void Button_Click_4(object sender, RoutedEventArgs e)
         {
-            client.Client.Shutdown(SocketShutdown.Send);
+            client.Transport.Client.Shutdown(SocketShutdown.Send);
         }
 
         private void ServerDisconnect(object sender, RoutedEventArgs e)
         {
-            server.Disconnect();
+            server.Transport.Disconnect();
         }
 
         private void ClientDisconnect(object sender, RoutedEventArgs e)
         {
-            client.Disconnect(true);
+            client.Transport.Disconnect(true);
         }
 
         private void ClientSend(object sender, RoutedEventArgs e)
@@ -278,12 +271,12 @@ namespace TestWPF
 
         private void StartSocketSend_Click(object sender, RoutedEventArgs e)
         {
-            client.StartSocketSend();
+            client.Transport.StartSocketSend();
         }
 
         private void StopSocketSend_Click(object sender, RoutedEventArgs e)
         {
-            client.StopSocketSend();
+            client.Transport.StopSocketSend();
         }
 
         private void Protocol_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -312,13 +305,12 @@ public interface ITestRemote : IRemote, IConnectable, ISocketSendable
     bool LogRecvBytes { get; set; }
 }
 
-public class TestRemote : TcpRemote, ITestRemote
+public class TestWPFRemote : UniversalRemote
 {
-    static Dictionary<string, TestRemote> AllClient = new Dictionary<string, TestRemote>();
+    static Dictionary<string, TestWPFRemote> AllClient = new Dictionary<string, TestWPFRemote>();
     public Label log { get; set; }
     public bool LogRecvBytes { get; set; }
 
-    int disCount = 0;
     public override ValueTask<object> OnReceive(short cmd, int messageID, object message)
     {
         log.Dispatcher.Invoke(() =>
@@ -381,174 +373,6 @@ public class TestRemote : TcpRemote, ITestRemote
         }
 
         base.ProcessBody(bodyBytes, RpcID, CMD, MessageID, options);
-    }
-}
-
-public class TestUdpRemote : UdpRemote, ITestRemote
-{
-    static Dictionary<string, TestUdpRemote> AllClient = new Dictionary<string, TestUdpRemote>();
-    public Label log { get; set; }
-    public bool LogRecvBytes { get; set; }
-
-    int disCount = 0;
-    public override ValueTask<object> OnReceive(short cmd, int messageID, object message)
-    {
-        log.Dispatcher.Invoke(() =>
-        {
-            switch (message)
-            {
-                case TestPacket1 packet1:
-                    log.Content += $"\n 收到{nameof(TestPacket1)} value:{packet1.Value}";
-                    break;
-                case TestPacket2 packet2:
-                    log.Content += $"\n 收到{nameof(TestPacket2)} value:{packet2.Value}";
-                    break;
-                case TestPacket3 packet3:
-                    log.Content += $"\n 收到{nameof(TestPacket3)} value:{packet3.Value}";
-                    break;
-                case Authentication auth:
-                    log.Content += $"\n 收到{nameof(Authentication)} Token:{auth.Token}";
-                    break;
-                default:
-                    log.Content += $"\n 收到{message.GetType().Name} value:{message} {RemoteEndPoint}";
-                    break;
-            }
-        });
-
-        switch (message)
-        {
-            case TestPacket2 packet2:
-                return new ValueTask<object>(message);
-            case Authentication auth2:
-                if (AllClient.ContainsKey(auth2.Token))
-                {
-                    return new ValueTask<object>(200);
-                }
-                if (auth2.Token.StartsWith("TestClient"))
-                {
-                    AllClient.Add(auth2.Token, this);
-                    return new ValueTask<object>(200);
-                }
-                else
-                {
-                    return new ValueTask<object>(404);
-                }
-            case string str:
-                return new ValueTask<object>(str);
-            default:
-                break;
-        }
-        return NullResult;
-    }
-
-    public override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, int RpcID, short CMD, int MessageID, object options)
-    {
-        if (LogRecvBytes)
-        {
-            var len = bodyBytes.Length;
-            log.Dispatcher.Invoke(() =>
-            {
-                log.Content += $"\n 收到bodyBytes len:{len} rpcID：{RpcID} CMD:{CMD}  MessageID:{MessageID}";
-            });
-        }
-
-        base.ProcessBody(bodyBytes, RpcID, CMD, MessageID, options);
-    }
-
-    public bool IsSocketSending { get; }
-
-    public void StartSocketSend()
-    {
-        throw new NotImplementedException();
-    }
-
-    public void StopSocketSend()
-    {
-        throw new NotImplementedException();
-    }
-}
-
-public class TestKcpRemote : KcpRemote, ITestRemote
-{
-    static Dictionary<string, TestKcpRemote> AllClient = new Dictionary<string, TestKcpRemote>();
-    public Label log { get; set; }
-    public bool LogRecvBytes { get; set; }
-
-    int disCount = 0;
-    public override ValueTask<object> OnReceive(short cmd, int messageID, object message)
-    {
-        log.Dispatcher.Invoke(() =>
-        {
-            switch (message)
-            {
-                case TestPacket1 packet1:
-                    log.Content += $"\n 收到{nameof(TestPacket1)} value:{packet1.Value}";
-                    break;
-                case TestPacket2 packet2:
-                    log.Content += $"\n 收到{nameof(TestPacket2)} value:{packet2.Value}";
-                    break;
-                case TestPacket3 packet3:
-                    log.Content += $"\n 收到{nameof(TestPacket3)} value:{packet3.Value}";
-                    break;
-                case Authentication auth:
-                    log.Content += $"\n 收到{nameof(Authentication)} Token:{auth.Token}";
-                    break;
-                default:
-                    log.Content += $"\n 收到{message.GetType().Name} value:{message} {RemoteEndPoint}";
-                    break;
-            }
-        });
-
-        switch (message)
-        {
-            case TestPacket2 packet2:
-                return new ValueTask<object>(message);
-            case Authentication auth2:
-                if (AllClient.ContainsKey(auth2.Token))
-                {
-                    return new ValueTask<object>(200);
-                }
-                if (auth2.Token.StartsWith("TestClient"))
-                {
-                    AllClient.Add(auth2.Token, this);
-                    return new ValueTask<object>(200);
-                }
-                else
-                {
-                    return new ValueTask<object>(404);
-                }
-            case string str:
-                return new ValueTask<object>(str);
-            default:
-                break;
-        }
-        return NullResult;
-    }
-
-    public override void ProcessBody(in ReadOnlySequence<byte> bodyBytes, int RpcID, short CMD, int MessageID, object options)
-    {
-        if (LogRecvBytes)
-        {
-            var len = bodyBytes.Length;
-            log.Dispatcher.Invoke(() =>
-            {
-                log.Content += $"\n 收到bodyBytes len:{len} rpcID：{RpcID} CMD:{CMD}  MessageID:{MessageID}";
-            });
-        }
-
-        base.ProcessBody(bodyBytes, RpcID, CMD, MessageID, options);
-    }
-
-    public bool IsSocketSending { get; }
-
-    public void StartSocketSend()
-    {
-        throw new NotImplementedException();
-    }
-
-    public void StopSocketSend()
-    {
-        throw new NotImplementedException();
     }
 }
 

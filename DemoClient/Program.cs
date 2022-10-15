@@ -60,11 +60,11 @@ namespace DemoClient
             };
 
             ///有返回值，这个是一个RPC过程，Exception在网络中传递
-            var resp = await remote.SendSafeAwait<Login2GateResult>(login);
-            if (resp.IsSuccess)
-            {
-                Console.WriteLine("登陆成功");
-            }
+            //var resp = await remote.SendSafeAwait<Login2GateResult>(login);
+            //if (resp.IsSuccess)
+            //{
+            //    Console.WriteLine("登陆成功");
+            //}
 
             ///没有返回值，不是RPC过程
         }

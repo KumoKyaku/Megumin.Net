@@ -92,17 +92,12 @@ namespace TestServer
                             listener2.Start();
                             while (true)
                             {
+                                TestServerRemote re = new TestServerRemote();
+                                var trans = new TcpRemote();
+                                re.SetTransport(trans);
                                 /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-                                var re = await listener2.ReadAsync(static () =>
-                                {
-                                    Console.WriteLine($"总接收到连接{connectCount}");
-                                    return new TestTcpServerRemote()
-                                    {
-                                        Post2ThreadScheduler = UsePost2ThreadScheduler,
-                                        UID = connectCount,
-                                        TraceListener = new ConsoleTraceListener(),
-                                    };
-                                }).ConfigureAwait(false);
+                                await listener2.ReadAsync(trans).ConfigureAwait(false);
+                                Console.WriteLine($"总接收到连接{connectCount}");
                                 Interlocked.Increment(ref connectCount);
                             }
                         }
@@ -114,17 +109,11 @@ namespace TestServer
                             listener2.Start();
                             while (true)
                             {
-                                /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-                                var re = await listener2.ReadAsync(static () =>
-                                {
-                                    Console.WriteLine($"总接收到连接{connectCount}");
-                                    return new TestUdpServerRemote()
-                                    {
-                                        Post2ThreadScheduler = UsePost2ThreadScheduler,
-                                        UID = connectCount,
-                                        TraceListener = new ConsoleTraceListener(),
-                                    };
-                                }).ConfigureAwait(false);
+                                TestServerRemote re = new TestServerRemote();
+                                var trans = new UdpRemote();
+                                re.SetTransport(trans);
+                                await listener2.ReadAsync(trans).ConfigureAwait(false);
+                                Console.WriteLine($"总接收到连接{connectCount}");
                                 Interlocked.Increment(ref connectCount);
                             }
                         }
@@ -136,17 +125,11 @@ namespace TestServer
                             listener2.Start();
                             while (true)
                             {
-                                /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-                                var re = await listener2.ReadAsync(static () =>
-                                {
-                                    Console.WriteLine($"总接收到连接{connectCount}");
-                                    return new TestKcpServerRemote()
-                                    {
-                                        Post2ThreadScheduler = UsePost2ThreadScheduler,
-                                        UID = connectCount,
-                                        TraceListener = new ConsoleTraceListener(),
-                                    };
-                                }).ConfigureAwait(false);
+                                TestServerRemote re = new TestServerRemote();
+                                var trans = new KcpRemote();
+                                re.SetTransport(trans);
+                                await listener2.ReadAsync(trans).ConfigureAwait(false);
+                                Console.WriteLine($"总接收到连接{connectCount}");
                                 //re.KcpCore.TraceListener = new ConsoleTraceListener();
                                 Interlocked.Increment(ref connectCount);
                             }
@@ -189,114 +172,60 @@ namespace TestServer
 
         static int connectCount = 1;
 
-        private static async void Listen(IListenerOld<TcpRemote> remote)
-        {
-            /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-            var re = await remote.ListenAsync(static ()=>
-            {
-                Console.WriteLine($"总接收到连接{connectCount}");
-                return new TestTcpServerRemote()
-                {
-                    Post2ThreadScheduler = UsePost2ThreadScheduler,
-                    UID = connectCount,
-                    TraceListener = new ConsoleTraceListener(),
-                };
-            });
-            Interlocked.Increment(ref connectCount);
-            Listen(remote);
-        }
+        //private static async void Listen(IListenerOld<TcpRemote> remote)
+        //{
+        //    /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
+        //    var re = await remote.ListenAsync(static () =>
+        //    {
+        //        Console.WriteLine($"总接收到连接{connectCount}");
+        //        return new TestTcpServerRemote()
+        //        {
+        //            Post2ThreadScheduler = UsePost2ThreadScheduler,
+        //            UID = connectCount,
+        //            TraceListener = new ConsoleTraceListener(),
+        //        };
+        //    });
+        //    Interlocked.Increment(ref connectCount);
+        //    Listen(remote);
+        //}
 
-        private static async void Listen(IListenerOld<UdpRemote> remote)
-        {
-            /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-            var re = await remote.ListenAsync(static () =>
-            {
-                Console.WriteLine($"总接收到连接{connectCount}");
-                return new TestUdpServerRemote()
-                {
-                    Post2ThreadScheduler = UsePost2ThreadScheduler,
-                    UID = connectCount,
-                    TraceListener = new ConsoleTraceListener(),
-                };
-            });
-            Interlocked.Increment(ref connectCount);
-            Listen(remote);
-        }
+        //private static async void Listen(IListenerOld<UdpRemote> remote)
+        //{
+        //    /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
+        //    var re = await remote.ListenAsync(static () =>
+        //    {
+        //        Console.WriteLine($"总接收到连接{connectCount}");
+        //        return new TestUdpServerRemote()
+        //        {
+        //            Post2ThreadScheduler = UsePost2ThreadScheduler,
+        //            UID = connectCount,
+        //            TraceListener = new ConsoleTraceListener(),
+        //        };
+        //    });
+        //    Interlocked.Increment(ref connectCount);
+        //    Listen(remote);
+        //}
 
-        private static async void ListenKcp(IListenerOld<KcpRemote> remote)
-        {
-            /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-            var re = await remote.ListenAsync(static () =>
-            {
-                Console.WriteLine($"总接收到连接{connectCount}");
-                return new TestKcpServerRemote()
-                {
-                    Post2ThreadScheduler = UsePost2ThreadScheduler,
-                    UID = connectCount,
-                    TraceListener = new ConsoleTraceListener(),
-                };
-            });
-            //re.KcpCore.TraceListener = new ConsoleTraceListener();
-            Interlocked.Increment(ref connectCount);
-            ListenKcp(remote);
-        }
+        //private static async void ListenKcp(IListenerOld<KcpRemote> remote)
+        //{
+        //    /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
+        //    var re = await remote.ListenAsync(static () =>
+        //    {
+        //        Console.WriteLine($"总接收到连接{connectCount}");
+        //        return new TestKcpServerRemote()
+        //        {
+        //            Post2ThreadScheduler = UsePost2ThreadScheduler,
+        //            UID = connectCount,
+        //            TraceListener = new ConsoleTraceListener(),
+        //        };
+        //    });
+        //    //re.KcpCore.TraceListener = new ConsoleTraceListener();
+        //    Interlocked.Increment(ref connectCount);
+        //    ListenKcp(remote);
+        //}
     }
 
-    public sealed class TestTcpServerRemote : TcpRemote
-    {
-        static int totalCount;
-        int myRecvCount = 0;
-        public async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
-        {
-            Interlocked.Increment(ref totalCount);
-            myRecvCount++;
-            switch (message)
-            {
-                case TestPacket1 packet1:
-                    if (totalCount % 1 == 0)
-                    {
-                        Console.WriteLine($"Remote:{UID} 接收消息{nameof(TestPacket1)}--{packet1.Value}--MyRecvCount{myRecvCount}----总消息数{totalCount}");
-                    }
-                    return null;
-                case TestPacket2 packet2:
-                    Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
-                    return packet2;
-                default:
-                    Console.WriteLine($"Remote{UID}:接收消息{message.GetType().Name}");
-                    break;
-            }
-            return null;
-        }
-    }
-
-    public sealed class TestUdpServerRemote : UdpRemote
-    {
-        static int totalCount;
-        int myRecvCount = 0;
-        public async override ValueTask<object> OnReceive(short cmd, int messageID, object message)
-        {
-            Interlocked.Increment(ref totalCount);
-            myRecvCount++;
-            switch (message)
-            {
-                case TestPacket1 packet1:
-                    if (totalCount % 1 == 0)
-                    {
-                        Console.WriteLine($"Remote:{UID} 接收消息{nameof(TestPacket1)}--{packet1.Value}--MyRecvCount{myRecvCount}----总消息数{totalCount}");
-                    }
-                    return null;
-                case TestPacket2 packet2:
-                    Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
-                    return packet2;
-                default:
-                    Console.WriteLine($"Remote{UID}:接收消息{message.GetType().Name}");
-                    break;
-            }
-            return null;
-        }
-    }
-
-    public sealed class TestKcpServerRemote : KcpRemote
+    public sealed class TestServerRemote : UniversalRemote
     {
         static int totalCount;
         int myRecvCount = 0;
