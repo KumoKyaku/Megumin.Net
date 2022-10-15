@@ -65,21 +65,6 @@ namespace Megumin.Remote
             base.SetUdpAuthResponse(response);
         }
 
-        internal protected virtual void SafeCloseKcpCore()
-        {
-            Task.Run(() =>
-            {
-                lock (kcpUpdateLock)
-                {
-                    AllKcp.Remove(kcpUpdate);
-                    if (kcpUpdate is IDisposable disposable)
-                    {
-                        disposable.Dispose();
-                    }
-                }
-            });
-        }
-
         static readonly Random convRandom = new Random();
         public override Task ConnectAsync(IPEndPoint endPoint, int retryCount = 0, CancellationToken cancellationToken = default)
         {
@@ -171,6 +156,21 @@ namespace Megumin.Remote
             {
                 IsGlobalUpdate = false;
             }
+        }
+
+        internal protected virtual void SafeCloseKcpCore()
+        {
+            Task.Run(() =>
+            {
+                lock (kcpUpdateLock)
+                {
+                    AllKcp.Remove(kcpUpdate);
+                    if (kcpUpdate is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+            });
         }
     }
 

@@ -17,7 +17,6 @@ namespace Megumin.Remote
     /// Lenght(总长度，包含自身报头) [int] [4] + RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
     public partial class TcpTransport : BaseTransport, ITransportable
     {
-
         public bool IsVaild => RemoteState == WorkState.Working;
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public Socket Client { get; protected set; }
@@ -258,8 +257,6 @@ namespace Megumin.Remote
         /// <remarks>发送管道没有涵盖所有案例，尽量不要给外界访问</remarks>
         protected TcpSendPipe SendPipe { get; set; } = new TcpSendPipe();
 
-        [Obsolete("Use IsSocketSending")]
-        public bool IsSending => IsSocketSending;
         public bool IsSocketSending { get; protected set; }
         /// <summary>
         /// 开始读取发送管道，使用Socket发送消息
@@ -348,21 +345,6 @@ namespace Megumin.Remote
         /// <para/>
         /// FlushAsync后，另一头的触发是通过ThreadPoolScheduler来触发的，不是调用FlushAsync的线程，
         /// 所以useSynchronizationContext = false时，不用担心 IOCP线程 执行pipeReader，反序列化等造成IOCP线程阻塞问题。
-        /// </summary>
-        /// <remarks>
-        /// <para/>useSynchronizationContext 如果为true的话，
-        /// <para/>那么pipe read write 异步后续只会在调用线程执行。
-        /// <para/>构造 连接 StartWork调用链通常导致pipe异步后续在unity中会被锁定在主线程。
-        /// <para/>https://source.dot.net/#System.IO.Pipelines/System/IO/Pipelines/PipeAwaitable.cs,115
-        /// </remarks>
-        [Obsolete("Use RecvPipe")]
-        protected Pipe Pipe => RecvPipe;
-
-        /// <summary>
-        /// 不使用线程同步上下文，全部推送到线程池调用。useSynchronizationContext 用来保证await前后线程一致。
-        /// <para/>
-        /// FlushAsync后，另一头的触发是通过ThreadPoolScheduler来触发的，不是调用FlushAsync的线程，
-        /// 所以useSynchronizationContext = false时，不用担心 IOCP线程 执行pipeReader，反序列化等造成IOCP线程阻塞问题。
         /// <para>--------</para>
         /// 背压和流量控制,根据项目需要在PipeOptions中设置参数。
         /// https://www.cnblogs.com/xxfy1/p/9290235.html
@@ -372,14 +354,10 @@ namespace Megumin.Remote
         /// <para/>那么pipe read write 异步后续只会在调用线程执行。
         /// <para/>构造 连接 StartWork调用链通常导致pipe异步后续在unity中会被锁定在主线程。
         /// <para/>https://source.dot.net/#System.IO.Pipelines/System/IO/Pipelines/PipeAwaitable.cs,115
+        /// <para/>https://zhuanlan.zhihu.com/p/39223648
         /// </remarks>
         protected Pipe RecvPipe { get; set; } = new Pipe(new PipeOptions(useSynchronizationContext: false));
 
-        /// <summary>
-        /// 当前socket是不是在接收。
-        /// </summary>
-        [Obsolete("Use IsSocketReceiving")]
-        public bool IsReceiving => IsSocketReceiving;
         /// <summary>
         /// 当前socket是不是在接收。
         /// </summary>
@@ -489,11 +467,6 @@ namespace Megumin.Remote
             IsMessageReceiving = false;
         }
 
-        /// <summary>
-        /// 正在处理消息
-        /// </summary>
-        [Obsolete("Use IsMessageReceiving")]
-        public bool IsDealReceiving => IsMessageReceiving;
         /// <summary>
         /// 正在处理消息
         /// </summary>

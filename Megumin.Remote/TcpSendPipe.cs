@@ -111,6 +111,12 @@ namespace Megumin.Remote
                 {
                     var size = Math.Max(sizeHint, sendPipe.DefaultWriterSize);
                     buffer = ArrayPool<byte>.Shared.Rent(size);
+                    if (buffer == null)
+                    {
+                        //内存池用尽.todo 这里应该有个log
+                        Console.WriteLine($" ArrayPool<byte>.Shared.Rent(size) 返回null");
+                        buffer = new byte[size];
+                    }
                     return;
                 }
 
@@ -157,7 +163,7 @@ namespace Megumin.Remote
         ConcurrentQueue<ISendBlock> sendQueue = new ConcurrentQueue<ISendBlock>();
 
         protected readonly object _pushLock = new object();
-        
+
         internal protected void Push2Queue(ISendBlock sendblock)
         {
             lock (_pushLock)

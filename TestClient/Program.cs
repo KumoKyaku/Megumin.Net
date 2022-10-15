@@ -123,7 +123,7 @@ namespace TestClient
         }
 
         /// <summary>
-        /// //峰值 12000 0000 字节每秒，平均 4~7千万字节每秒
+        /// Tcp本机峰值26000 0000 字节每秒，网络模块性能已经不在是问题。
         /// int MessageCount = 10000;
         /// int RemoteCount = 100;
         /// </summary>
