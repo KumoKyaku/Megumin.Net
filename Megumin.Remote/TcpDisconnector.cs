@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Megumin.Remote
 {
-    public partial class TcpRemote
+    public partial class TcpTransport
     {
         internal protected Disconnector disconnector;
         public IDisconnectHandler DisconnectHandler { get; set; }
@@ -23,8 +23,8 @@ namespace Megumin.Remote
             /// 设置为true后，不需要重置为false，因为设计上一个remote只能触发断开一次。
             /// </summary>
             public bool IsDisconnecting = false;
-            public TcpRemote tcpRemote;
-            public IDisconnectHandler DisconnectHandler => tcpRemote.DisconnectHandler;
+            public TcpTransport tcpTransport;
+            public IDisconnectHandler DisconnectHandler => tcpTransport.DisconnectHandler;
 
             protected void OnSocketError(SocketError error)
             {
@@ -47,14 +47,14 @@ namespace Megumin.Remote
                 try
                 {
                     DisconnectHandler?.PreDisconnect(error, null);
-                    tcpRemote.RemoteState = WorkState.StopingAll;
+                    tcpTransport.RemoteState = WorkState.StopingAll;
                     //停止收发。
-                    tcpRemote.Client.Shutdown(SocketShutdown.Both);
+                    tcpTransport.Client.Shutdown(SocketShutdown.Both);
                 }
                 catch (Exception e)
                 {
                     //忽略  
-                    tcpRemote.TraceListener?.WriteLine(e.ToString());
+                    tcpTransport.TraceListener?.WriteLine(e.ToString());
                 }
                 finally
                 {
@@ -65,27 +65,27 @@ namespace Megumin.Remote
 
                         //关闭接收，这个过程中可能调用本身出现异常。
                         //也可能导致异步接收部分抛出，由于disconnectSignal只能使用一次，所有这个阶段异常都会被忽略。
-                        tcpRemote.Client.Disconnect(false);
+                        tcpTransport.Client.Disconnect(false);
                     }
                     catch (Exception e)
                     {
                         //忽略  
-                        tcpRemote.TraceListener?.WriteLine(e.ToString());
+                        tcpTransport.TraceListener?.WriteLine(e.ToString());
                     }
                     finally
                     {
                         try
                         {
-                            tcpRemote.RecvPipe.Writer.Complete();
-                            tcpRemote.Client.Close();
+                            tcpTransport.RecvPipe.Writer.Complete();
+                            tcpTransport.Client.Close();
                             //触发回调
-                            tcpRemote.RemoteState = WorkState.Stoped;
+                            tcpTransport.RemoteState = WorkState.Stoped;
                             DisconnectHandler?.OnDisconnect(error, null);
                         }
                         catch (Exception e)
                         {
                             //忽略  
-                            tcpRemote.TraceListener?.WriteLine(e.ToString());
+                            tcpTransport.TraceListener?.WriteLine(e.ToString());
                         }
                         finally
                         {
@@ -142,43 +142,43 @@ namespace Megumin.Remote
                     {
                         DisconnectHandler?.PreDisconnect(SocketError.Disconnecting, options);
                     }
-                    tcpRemote.RemoteState = WorkState.StopingWaitQueueSending;
+                    tcpTransport.RemoteState = WorkState.StopingWaitQueueSending;
 
                     if (waitSendQueue)
                     {
                         //todo 等待当前发送缓冲区发送结束。
                     }
 
-                    tcpRemote.RemoteState = WorkState.StopingAll;
+                    tcpTransport.RemoteState = WorkState.StopingAll;
 
                     //关闭接收，这个过程中可能调用本身出现异常。
-                    tcpRemote.Client.Shutdown(SocketShutdown.Both);
+                    tcpTransport.Client.Shutdown(SocketShutdown.Both);
                 }
                 catch (Exception e)
                 {
                     //忽略  
-                    tcpRemote.TraceListener?.WriteLine(e.ToString());
+                    tcpTransport.TraceListener?.WriteLine(e.ToString());
                 }
                 finally
                 {
                     try
                     {
-                        tcpRemote.Client.Disconnect(false);
+                        tcpTransport.Client.Disconnect(false);
                     }
                     catch (Exception e)
                     {
                         //忽略  
-                        tcpRemote.TraceListener?.WriteLine(e.ToString());
+                        tcpTransport.TraceListener?.WriteLine(e.ToString());
                     }
                     finally
                     {
                         try
                         {
-                            tcpRemote.RecvPipe.Writer.Complete();
+                            tcpTransport.RecvPipe.Writer.Complete();
                             //todo 等待已接受缓存处理完毕
                             //await tcpRemote.EndDealRecv();
-                            tcpRemote.Client.Close();
-                            tcpRemote.RemoteState = WorkState.Stoped;
+                            tcpTransport.Client.Close();
+                            tcpTransport.RemoteState = WorkState.Stoped;
                             if (triggerOnDisConnect)
                             {
                                 //触发回调
@@ -188,7 +188,7 @@ namespace Megumin.Remote
                         catch (Exception e)
                         {
                             //忽略  
-                            tcpRemote.TraceListener?.WriteLine(e.ToString());
+                            tcpTransport.TraceListener?.WriteLine(e.ToString());
                         }
                         finally
                         {

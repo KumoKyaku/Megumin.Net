@@ -36,7 +36,7 @@ namespace DemoClient
         /// </summary>
         private static async void ConnectAsync()
         {
-            TcpRemote remote = new TcpRemote();
+            TcpTransport remote = new TcpTransport();
             try
             {
                 await remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback, 54321));

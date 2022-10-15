@@ -9,14 +9,14 @@ namespace UnitTest
     [TestClass]
     public class UnitTestRemote2
     {
-        private UdpRemote CreateUdp()
+        private UdpTransport CreateUdp()
         {
-            return new UdpRemote();
+            return new UdpTransport();
         }
 
-        private KcpRemote CreateKcp()
+        private KcpTransport CreateKcp()
         {
-            return new KcpRemote();
+            return new KcpTransport();
         }
 
         //[TestMethod]

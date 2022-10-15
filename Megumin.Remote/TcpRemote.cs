@@ -15,7 +15,7 @@ namespace Megumin.Remote
     /// </summary>
     /// <remarks>消息报头结构：
     /// Lenght(总长度，包含自身报头) [int] [4] + RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
-    public partial class TcpRemote : BaseTransporter, ITransportable
+    public partial class TcpTransport : BaseTransport, ITransportable
     {
         public int ID { get; } = InterlockedID<IRemoteID>.NewID();
 
@@ -54,7 +54,7 @@ namespace Megumin.Remote
         /// </summary>
         public WorkState RemoteState { get; internal protected set; } = WorkState.NotStart;
 
-        public TcpRemote()
+        public TcpTransport()
         {
 
         }
@@ -64,7 +64,7 @@ namespace Megumin.Remote
         /// <para>SocketException: Protocol option not supported</para>
         /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
         /// </remarks>
-        public TcpRemote(AddressFamily addressFamily)
+        public TcpTransport(AddressFamily addressFamily)
         {
             SetSocket(new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp));
         }
@@ -84,7 +84,7 @@ namespace Megumin.Remote
             this.Client = socket;
             //每个socket都可以断开一次。
             disconnector = new Disconnector();
-            disconnector.tcpRemote = this;
+            disconnector.tcpTransport = this;
             if (Client.Connected)
             {
                 //服务器接受设置Socket
@@ -106,7 +106,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class TcpRemote : IConnectable
+    public partial class TcpTransport : IConnectable
     {
         /// <summary>
         /// 连接保护器，防止多次调用
@@ -149,7 +149,7 @@ namespace Megumin.Remote
                 {
                     await socket.ConnectAsync(endPoint).ConfigureAwait(false);
                     IsConnecting = false;
-                    disconnector.tcpRemote = this;
+                    disconnector.tcpTransport = this;
                     StartWork();
                     return;
                 }
@@ -194,7 +194,7 @@ namespace Megumin.Remote
         /// <para/> 只有方法2成立。重连后需要进行验证流程，需要收发消息甚至rpc功能，需要使用remote功能，所以1不成立。
         /// <para/> 收发消息后，socket ReceiveAsync已经挂起，socket已经和remote绑定，不能切换socket，所以方法3不成立。
         /// </remarks>
-        public virtual void ReConnectFrom(TcpRemote oldRemote)
+        public virtual void ReConnectFrom(TcpTransport oldRemote)
         {
             if (oldRemote == null)
             {
@@ -209,7 +209,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class TcpRemote
+    public partial class TcpTransport
     {
         public virtual void Send(int rpcID, object message, object options = null)
         {
@@ -342,7 +342,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class TcpRemote : IReceiveMessage
+    public partial class TcpTransport : IReceiveMessage
     {
         /// <summary>
         /// 不使用线程同步上下文，全部推送到线程池调用。useSynchronizationContext 用来保证await前后线程一致。

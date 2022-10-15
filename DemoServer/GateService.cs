@@ -30,7 +30,7 @@ namespace DemoServer
             return new GateRemote();
         }
 
-        class GateRemote : TcpRemote
+        class GateRemote : TcpTransport
         {
             //protected async override ValueTask<object> OnReceive(object message)
             //{

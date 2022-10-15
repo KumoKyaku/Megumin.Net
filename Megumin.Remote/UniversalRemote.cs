@@ -22,10 +22,10 @@ namespace Megumin.Remote
 
         public ITransportable Transport { get; private set; }
 
-        public void SetTransport(BaseTransporter transporter)
+        public void SetTransport(BaseTransport transport)
         {
-            transporter.RemoteCore = this;
-            if (transporter is ITransportable transportable)
+            transport.RemoteCore = this;
+            if (transport is ITransportable transportable)
             {
                 Transport = transportable;
             }

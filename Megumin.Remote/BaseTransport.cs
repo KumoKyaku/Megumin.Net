@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Megumin.Remote
 {
-    public class BaseTransporter
+    public class BaseTransport
     {
         public RpcRemote RemoteCore { get; set; }
         public System.Diagnostics.TraceListener TraceListener { get; set; }

@@ -154,7 +154,7 @@ namespace TestClient
                         testR.Index = clientIndex;
                         testR.MessageCount = MessageCount;
                         testR.TraceListener = new ConsoleTraceListener();
-                        testR.SetTransport(new TcpRemote());
+                        testR.SetTransport(new TcpTransport());
                         remote = testR;
                     }
                     break;
@@ -164,7 +164,7 @@ namespace TestClient
                         testR.Index = clientIndex;
                         testR.MessageCount = MessageCount;
                         testR.TraceListener = new ConsoleTraceListener();
-                        testR.SetTransport(new UdpRemote());
+                        testR.SetTransport(new UdpTransport());
                         remote = testR;
                     }
                     break;
@@ -174,7 +174,7 @@ namespace TestClient
                         testR.Index = clientIndex;
                         testR.MessageCount = MessageCount;
                         testR.TraceListener = new ConsoleTraceListener();
-                        testR.SetTransport(new KcpRemote());
+                        testR.SetTransport(new KcpTransport());
                         remote = testR;
                     }
                     break;
@@ -188,7 +188,7 @@ namespace TestClient
                 {
                     await conn.ConnectAsync(new IPEndPoint(IPAddress.Loopback, Port));
                     Console.WriteLine($"Remote{clientIndex} 连接成功。");
-                    if (remote.Transport is KcpRemote kcp)
+                    if (remote.Transport is KcpTransport kcp)
                     {
                         //kcp.KcpCore.TraceListener = new ConsoleTraceListener();
                         kcp.SendBeat();

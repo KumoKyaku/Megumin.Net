@@ -77,7 +77,7 @@ namespace Megumin.Remote
 
     public class Utility
     {
-        public static void BroadCast(object message, object options, params TcpRemote[] remote)
+        public static void BroadCast(object message, object options, params TcpTransport[] transport)
         {
             throw new NotImplementedException();
         }

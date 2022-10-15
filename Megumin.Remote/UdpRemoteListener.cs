@@ -27,8 +27,8 @@ namespace Megumin.Remote
     {
         public IPEndPoint ConnectIPEndPoint { get; set; }
 
-        protected readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
-        protected readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
+        protected readonly Dictionary<IPEndPoint, UdpTransport> connected = new Dictionary<IPEndPoint, UdpTransport>();
+        protected readonly Dictionary<Guid, UdpTransport> lut = new Dictionary<Guid, UdpTransport>();
         protected readonly UdpAuthHelper authHelper = new UdpAuthHelper();
         /// <remarks>
         /// Q:要不要用同步队列，预计有多个线程入队，只有一个线程出队，会不会有线程安全问题？
@@ -180,7 +180,7 @@ namespace Megumin.Remote
             }
         }
 
-        protected async ValueTask<UdpRemote> FindRemote(IPEndPoint endPoint)
+        protected async ValueTask<UdpTransport> FindRemote(IPEndPoint endPoint)
         {
             if (connected.TryGetValue(endPoint, out var remote))
             {
@@ -213,7 +213,7 @@ namespace Megumin.Remote
                     }
                     else
                     {
-                        UdpRemote udp = CreateNew(endPoint, answer);
+                        UdpTransport udp = CreateNew(endPoint, answer);
                         if (udp == null)
                         {
                             TraceListener?.Fail($"Listner 无法创建 remote");
@@ -224,7 +224,7 @@ namespace Megumin.Remote
             }
         }
 
-        protected virtual UdpRemote CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
+        protected virtual UdpTransport CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
         {
             if (remoteCreators.TryDequeue(out var creator))
             {
@@ -256,10 +256,10 @@ namespace Megumin.Remote
             IsListening = false;
         }
 
-        protected ConcurrentQueue<Func<(Action ContinueDelegate, UdpRemote Remote)>>
-            remoteCreators = new ConcurrentQueue<Func<(Action ContinueDelegate, UdpRemote Remote)>>();
+        protected ConcurrentQueue<Func<(Action ContinueDelegate, UdpTransport Remote)>>
+            remoteCreators = new ConcurrentQueue<Func<(Action ContinueDelegate, UdpTransport Remote)>>();
 
-        public virtual ValueTask<R> ListenAsync<R>(Func<R> createFunc) where R : UdpRemote
+        public virtual ValueTask<R> ListenAsync<R>(Func<R> createFunc) where R : UdpTransport
         {
             if (IsListening == false)
             {
@@ -269,7 +269,7 @@ namespace Megumin.Remote
             }
             TaskCompletionSource<R> source = new TaskCompletionSource<R>();
 
-            Func<(Action, UdpRemote)> d = () =>
+            Func<(Action, UdpTransport)> d = () =>
             {
                 var r = createFunc.Invoke();
                 Action a = () => { source.SetResult(r); };
@@ -298,8 +298,8 @@ namespace Megumin.Remote
         /// <summary>
         /// TODO: Recv0不保证能收到，应该启动一个计时器保证安全移除，防止内存泄露。每次收到消息延长生命周期。
         /// </summary>
-        protected readonly Dictionary<IPEndPoint, UdpRemote> connected = new Dictionary<IPEndPoint, UdpRemote>();
-        protected readonly Dictionary<Guid, UdpRemote> lut = new Dictionary<Guid, UdpRemote>();
+        protected readonly Dictionary<IPEndPoint, UdpTransport> connected = new Dictionary<IPEndPoint, UdpTransport>();
+        protected readonly Dictionary<Guid, UdpTransport> lut = new Dictionary<Guid, UdpTransport>();
         public TraceListener TraceListener { get; set; }
         public Socket ListenerSocket { get; protected set; }
         public int SendSocketCount { get; set; } = 10;
@@ -318,7 +318,7 @@ namespace Megumin.Remote
             this.ConnectIPEndPoint = new IPEndPoint(ip, port);
         }
 
-        protected async ValueTask<UdpRemote> FindRemote(IPEndPoint endPoint)
+        protected async ValueTask<UdpTransport> FindRemote(IPEndPoint endPoint)
         {
             if (connected.TryGetValue(endPoint, out var remote))
             {
@@ -353,7 +353,7 @@ namespace Megumin.Remote
                 }
 
                 //没有找到现有的
-                UdpRemote udp = await CreateNew(endPoint, answer);
+                UdpTransport udp = await CreateNew(endPoint, answer);
                 if (udp == null)
                 {
                     TraceListener?.Fail($"Listner 无法创建 remote");
@@ -362,19 +362,19 @@ namespace Megumin.Remote
             }
         }
 
-        protected virtual async ValueTask<UdpRemote> CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
+        protected virtual async ValueTask<UdpTransport> CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
         {
             //Todo 超时2000ms
-            (UdpRemote transporter, Action OnComplete)
+            (UdpTransport transport, Action OnComplete)
                 = await remoteCreators.ReadAsync().ConfigureAwait(false);
 
-            if (transporter != null)
+            if (transport != null)
             {
-                transporter.SetUdpAuthResponse(answer);
-                transporter.IsVaild = true;
-                transporter.ConnectIPEndPoint = endPoint;
-                transporter.IsListenSide = true;
-                transporter.UdpRemoteListener = this;
+                transport.SetUdpAuthResponse(answer);
+                transport.IsVaild = true;
+                transport.ConnectIPEndPoint = endPoint;
+                transport.IsListenSide = true;
+                transport.UdpRemoteListener = this;
 
                 if (UseSendSocketInsteadRecvSocketOnListenSideRemote && SendSockets.Count > 0)
                 {
@@ -383,32 +383,32 @@ namespace Megumin.Remote
                     var sendSocket = SendSockets[connected.Count % SendSockets.Count];
                     if (sendSocket != null)
                     {
-                        transporter.SetSocket(sendSocket);
+                        transport.SetSocket(sendSocket);
                     }
                     else
                     {
-                        transporter.SetSocket(ListenerSocket);
+                        transport.SetSocket(ListenerSocket);
                     }
                 }
                 else
                 {
-                    transporter.SetSocket(ListenerSocket);
+                    transport.SetSocket(ListenerSocket);
                 }
 
-                lut.Add(transporter.GUID.Value, transporter);
-                connected.Add(endPoint, transporter);
+                lut.Add(transport.GUID.Value, transport);
+                connected.Add(endPoint, transport);
             }
 
             OnComplete?.Invoke();
-            return transporter;
+            return transport;
         }
 
         /// <summary>
         /// 用于主动或被动断开连接后，从查询列表中移除。
         /// </summary>
         /// <param name="endPoint"></param>
-        /// <param name="remote"></param>
-        public void DelayRemove(IPEndPoint endPoint, UdpRemote remote)
+        /// <param name="transport"></param>
+        public void DelayRemove(IPEndPoint endPoint, UdpTransport transport)
         {
             Task.Run(async () =>
             {
@@ -417,9 +417,9 @@ namespace Megumin.Remote
                 /// A:Udp是不保证顺序的，可能断开的短时间内还有之前发送的包收到。如果立刻移除会触发重新认证。
                 await Task.Delay(120000);
                 connected.Remove(endPoint);
-                if (remote.GUID.HasValue)
+                if (transport.GUID.HasValue)
                 {
-                    lut.Remove(remote.GUID.Value);
+                    lut.Remove(transport.GUID.Value);
                 }
             });
         }
@@ -505,8 +505,8 @@ namespace Megumin.Remote
         //protected QueuePipe<(Func<UdpRemote> CreateRemote, Action<UdpRemote> OnComplete)> remoteCreators
         //    = new QueuePipe<(Func<UdpRemote> CreateRemote, Action<UdpRemote> OnComplete)>();
 
-        protected QueuePipe<(UdpRemote Trans, Action OnComplete)> remoteCreators
-            = new QueuePipe<(UdpRemote Trans, Action OnComplete)>();
+        protected QueuePipe<(UdpTransport Transport, Action OnComplete)> remoteCreators
+            = new QueuePipe<(UdpTransport Transport, Action OnComplete)>();
 
         //public ValueTask<R> ReadAsync<R>(Func<R> createFunc) where R : UdpRemote
         //{
@@ -519,10 +519,10 @@ namespace Megumin.Remote
         //    return new ValueTask<R>(source.Task);
         //}
 
-        public async ValueTask ReadAsync(UdpRemote trans)
+        public async ValueTask ReadAsync(UdpTransport transport)
         {
             TaskCompletionSource<int> source = new TaskCompletionSource<int>();
-            remoteCreators.Write((trans,() =>
+            remoteCreators.Write((transport, () =>
             {
                 source.TrySetResult(0);
             }

@@ -21,13 +21,13 @@ namespace Megumin.Remote
     /// <para></para>
     /// 工程实践中由于消息是不间断的，总是出现打嗝卡顿，后续消息会触发fastack。假死现象要比测试少一点。
     /// </summary>
-    public partial class KcpRemote : UdpRemote
+    public partial class KcpTransport : UdpTransport
     {
         public PoolSegManager.KcpIO KcpCore { get; internal protected set; } = null;
         IKcpUpdate kcpUpdate = null;
         const int BufferSizer = 1024 * 4;
 
-        public KcpRemote(AddressFamily? addressFamily = null) : base(addressFamily)
+        public KcpTransport(AddressFamily? addressFamily = null) : base(addressFamily)
         {
         }
 
@@ -100,7 +100,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class KcpRemote
+    public partial class KcpTransport
     {
         //循环Tick================================================================
         internal protected static readonly List<IKcpUpdate> AllKcp = new List<IKcpUpdate>();
@@ -174,7 +174,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class KcpRemote
+    public partial class KcpTransport
     {
         // 发送===================================================================
         protected UdpBufferWriter kcpout = new UdpBufferWriter(BufferSizer);
@@ -227,7 +227,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class KcpRemote
+    public partial class KcpTransport
     {
         ///接收===================================================================
 

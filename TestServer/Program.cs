@@ -92,8 +92,8 @@ namespace TestServer
                             listener2.Start();
                             while (true)
                             {
-                                TestServerRemote re = new TestServerRemote();
-                                var trans = new TcpRemote();
+                                TestServerRemote re = new TestServerRemote() { UID = connectCount };
+                                var trans = new TcpTransport();
                                 re.SetTransport(trans);
                                 /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
                                 await listener2.ReadAsync(trans).ConfigureAwait(false);
@@ -109,8 +109,8 @@ namespace TestServer
                             listener2.Start();
                             while (true)
                             {
-                                TestServerRemote re = new TestServerRemote();
-                                var trans = new UdpRemote();
+                                TestServerRemote re = new TestServerRemote() { UID = connectCount };
+                                var trans = new UdpTransport();
                                 re.SetTransport(trans);
                                 await listener2.ReadAsync(trans).ConfigureAwait(false);
                                 Console.WriteLine($"总接收到连接{connectCount}");
@@ -125,8 +125,8 @@ namespace TestServer
                             listener2.Start();
                             while (true)
                             {
-                                TestServerRemote re = new TestServerRemote();
-                                var trans = new KcpRemote();
+                                TestServerRemote re = new TestServerRemote() { UID = connectCount };
+                                var trans = new KcpTransport();
                                 re.SetTransport(trans);
                                 await listener2.ReadAsync(trans).ConfigureAwait(false);
                                 Console.WriteLine($"总接收到连接{connectCount}");

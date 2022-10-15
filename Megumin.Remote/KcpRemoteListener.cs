@@ -32,13 +32,13 @@ namespace Megumin.Remote
         {
         }
 
-        protected override UdpRemote CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
+        protected override UdpTransport CreateNew(IPEndPoint endPoint, UdpAuthResponse answer)
         {
             if (remoteCreators.TryDequeue(out var cre))
             {
                 var (continueAction, udp) = cre.Invoke();
 
-                KcpRemote remote = udp as KcpRemote;
+                KcpTransport remote = udp as KcpTransport;
                 if (remote != null)
                 {
                     remote.InitKcp(answer.KcpChannel);
@@ -82,9 +82,9 @@ namespace Megumin.Remote
         //    return base.ReadAsync(createFunc);
         //}
 
-        public ValueTask ReadAsync(KcpRemote trans)
+        public ValueTask ReadAsync(KcpTransport transport)
         {
-            return base.ReadAsync(trans);
+            return base.ReadAsync(transport);
         }
     }
 }

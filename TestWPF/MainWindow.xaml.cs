@@ -66,7 +66,7 @@ namespace TestWPF
             {
                 var dh = new DisconnectHandle() { log = this.Serverlog, };
                 TestWPFRemote remote = new TestWPFRemote() { log = Serverlog };
-                var trans = new TcpRemote() { DisconnectHandler = dh };
+                var trans = new TcpTransport() { DisconnectHandler = dh };
                 remote.SetTransport(trans);
                 await listener.ReadAsync(trans);
                 if (remote != null)
@@ -89,7 +89,7 @@ namespace TestWPF
             {
                 var dh = new DisconnectHandle() { log = this.Serverlog, };
                 TestWPFRemote remote = new TestWPFRemote() { log = Serverlog };
-                var trans = new UdpRemote() { DisconnectHandler = dh };
+                var trans = new UdpTransport() { DisconnectHandler = dh };
                 remote.SetTransport(trans);
                 await UdpRemoteListener.ReadAsync(trans);
                 if (remote != null)
@@ -112,7 +112,7 @@ namespace TestWPF
             {
                 var dh = new DisconnectHandle() { log = this.Serverlog, };
                 TestWPFRemote remote = new TestWPFRemote() { log = Serverlog };
-                var trans = new KcpRemote() { DisconnectHandler = dh };
+                var trans = new KcpTransport() { DisconnectHandler = dh };
                 remote.SetTransport(trans);
                 await KcpRemoteListener.ReadAsync(trans);
                 if (remote != null)
@@ -143,19 +143,19 @@ namespace TestWPF
             if (ProtocolType == Megumin.Remote.Protocol.Tcp)
             {
                 client = new TestWPFRemote();
-                var trans = new TcpRemote() { DisconnectHandler = dh };
+                var trans = new TcpTransport() { DisconnectHandler = dh };
                 client.SetTransport(trans);
             }
             else if (ProtocolType == Megumin.Remote.Protocol.Udp)
             {
                 client = new TestWPFRemote();
-                var trans = new UdpRemote() { DisconnectHandler = dh };
+                var trans = new UdpTransport() { DisconnectHandler = dh };
                 client.SetTransport(trans);
             }
             else if (ProtocolType == Megumin.Remote.Protocol.Kcp)
             {
                 client = new TestWPFRemote();
-                var trans = new KcpRemote() { DisconnectHandler = dh };
+                var trans = new KcpTransport() { DisconnectHandler = dh };
                 client.SetTransport(trans);
             }
 

@@ -56,7 +56,7 @@ namespace Megumin.Remote
         /// </summary>
         /// <returns></returns>
         public async ValueTask<R> ListenAsync<R>(Func<R> createFunc)
-            where R : TcpRemote
+            where R : TcpTransport
         {
             Socket remoteSocket = null;
             try
@@ -166,11 +166,11 @@ namespace Megumin.Remote
             tcpListener = null;
         }
 
-        public async ValueTask ReadAsync(TcpRemote trans)
+        public async ValueTask ReadAsync(TcpTransport transport)
         {
             var socket = await AcceptedSockets.ReadAsync().ConfigureAwait(false);
-            trans.SetSocket(socket);
-            trans.StartWork();
+            transport.SetSocket(socket);
+            transport.StartWork();
         }
     }
 }

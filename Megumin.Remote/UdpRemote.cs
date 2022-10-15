@@ -19,7 +19,7 @@ namespace Megumin.Remote
     /// <para>SocketException: Protocol option not supported</para>
     /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
     /// </summary>
-    public partial class UdpRemote : BaseTransporter, ITransportable
+    public partial class UdpTransport : BaseTransport, ITransportable
     {
         public int ID { get; } = InterlockedID<IRemoteID>.NewID();
         public AddressFamily? AddressFamily { get; set; } = null;
@@ -42,7 +42,7 @@ namespace Megumin.Remote
         /// </summary>
         protected int KcpIOChannel { get; set; }
 
-        public UdpRemote(AddressFamily? addressFamily = null)
+        public UdpTransport(AddressFamily? addressFamily = null)
         {
             this.AddressFamily = addressFamily;
         }
@@ -69,7 +69,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class UdpRemote
+    public partial class UdpTransport
     {
         //连接相关功能
 
@@ -263,7 +263,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class UdpRemote : ISocketSendable
+    public partial class UdpTransport : ISocketSendable
     {
         //发送==========================================================
 
@@ -329,7 +329,7 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class UdpRemote
+    public partial class UdpTransport
     {
         //接收============================================================
 
