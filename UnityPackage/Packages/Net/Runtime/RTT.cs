@@ -18,14 +18,14 @@ namespace Megumin
     {
         public TextMeshProUGUI RTTValue;
         public int IntervalMilliseconds = 500;
-        private ISendCanAwaitable Target;
+        private ISendAsyncable Target;
         private CancellationTokenSource cancellation;
         public void OnEnable()
         {
 
         }
 
-        internal void SetTarget(ISendCanAwaitable client)
+        internal void SetTarget(ISendAsyncable client)
         {
             this.Target = client;
             cancellation?.Cancel();
@@ -46,7 +46,7 @@ namespace Megumin
                 if (Target != null && this.enabled)
                 {
                     DateTimeOffset sendTime = DateTimeOffset.UtcNow;
-                    var (obj, ex) = await Target.Send<Heartbeat>(Heartbeat.Default, options: SendOption.Echo);
+                    var (obj, ex) = await Target.SendAsync<Heartbeat>(Heartbeat.Default, options: SendOption.Echo);
                     if (ex == null)
                     {
                         DateTimeOffset respTime = DateTimeOffset.UtcNow;

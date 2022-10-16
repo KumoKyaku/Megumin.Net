@@ -21,6 +21,13 @@ namespace Net.Remote
         /// 当前是否正常工作
         /// </summary>
         bool IsVaild { get; }
+
+        /// <summary>
+        /// 断线重连
+        /// </summary>
+        /// <param name="transportable"></param>
+        /// <returns></returns>
+        bool ReConnectFrom(ITransportable transportable);
     }
 }
 

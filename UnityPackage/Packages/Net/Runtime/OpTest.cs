@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using UnityEngine.tvOS;
 
 public class OpTest : MonoBehaviour
 {
@@ -72,17 +73,12 @@ public class OpTest : MonoBehaviour
                     Log($"开始监听 {ProtocolType}");
                     while (true)
                     {
-                        var accept = await rl.ReadAsync(() =>
-                        {
-                            return new TcpRemote();
-                        });
-
-                        if (accept != null)
-                        {
-                            Console.text += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
-                            Log($"收到连接 {accept.Client.RemoteEndPoint}");
-                            serverSide = accept;
-                        }
+                        EchoRemote remote = new EchoRemote();
+                        remote.SetTransport(new TcpTransport());
+                        await rl.ReadAsync(remote);
+                        Console.text += $"\n 收到连接 {remote.Transport.Client.RemoteEndPoint} ";
+                        Log($"收到连接 {remote.Transport.Client.RemoteEndPoint}");
+                        serverSide = remote;
                     }
                 }
                 break;
@@ -93,17 +89,12 @@ public class OpTest : MonoBehaviour
                     Log($"开始监听 {ProtocolType}");
                     while (true)
                     {
-                        var accept = await rl.ReadAsync(() =>
-                        {
-                            return new TestUdpRemote(AddressFamily.InterNetwork);
-                        });
-
-                        if (accept != null)
-                        {
-                            Console.text += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
-                            Log($"收到连接 {accept.Client.RemoteEndPoint}");
-                            serverSide = accept;
-                        }
+                        EchoRemote remote = new EchoRemote();
+                        remote.SetTransport(new UdpTransport());
+                        await rl.ReadAsync(remote);
+                        Console.text += $"\n 收到连接 {remote.Transport.Client.RemoteEndPoint} ";
+                        Log($"收到连接 {remote.Transport.Client.RemoteEndPoint}");
+                        serverSide = remote;
                     }
                 }
                 break;
@@ -114,17 +105,12 @@ public class OpTest : MonoBehaviour
                     Log($"开始监听 {ProtocolType}");
                     while (true)
                     {
-                        var accept = await rl.ReadAsync(() =>
-                        {
-                            return new TestKcpRemote(AddressFamily.InterNetwork);
-                        });
-
-                        if (accept != null)
-                        {
-                            Console.text += $"\n 收到连接 {accept.Client.RemoteEndPoint} ";
-                            Log($"收到连接 {accept.Client.RemoteEndPoint}");
-                            serverSide = accept;
-                        }
+                        EchoRemote remote = new EchoRemote();
+                        remote.SetTransport(new KcpTransport());
+                        await rl.ReadAsync(remote);
+                        Console.text += $"\n 收到连接 {remote.Transport.Client.RemoteEndPoint} ";
+                        Log($"收到连接 {remote.Transport.Client.RemoteEndPoint}");
+                        serverSide = remote;
                     }
                 }
                 break;
@@ -147,42 +133,56 @@ public class OpTest : MonoBehaviour
         IPAddress targetIP = IPAddress.Loopback;
         IPAddress.TryParse(TargetIP.text, out targetIP);
 
+        var testClient = new TestRemote();
+        testClient.TraceListener = new UnityTraceListener();
+        testClient.Test = this;
+        testClient.Post2ThreadScheduler = false;
+
         if (ProtocolType == Protocol.Tcp)
         {
-            var testClient = new TestTcpRemote();
-            testClient.TraceListener = new UnityTraceListener();
-            testClient.Test = this;
-            testClient.Post2ThreadScheduler = false;
-            client = testClient;
-            Connect(testClient, port, targetIP);
+            testClient.SetTransport(new TcpTransport()
+            {
+                TraceListener = testClient.TraceListener,
+                DisconnectHandler = new TcpDisconnectHandle()
+                {
+                    Test = this
+                },
+            });
         }
         else if (ProtocolType == Protocol.Udp)
         {
-            var testClient = new TestUdpRemote(AddressFamily.InterNetwork);
-            testClient.TraceListener = new UnityTraceListener();
-            testClient.Test = this;
-            testClient.Post2ThreadScheduler = false;
-            client = testClient;
-            Connect(testClient, port, targetIP);
+            testClient.SetTransport(new UdpTransport(AddressFamily.InterNetwork)
+            {
+                TraceListener = testClient.TraceListener,
+                DisconnectHandler = new LogDisconnectHandle()
+                {
+                    Test = this
+                },
+            });
         }
         else if (ProtocolType == Protocol.Kcp)
         {
-            var testClient = new TestKcpRemote(AddressFamily.InterNetwork);
-            testClient.TraceListener = new UnityTraceListener();
-            testClient.Test = this;
-            testClient.Post2ThreadScheduler = false;
-            client = testClient;
-            Connect(testClient, port, targetIP);
+            testClient.SetTransport(new KcpTransport(AddressFamily.InterNetwork)
+            {
+                TraceListener = testClient.TraceListener,
+                DisconnectHandler = new LogDisconnectHandle()
+                {
+                    Test = this
+                },
+            });
         }
+
+        client = testClient;
+        Connect(testClient, port, targetIP);
     }
 
     private async void Connect<T>(T client, int port, IPAddress targetIP)
-        where T : IConnectable, ISendCanAwaitable
+        where T : TestRemote
     {
         try
         {
             Log($"开始连接 {targetIP} : {port}");
-            await client.ConnectAsync(new IPEndPoint(targetIP, port));
+            await client.Transport.ConnectAsync(new IPEndPoint(targetIP, port));
             Log($"\n 连接成功");
             await Auth(client);
 
@@ -207,11 +207,11 @@ public class OpTest : MonoBehaviour
     /// </summary>
     /// <param name="remote"></param>
     /// <returns></returns>
-    public async ValueTask<bool> Auth(ISendCanAwaitable remote)
+    public async ValueTask<bool> Auth(ISendAsyncable remote)
     {
         Authentication authentication = new Authentication();
         authentication.Token = "TestClient9527";
-        var (result, ex) = await remote.Send<int>(authentication);
+        var (result, ex) = await remote.SendAsync<int>(authentication);
         if (ex == null)
         {
             if (result == 200)
@@ -253,14 +253,14 @@ public class OpTest : MonoBehaviour
         var send = string.Format(SendMessageText.text, messageIndex);
         Interlocked.Increment(ref messageIndex);
         Log($"client{client.ID} 发送：{send}");
-        var resp = await client.SendSafeAwait<string>(send);
+        var resp = await client.SendAsyncSafeAwait<string>(send);
         Log($"返回：{resp}");
     }
 
     [Button]
     public async void RemoteTime()
     {
-        var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime());
+        var remotetime = await client.SendAsyncSafeAwait<DateTimeOffset>(new GetTime());
         var span = (remotetime - DateTimeOffset.UtcNow).TotalMilliseconds;
         this.LogThreadID();
         Log($"Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}");
@@ -273,7 +273,7 @@ public class OpTest : MonoBehaviour
         {
             RpcComplatePost2ThreadScheduler = false,
         };
-        var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime(), options: sendOption).ConfigureAwait(false);
+        var remotetime = await client.SendAsyncSafeAwait<DateTimeOffset>(new GetTime(), options: sendOption).ConfigureAwait(false);
         var span = (remotetime - DateTimeOffset.UtcNow).TotalMilliseconds;
         this.LogThreadID();
         await MainThread.Switch();
@@ -387,20 +387,28 @@ public class OpTest : MonoBehaviour
         //模拟重连过程，正式代码注释掉
         await Task.Delay(1000);
 
-        if (client is TestTcpRemote oldTcpRemote)
+        if (client is TestRemote oldTcpRemote)
         {
-            oldTcpRemote.Disconnect();
+            oldTcpRemote.Transport.Disconnect();
 
-            var client2 = new TestTcpRemote();
+            var client2 = new TestRemote();
             client2.TraceListener = new UnityTraceListener();
             client2.Test = this;
             client2.Post2ThreadScheduler = true;
+            client2.SetTransport(new TcpTransport()
+            {
+                TraceListener = client2.TraceListener,
+                DisconnectHandler = new TcpDisconnectHandle()
+                {
+                    Test = this
+                },
+            });
 
             try
             {
-                Log($"\n 断线重连 {oldTcpRemote.ConnectIPEndPoint.Address} : {oldTcpRemote.ConnectIPEndPoint.Port}");
+                Log($"\n 断线重连 {oldTcpRemote.Transport.ConnectIPEndPoint.Address} : {oldTcpRemote.Transport.ConnectIPEndPoint.Port}");
                 //在两秒内重连
-                var res = await client2.ConnectAsync(oldTcpRemote.ConnectIPEndPoint).WaitAsync(2000);
+                var res = await client2.Transport.ConnectAsync(oldTcpRemote.Transport.ConnectIPEndPoint).WaitAsync(2000);
                 if (res && !token.IsCancellationRequested)
                 {
                     Log($"\n 连接成功");
@@ -409,10 +417,10 @@ public class OpTest : MonoBehaviour
                     if (success && !token.IsCancellationRequested)
                     {
                         //使用旧的remote的rpclayer，sendpipe。
-                        client2.ReConnectFrom(oldTcpRemote);
+                        client2.Transport.ReConnectFrom(oldTcpRemote.Transport);
                         client = client2;
 
-                        RTT.SetTarget(oldTcpRemote);
+                        RTT.SetTarget(client);
                         //重连成功
                         if (AutoReConnectUI)
                         {
@@ -423,7 +431,7 @@ public class OpTest : MonoBehaviour
                 }
 
                 //重连失败
-                client2.Disconnect();
+                client2.Transport.Disconnect();
                 ReConnectError();
             }
             catch (Exception ex)
@@ -431,32 +439,22 @@ public class OpTest : MonoBehaviour
                 ReConnectError();
                 Log($"\n {ex.Message}");
                 //重连失败
-                client2.Disconnect();
+                client2.Transport.Disconnect();
             }
         }
 
     }
 
-    public class TestTcpRemote : TcpRemote
+    public class TcpDisconnectHandle : IDisconnectHandler
     {
         public OpTest Test { get; internal set; }
-
-        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        public void PreDisconnect(SocketError error, object options = null)
         {
-            Test.Log($"接收：{message}");
-            return new ValueTask<object>(base.OnReceive(cmd, messageID, message));
+
         }
 
-        public override void OnSendSafeAwaitException(object request, object response, Action<Exception> onException, Exception finnalException)
+        public async void OnDisconnect(SocketError error, object options = null)
         {
-            base.OnSendSafeAwaitException(request, response, onException, finnalException);
-            Debug.Log(finnalException);
-            Test.Log($"接收：{finnalException}");
-        }
-
-        public override async void OnDisconnect(SocketError error, object options = null)
-        {
-            base.OnDisconnect(error, options);
 #if UNITY_EDITOR
             await MainThread.Switch();
             if (UnityEditor.EditorApplication.isPlaying == false)
@@ -474,93 +472,48 @@ public class OpTest : MonoBehaviour
                 Test.OnDisconnect(error, ActiveOrPassive.Passive);
             }
         }
+
+        public void PostDisconnect(SocketError error, object options = null)
+        {
+
+        }
     }
 
-    public class TestUdpRemote : UdpRemote
+    public class LogDisconnectHandle : IDisconnectHandler
     {
-        public TestUdpRemote(AddressFamily? addressFamily) : base(addressFamily)
+        public OpTest Test { get; internal set; }
+
+        public void PreDisconnect(SocketError error, object options = null)
         {
 
         }
 
+        public void OnDisconnect(SocketError error, object options = null)
+        {
+            Test.Log($"OnDisconnect {error}");
+        }
+
+        public void PostDisconnect(SocketError error, object options = null)
+        {
+
+        }
+    }
+
+    public class TestRemote : RpcRemote
+    {
         public OpTest Test { get; internal set; }
 
-        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
+        public override ValueTask<object> OnReceive(short cmd, int messageID, object message)
         {
             Test.Log($"接收：{message}");
             return new ValueTask<object>(base.OnReceive(cmd, messageID, message));
         }
 
-        public override void OnSendSafeAwaitException(object request, object response, Action<Exception> onException, Exception finnalException)
+        public override void OnSendSafeAwaitException<T, Result>(T request, Result response, Action<Exception> onException, Exception finnalException)
         {
             base.OnSendSafeAwaitException(request, response, onException, finnalException);
             Debug.Log(finnalException);
             Test.Log($"接收：{finnalException}");
-        }
-
-        public override async void OnDisconnect(SocketError error, object options = null)
-        {
-            base.OnDisconnect(error, options);
-#if UNITY_EDITOR
-            await MainThread.Switch();
-            if (UnityEditor.EditorApplication.isPlaying == false)
-            {
-                //防止编辑器停止播放时触发断线重连
-                return;
-            }
-#endif
-            if (options is DisconnectOptions disconnect)
-            {
-                Test.OnDisconnect(error, disconnect.ActiveOrPassive);
-            }
-            else
-            {
-                Test.OnDisconnect(error, ActiveOrPassive.Passive);
-            }
-        }
-    }
-
-    public class TestKcpRemote : KcpRemote
-    {
-        public TestKcpRemote(AddressFamily? addressFamily) : base(addressFamily)
-        {
-
-        }
-
-        public OpTest Test { get; internal set; }
-
-        protected override ValueTask<object> OnReceive(short cmd, int messageID, object message)
-        {
-            Test.Log($"接收：{message}");
-            return new ValueTask<object>(base.OnReceive(cmd, messageID, message));
-        }
-
-        public override void OnSendSafeAwaitException(object request, object response, Action<Exception> onException, Exception finnalException)
-        {
-            base.OnSendSafeAwaitException(request, response, onException, finnalException);
-            Debug.Log(finnalException);
-            Test.Log($"接收：{finnalException}");
-        }
-
-        public override async void OnDisconnect(SocketError error, object options = null)
-        {
-            base.OnDisconnect(error, options);
-#if UNITY_EDITOR
-            await MainThread.Switch();
-            if (UnityEditor.EditorApplication.isPlaying == false)
-            {
-                //防止编辑器停止播放时触发断线重连
-                return;
-            }
-#endif
-            if (options is DisconnectOptions disconnect)
-            {
-                Test.OnDisconnect(error, disconnect.ActiveOrPassive);
-            }
-            else
-            {
-                Test.OnDisconnect(error, ActiveOrPassive.Passive);
-            }
         }
     }
 }

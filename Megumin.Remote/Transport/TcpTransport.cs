@@ -192,18 +192,23 @@ namespace Megumin.Remote
         /// <para/> 只有方法2成立。重连后需要进行验证流程，需要收发消息甚至rpc功能，需要使用remote功能，所以1不成立。
         /// <para/> 收发消息后，socket ReceiveAsync已经挂起，socket已经和remote绑定，不能切换socket，所以方法3不成立。
         /// </remarks>
-        public virtual void ReConnectFrom(TcpTransport oldRemote)
+        public override bool ReConnectFrom(ITransportable transportable)
         {
-            if (oldRemote == null)
+            if (transportable is TcpTransport oldRemote)
             {
-                return;
+                oldRemote.StopSocketSend();
+                this.StopSocketSend();
+                //SendPipe 应该和 RpcLayer，待发送消息和rpc回调时对应关系。
+                //但是既不能将SendPipe 放到RpcRemote中，也不能将RpcLayer放到Transport中，只能这样将就。
+                SendPipe = oldRemote.SendPipe;
+                RemoteCore.RpcLayer = oldRemote.RemoteCore.RpcLayer;
+                StartSocketSend();
+                return true;
             }
-
-            oldRemote.StopSocketSend();
-            this.StopSocketSend();
-            SendPipe = oldRemote.SendPipe;
-            RemoteCore = oldRemote.RemoteCore;
-            StartSocketSend();
+            else
+            {
+                throw new ArgumentException();
+            }
         }
     }
 
