@@ -18,14 +18,14 @@ public static class TestConfig
     }
     public static Mode PMode = TestConfig.Mode.KCP;
     public static int Port = 54321;
-    public static int MessageCount = 100;
+    public static int MessageCount = 10;
     /// <summary>
     /// 本机同时开Client Server 15000左右连接Tcp就会用尽端口
     /// Tcp每秒8kw字节差不多就是极限了，多了就自动卡死了，不清楚是socket问题还是console.writeline问题。
     /// Upd 测试5000连接比较稳定。
     /// Kcp测试10000连接没有成功。5000也不性。推测应该是UdpListenner一个端口无法处理这么大流量，大量丢包。
     /// </summary>
-    public static int RemoteCount = 100;
+    public static int RemoteCount = 1000;
 }
 
 namespace TestClient
