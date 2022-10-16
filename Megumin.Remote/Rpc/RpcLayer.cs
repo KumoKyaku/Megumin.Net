@@ -12,7 +12,7 @@ namespace Megumin.Remote.Rpc
         void Send<T>(K rpcID, T message, object options = null);
 
         /// <summary>
-        ///  <see cref="ISendCanAwaitable.SendSafeAwait{Result}(object, object, Action{Exception})"/>收到obj response后，如果是异常，处理异常的逻辑。
+        ///  <see cref="ISendAsyncable.SendAsyncSafeAwait{Result}(object, object, Action{Exception})"/>收到obj response后，如果是异常，处理异常的逻辑。
         /// </summary>
         /// <param name="request"></param>
         /// <param name="response"></param>
@@ -171,7 +171,7 @@ namespace Megumin.Remote.Rpc
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual async ValueTask<(Result result, Exception exception)>
-            Send<T, Result>(T message, IRpcCallback<int> callback, object options = null)
+            SendAsync<T, Result>(T message, IRpcCallback<int> callback, object options = null)
         {
             //可以在这里重写异常堆栈信息。
             //StackTrace stackTrace = new System.Diagnostics.StackTrace();
@@ -183,7 +183,7 @@ namespace Megumin.Remote.Rpc
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual async ValueTask<Result> SendSafeAwait<T, Result>
+        public virtual async ValueTask<Result> SendAsyncSafeAwait<T, Result>
              (T message, IRpcCallback<int> callback, object options = null, Action<Exception> onException = null)
         {
             var (tempresp, tempex) = await InnerRpcSend(message, callback, options);

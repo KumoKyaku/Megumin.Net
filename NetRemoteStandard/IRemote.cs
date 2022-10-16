@@ -130,10 +130,10 @@ namespace Net.Remote
     ///         所以折衷将异常以返回值的形式传递回调用者处。
     /// <para/> 这里的精髓是，当后续代码读取结果时，结果一定符合预期，如果不符合预期，后续代码则不会被执行。
     ///         当出现异常时，允许不触发异步延续，后续代码执行全被吃掉，这是Go所不具备的。
-    /// <para/> <see cref="SendSafeAwait{T, Result}(T, object, Action{Exception})"/> 才是设计的最终目的。
-    ///         而<see cref="Send{T, Result}(T, object)"/>只是对特殊需求的补丁API。
+    /// <para/> <see cref="SendAsyncSafeAwait{T, Result}(T, object, Action{Exception})"/> 才是设计的最终目的。
+    ///         而<see cref="SendAsync{T, Result}(T, object)"/>只是对特殊需求的补丁API。
     /// </remarks>
-    public interface ISendCanAwaitable
+    public interface ISendAsyncable
     {
         /// <summary>
         /// 异步发送消息，封装Rpc过程。
@@ -142,7 +142,7 @@ namespace Net.Remote
         /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表 MessageLUT 中指定ID和序列化函数</param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
         /// <returns>需要检测空值</returns>
-        ValueTask<(Result result, Exception exception)> Send<Result>(object message, object options = null);
+        ValueTask<(Result result, Exception exception)> SendAsync<Result>(object message, object options = null);
 
         /// <summary>
         /// 异步发送消息，封装Rpc过程
@@ -157,7 +157,7 @@ namespace Net.Remote
         /// <param name="onException">发生异常时的回调函数</param>
         /// <returns></returns>
         /// <remarks></remarks>
-        ValueTask<Result> SendSafeAwait<Result>(object message, object options = null, Action<Exception> onException = null);
+        ValueTask<Result> SendAsyncSafeAwait<Result>(object message, object options = null, Action<Exception> onException = null);
 
         /// <summary>
         /// 异步发送消息，封装Rpc过程。
@@ -167,7 +167,7 @@ namespace Net.Remote
         /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表 MessageLUT 中指定ID和序列化函数</param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
         /// <returns>需要检测空值</returns>
-        ValueTask<(Result result, Exception exception)> Send<T, Result>(T message, object options = null);
+        ValueTask<(Result result, Exception exception)> SendAsync<T, Result>(T message, object options = null);
 
         /// <summary>
         /// 异步发送消息，封装Rpc过程
@@ -183,7 +183,7 @@ namespace Net.Remote
         /// <param name="onException">发生异常时的回调函数</param>
         /// <returns></returns>
         /// <remarks></remarks>
-        ValueTask<Result> SendSafeAwait<T, Result>(T message, object options = null, Action<Exception> onException = null);
+        ValueTask<Result> SendAsyncSafeAwait<T, Result>(T message, object options = null, Action<Exception> onException = null);
     }
 
     //广播一定是个静态方法，没法通过接口调用
@@ -264,7 +264,7 @@ namespace Net.Remote
     /// 对于接收端，收到时就是已连接的，所以IConnectable是次要的。</para>
     /// </summary>
     /// <inheritdoc/>
-    public interface IRemote : ISendable, IRemoteID, ISendCanAwaitable
+    public interface IRemote : ISendable, IRemoteID, ISendAsyncable
     {
         ITransportable Transport { get; }
     }

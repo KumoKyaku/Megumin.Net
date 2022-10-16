@@ -175,30 +175,30 @@ namespace Megumin.Remote
         }
     }
 
-    public partial class RpcRemote : ISendCanAwaitable
+    public partial class RpcRemote : ISendAsyncable
     {
         public virtual ValueTask<(Result result, Exception exception)>
-            Send<T, Result>(T message, object options = null)
+            SendAsync<T, Result>(T message, object options = null)
         {
-            return RpcLayer.Send<T, Result>(message, this, options);
+            return RpcLayer.SendAsync<T, Result>(message, this, options);
         }
 
-        public virtual ValueTask<Result> SendSafeAwait<T, Result>
+        public virtual ValueTask<Result> SendAsyncSafeAwait<T, Result>
             (T message, object options = null, Action<Exception> onException = null)
         {
-            return RpcLayer.SendSafeAwait<T, Result>(message, this, options, onException);
+            return RpcLayer.SendAsyncSafeAwait<T, Result>(message, this, options, onException);
         }
 
         public ValueTask<(Result result, Exception exception)>
-            Send<Result>(object message, object options = null)
+            SendAsync<Result>(object message, object options = null)
         {
-            return Send<object, Result>(message, options);
+            return SendAsync<object, Result>(message, options);
         }
 
-        public ValueTask<Result> SendSafeAwait<Result>
+        public ValueTask<Result> SendAsyncSafeAwait<Result>
             (object message, object options = null, Action<Exception> onException = null)
         {
-            return SendSafeAwait<object, Result>(message, options, onException);
+            return SendAsyncSafeAwait<object, Result>(message, options, onException);
         }
     }
 }

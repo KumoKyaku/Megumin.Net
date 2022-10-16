@@ -110,7 +110,7 @@ namespace Megumin.Remote
             ConnectSideSocketReceive();
 
             //发送一个心跳包触发认证。
-            var (_, exception) = await RemoteCore.Send<Heartbeat>(Heartbeat.Default, HeartbeatSendOption);
+            var (_, exception) = await RemoteCore.SendAsync<Heartbeat>(Heartbeat.Default, HeartbeatSendOption);
             if (exception is RcpTimeoutException rcpex)
             {
                 throw new SocketException((int)SocketError.TimedOut);
@@ -239,7 +239,7 @@ namespace Megumin.Remote
             while (true)
             {
                 MissHearCount += 1;
-                var (_, exception) = await RemoteCore.Send<Heartbeat>(Heartbeat.Default, HeartbeatSendOption);
+                var (_, exception) = await RemoteCore.SendAsync<Heartbeat>(Heartbeat.Default, HeartbeatSendOption);
                 if (exception == null)
                 {
                     //正常收到心跳，重置MissHearCount

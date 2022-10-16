@@ -171,7 +171,7 @@ namespace TestWPF
 
         private async void TestRpc(object sender, RoutedEventArgs e)
         {
-            var resp = await client.SendSafeAwait<TestPacket2>(new TestPacket2() { Value = 999 });
+            var resp = await client.SendAsyncSafeAwait<TestPacket2>(new TestPacket2() { Value = 999 });
             if (resp.Value == 999)
             {
                 ClientLog.Content += $"\n Rpc测试成功";
@@ -211,7 +211,7 @@ namespace TestWPF
         private async void RPCString_Click(object sender, RoutedEventArgs e)
         {
             const string TestStr = "RPCString测试";
-            var resp = await client.SendSafeAwait<string>(TestStr);
+            var resp = await client.SendAsyncSafeAwait<string>(TestStr);
             if (resp == TestStr)
             {
                 ClientLog.Content += $"\n RPCString测试成功";
@@ -234,7 +234,7 @@ namespace TestWPF
 
         private async void TestTime_Click(object sender, RoutedEventArgs e)
         {
-            var remotetime = await client.SendSafeAwait<DateTimeOffset>(new GetTime());
+            var remotetime = await client.SendAsyncSafeAwait<DateTimeOffset>(new GetTime());
             var span = (DateTimeOffset.UtcNow - remotetime).TotalMilliseconds;
             ClientLog.Content += $"\n Mytime:{DateTimeOffset.UtcNow}----RemoteTime:{remotetime}----offset:{(int)span}";
         }
@@ -364,7 +364,12 @@ public class TestWPFRemote : RpcRemote
 
     async void Test()
     {
-        var rest = await this.SendSafeAwait<int,DateTime>(20);
+        this.Send<DateTime>(DateTime.UtcNow);
+        var rest1 = await this.SendAsync<DateTime>(DateTime.UtcNow);
+        var rest2 = await this.SendAsync<DateTime, DateTime>(DateTime.UtcNow);
+
+        var rest3 = await this.SendAsyncSafeAwait<DateTime>(DateTime.UtcNow);
+        var rest4 = await this.SendAsyncSafeAwait<DateTime, DateTime>(DateTime.UtcNow);
     }
 }
 

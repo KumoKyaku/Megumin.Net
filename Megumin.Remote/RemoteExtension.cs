@@ -19,12 +19,12 @@ namespace Megumin.Remote
         /// 往返时间毫秒数。
         /// 负数表示无法联通。
         /// </returns>
-        public static async ValueTask<int> Rtt(this ISendCanAwaitable send)
+        public static async ValueTask<int> Rtt(this ISendAsyncable send)
         {
             if (send != null)
             {
                 DateTimeOffset sendTime = DateTimeOffset.UtcNow;
-                var (obj, ex) = await send.Send<Heartbeat>(Heartbeat.Default, options: SendOption.Echo);
+                var (obj, ex) = await send.SendAsync<Heartbeat>(Heartbeat.Default, options: SendOption.Echo);
                 if (ex == null)
                 {
                     DateTimeOffset respTime = DateTimeOffset.UtcNow;

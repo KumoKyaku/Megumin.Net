@@ -8,7 +8,7 @@ namespace Megumin.Remote.Simple
 {
     public class LogExampleRemote : RpcRemote
     {
-        public override ValueTask<Result> SendSafeAwait<T, Result>(T message, object options = null, Action<Exception> onException = null)
+        public override ValueTask<Result> SendAsyncSafeAwait<T, Result>(T message, object options = null, Action<Exception> onException = null)
         {
             if (onException == null)
             {
@@ -20,7 +20,7 @@ namespace Megumin.Remote.Simple
                     Debug.Write(err);
                 };
             }
-            return base.SendSafeAwait<T, Result>(message, options, onException);
+            return base.SendAsyncSafeAwait<T, Result>(message, options, onException);
         }
     }
 }

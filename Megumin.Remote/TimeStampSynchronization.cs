@@ -50,7 +50,7 @@ namespace Megumin.Remote
         /// <param name="count"></param>
         /// <param name="interval"></param>
         /// <returns></returns>
-        public async ValueTask Sync(ISendCanAwaitable remote, int count = 20, int interval = 50)
+        public async ValueTask Sync(ISendAsyncable remote, int count = 20, int interval = 50)
         {
             List<Task<OffsetValue>> tasks = new List<Task<OffsetValue>>();
             tasks.Clear();
@@ -104,7 +104,7 @@ namespace Megumin.Remote
             RpcComplatePost2ThreadScheduler = false,
         };
 
-        public async Task<OffsetValue> GetOffset(ISendCanAwaitable remote, int index = 0)
+        public async Task<OffsetValue> GetOffset(ISendAsyncable remote, int index = 0)
         {
             SendOption sendOption = new SendOption()
             {
@@ -112,7 +112,7 @@ namespace Megumin.Remote
                 RpcComplatePost2ThreadScheduler = false,
             };
             var sendTime = DateTimeOffset.UtcNow;
-            var (remotetime, ex) = await remote.Send<DateTimeOffset>(new GetTime(), options: sendOption).ConfigureAwait(false);
+            var (remotetime, ex) = await remote.SendAsync<DateTimeOffset>(new GetTime(), options: sendOption).ConfigureAwait(false);
 
             var loacalUtcNow = DateTimeOffset.UtcNow;
             var rttSpan = loacalUtcNow - sendTime;

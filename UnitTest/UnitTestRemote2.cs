@@ -52,7 +52,7 @@ namespace UnitTest
         public void EchoTest(IRemote remote)
         {
             TestPacket1 packet1 = new TestPacket1() { Value = 5645645 };
-            var ret = remote.SendSafeAwait<TestPacket1>(packet1,
+            var ret = remote.SendAsyncSafeAwait<TestPacket1>(packet1,
                 options: SendOption.Echo).ConfigureAwait(false)
                 .GetAwaiter().GetResult();
             Assert.AreEqual(packet1.Value, ret.Value);
