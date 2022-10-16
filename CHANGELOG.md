@@ -16,6 +16,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -->
 
 ---
+## [3.0.0] - 2022-10-16
+
+### Added   
+- 从Remote拆分IDisconnectHandler。
+- 从Remote拆分Transport。
+### Changed  
+- 公开大部分Remote 中间处理过程 API。
+- 整理ITransportable 和 IRemote 和 IListener接口
+- 重命名 interface ISendCanAwaitable -> ISendAsyncable
+### Deprecated  
+### Removed  
+### Fixed  
+- 修复Tcp半包假死BUG。
+- 调整  void Send<T>(T message, int rpcID, object options = null) 参数顺序，消除Rpc   send  reply   二义性。
+### Security  
 
 ## [2.1.0] - 2022-10-04
 ### Added  

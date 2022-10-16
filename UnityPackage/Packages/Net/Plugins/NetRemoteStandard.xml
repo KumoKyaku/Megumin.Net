@@ -43,6 +43,7 @@
             <param name="retryCount">重试次数，失败会返回最后一次的异常</param>
             <param name="cancellationToken"></param>
             <returns></returns>
+            <remarks>没有timeout参数，可以调用<see cref="M:System.Threading.CancellationTokenSource.CancelAfter(System.TimeSpan)"/></remarks>
         </member>
         <member name="M:Net.Remote.IDisconnectable.Disconnect(System.Boolean,System.Boolean)">
             <summary>
@@ -87,7 +88,7 @@
             发送任意对象，只要它能被MessageLUT解析。
             </summary>
         </member>
-        <member name="M:Net.Remote.ISendable.Send(System.Object,System.Object)">
+        <member name="M:Net.Remote.ISendable.Send``1(``0,System.Object)">
             <summary>
             发送消息，无阻塞立刻返回
             <para>调用方 无法了解发送情况</para>
@@ -97,33 +98,72 @@
             <param name="options">参数项，在整个发送管线中传递</param>
             <remarks>序列化开销不大，放在调用线程执行比使用单独的序列化线程更好</remarks>
         </member>
-        <member name="T:Net.Remote.ISendCanAwaitable">
+        <member name="T:Net.Remote.ISendAsyncable">
             <summary>
             可以发送一个消息并期待一个指定类型的返回值
             </summary>
-            <remarks>为了通用性和框架兼容性，object导致值类型装箱是可以妥协的。</remarks>
+            <remarks>
+            为了通用性和框架兼容性，object message导致值类型装箱是可以妥协的。
+            Result已经是泛型了，如果message也使用泛型，则需要使用2个泛型，调用出没办法自动类型推导，需要明确指定，严重影响易用性。
+            <para/> --------
+            <para/> 在这里吐槽几句，可能有人觉得这两个API比较像Go。https://www.zhihu.com/question/451484968
+            <para/> 其实本质含义不一样,设计初衷是禁止异常抛出到Send处。
+                    基于异步的业务逻辑应该是顺畅的，不应该写try-catch。总不能每个Send位置都去catch SocketException。
+            <para/> 但是在网络模块底层拦截所有异常也是不行的，某些业务逻辑有可能需要明确知道异常是什么。
+                    所以折衷将异常以返回值的形式传递回调用者处。
+            <para/> 这里的精髓是，当后续代码读取结果时，结果一定符合预期，如果不符合预期，后续代码则不会被执行。
+                    当出现异常时，允许不触发异步延续，后续代码执行全被吃掉，这是Go所不具备的。
+            <para/> <see cref="M:Net.Remote.ISendAsyncable.SendAsyncSafeAwait``2(``0,System.Object,System.Action{System.Exception})"/> 才是设计的最终目的。
+                    而<see cref="M:Net.Remote.ISendAsyncable.SendAsync``2(``0,System.Object)"/>只是对特殊需求的补丁API。
+            </remarks>
         </member>
-        <member name="M:Net.Remote.ISendCanAwaitable.Send``1(System.Object,System.Object)">
+        <member name="M:Net.Remote.ISendAsyncable.SendAsync``1(System.Object,System.Object)">
             <summary>
             异步发送消息，封装Rpc过程。
             </summary>
-            <typeparam name="RpcResult">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
+            <typeparam name="Result">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
             <param name="message">发送消息的类型需要序列化 具体实现使用查找表 MessageLUT 中指定ID和序列化函数</param>
             <param name="options">参数项，在整个发送管线中传递</param>
             <returns>需要检测空值</returns>
         </member>
-        <member name="M:Net.Remote.ISendCanAwaitable.SendSafeAwait``1(System.Object,System.Action{System.Exception},System.Object)">
+        <member name="M:Net.Remote.ISendAsyncable.SendAsyncSafeAwait``1(System.Object,System.Object,System.Action{System.Exception})">
             <summary>
             异步发送消息，封装Rpc过程
             结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，不会抛出异常，所以不用try catch。
             异步方法的后续部分不会触发，所以后续部分可以省去空检查。
-            <para>****千万注意，只有在RpcResult有返回值的情况下，后续异步方法才会执行。
+            <para>****千万注意，只有在Result有返回值的情况下，后续异步方法才会执行。
             这不是语言特性，也不是语法特性。这由具体实现的类库保证。*****</para>
             </summary>
-            <typeparam name="RpcResult"></typeparam>
+            <typeparam name="Result"></typeparam>
             <param name="message"></param>
-            <param name="onException">发生异常时的回调函数</param>
             <param name="options">参数项，在整个发送管线中传递</param>
+            <param name="onException">发生异常时的回调函数</param>
+            <returns></returns>
+            <remarks></remarks>
+        </member>
+        <member name="M:Net.Remote.ISendAsyncable.SendAsync``2(``0,System.Object)">
+            <summary>
+            异步发送消息，封装Rpc过程。
+            </summary>
+            <typeparam name="T">发送消息类型</typeparam>
+            <typeparam name="Result">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
+            <param name="message">发送消息的类型需要序列化 具体实现使用查找表 MessageLUT 中指定ID和序列化函数</param>
+            <param name="options">参数项，在整个发送管线中传递</param>
+            <returns>需要检测空值</returns>
+        </member>
+        <member name="M:Net.Remote.ISendAsyncable.SendAsyncSafeAwait``2(``0,System.Object,System.Action{System.Exception})">
+            <summary>
+            异步发送消息，封装Rpc过程
+            结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，不会抛出异常，所以不用try catch。
+            异步方法的后续部分不会触发，所以后续部分可以省去空检查。
+            <para>****千万注意，只有在Result有返回值的情况下，后续异步方法才会执行。
+            这不是语言特性，也不是语法特性。这由具体实现的类库保证。*****</para>
+            </summary>
+            <typeparam name="T">发送消息类型</typeparam>
+            <typeparam name="Result"></typeparam>
+            <param name="message"></param>
+            <param name="options">参数项，在整个发送管线中传递</param>
+            <param name="onException">发生异常时的回调函数</param>
             <returns></returns>
             <remarks></remarks>
         </member>
@@ -155,16 +195,6 @@
             对于接收端，收到时就是已连接的，所以IConnectable是次要的。</para>
             </summary>
             <inheritdoc/>
-        </member>
-        <member name="P:Net.Remote.IRemote.Client">
-            <summary>
-            实际连接的Socket
-            </summary>
-        </member>
-        <member name="P:Net.Remote.IRemote.IsVaild">
-            <summary>
-            当前是否正常工作
-            </summary>
         </member>
         <member name="T:Net.Remote.IMultiplexing">
             <summary>
@@ -237,6 +267,28 @@
             对Socket进行控制。
             不一定所有remote都支持。大多时候用于调试
             </summary>
+        </member>
+        <member name="T:Net.Remote.ITransportable">
+            <summary>
+            传输层标准接口
+            </summary>
+        </member>
+        <member name="P:Net.Remote.ITransportable.Client">
+            <summary>
+            实际连接的Socket
+            </summary>
+        </member>
+        <member name="P:Net.Remote.ITransportable.IsVaild">
+            <summary>
+            当前是否正常工作
+            </summary>
+        </member>
+        <member name="M:Net.Remote.ITransportable.ReConnectFrom(Net.Remote.ITransportable)">
+            <summary>
+            断线重连
+            </summary>
+            <param name="transportable"></param>
+            <returns></returns>
         </member>
     </members>
 </doc>

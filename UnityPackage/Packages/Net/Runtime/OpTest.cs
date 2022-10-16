@@ -1,15 +1,14 @@
-﻿using Megumin;
-using Megumin.Message;
-using Megumin.Remote;
-using Net.Remote;
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Megumin;
+using Megumin.Message;
+using Megumin.Remote;
+using Net.Remote;
 using TMPro;
 using UnityEngine;
-using UnityEngine.tvOS;
 
 public class OpTest : MonoBehaviour
 {
@@ -196,10 +195,7 @@ public class OpTest : MonoBehaviour
 
     public void Disconnect()
     {
-        if (client is IConnectable connectable)
-        {
-            connectable.Disconnect();
-        }
+        client.Transport.Disconnect();
     }
 
     /// <summary>

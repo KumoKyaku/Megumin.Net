@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Megumin.Protobuf-netLUT</name>
+    </assembly>
+    <members>
+        <member name="T:Megumin.Remote.Protobuf_netLUT">
+            <summary>
+            适用于Protobuf-net协议的查找表    没有测试
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.Protobuf_netLUT.Regist(System.Reflection.Assembly,Megumin.Remote.KeyAlreadyHave)">
+            <summary>
+            注册程序集中所有协议类
+            </summary>
+            <param name="assembly"></param>
+            <param name="key"></param>
+        </member>
+        <member name="M:Megumin.Remote.Protobuf_netLUT.Regist(System.Type,Megumin.Remote.KeyAlreadyHave)">
+            <summary>
+            注册消息类型
+            </summary>
+            <param name="type"></param>
+            <param name="key"></param>
+        </member>
+        <member name="M:Megumin.Remote.Protobuf_netLUT.Regist``1(Megumin.Remote.KeyAlreadyHave)">
+            <summary>
+            注册消息类型
+            </summary>
+            <param name="key"></param>
+        </member>
+        <member name="M:Megumin.Remote.Protobuf_netLUT.RegistBasicType(Megumin.Remote.KeyAlreadyHave)">
+            <summary>
+            注册基础类型
+            </summary>
+            <param name="key"></param>
+        </member>
+    </members>
+</doc>

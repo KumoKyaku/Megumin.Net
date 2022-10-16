@@ -79,6 +79,12 @@
             <remarks>返回值不考虑泛型，泛型虽然能避免值类型消息装箱，但是调用时要使用反射去转化为
             对应类型接口，在rpc回调转型处仍然会有类型匹配失败问题，得不偿失。</remarks>
         </member>
+        <member name="T:Megumin.Remote.IMeguminFormater`1">
+            <summary>
+            不要使用协变，会导致序列化错误
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
         <member name="M:Megumin.Remote.IMeguminFormater`1.Serialize(System.Buffers.IBufferWriter{System.Byte},`0,System.Object)">
             <summary>
             序列化函数
@@ -119,18 +125,6 @@
             </summary>
             <typeparam name="T"></typeparam>
             <param name="key"></param>
-        </member>
-        <member name="M:Megumin.Remote.MessageLUT.Serialize(System.Buffers.IBufferWriter{System.Byte},System.Object,System.Object)">
-            <summary>
-            序列化一个对象到指定writer
-            </summary>
-            <param name="writer"></param>
-            <param name="value"></param>
-            <param name="options"></param>
-            <returns>消息ID</returns>
-            <remarks>序列化函数不在提供序列化多少字节，需要在writer中自己统计</remarks>
-            <exception cref="T:System.Collections.Generic.KeyNotFoundException"></exception>
-            <exception cref="T:System.ArgumentNullException"></exception>
         </member>
         <member name="M:Megumin.Remote.MessageLUT.GetType(System.Int32)">
             <summary>
@@ -176,6 +170,18 @@
             <param name="type"></param>
             <param name="ID"></param>
             <returns></returns>
+        </member>
+        <member name="M:Megumin.Remote.MessageLUT.Serialize``1(System.Buffers.IBufferWriter{System.Byte},``0,System.Object)">
+            <summary>
+            序列化一个对象到指定writer
+            </summary>
+            <param name="writer"></param>
+            <param name="value"></param>
+            <param name="options"></param>
+            <returns>消息ID</returns>
+            <remarks>序列化函数不在提供序列化多少字节，需要在writer中自己统计</remarks>
+            <exception cref="T:System.Collections.Generic.KeyNotFoundException"></exception>
+            <exception cref="T:System.ArgumentNullException"></exception>
         </member>
         <member name="M:Megumin.Remote.MessageLUT.Deserialize(System.Int32,System.Buffers.ReadOnlySequence{System.Byte}@,System.Object)">
             <summary>
@@ -245,6 +251,16 @@
             <exception cref="T:System.Collections.Generic.KeyNotFoundException"></exception>
             <exception cref="T:System.ArgumentNullException"></exception>
             <exception cref="T:System.InvalidCastException"></exception>
+        </member>
+        <member name="T:Megumin.Remote.IDeserializeLengthWriter">
+            <summary>
+            用于反序列化时获取长度
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.DeserializeLengthHelper">
+            <summary>
+            用于反序列化时获取长度
+            </summary>
         </member>
         <member name="T:Megumin.Remote.BufferWriterBytesSteam">
             <summary>
@@ -340,6 +356,7 @@
         <member name="T:Megumin.Message.StringFormatter">
             <summary>
             内置UTF8 string 格式化器，性能低没有优化
+            对动态长度的类型，先用ushort写入总长度，在写入正文，实现复杂类型字段切分。实现复杂类型嵌套序列化。
             </summary>
         </member>
         <member name="T:Megumin.Message.SpanByteExtension_37AAF334E75041368C6B47A256F0F93F">

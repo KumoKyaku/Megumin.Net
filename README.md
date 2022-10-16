@@ -17,6 +17,14 @@
 ~~由于使用了C# 7.3语法，在unity中如果使用源码至少需要2018.3。~~  
 目标框架netstandard2.1，在unity中建议unity版本2021.2以上。过小的版本可以使用源码，但需要自行解决依赖关系。
 
+# UPM Package
+## Install via git URL
+![image](https://user-images.githubusercontent.com/46207/79450714-3aadd100-8020-11ea-8aae-b8d87fc4d7be.png)
+
+or add `"com.megumin.net": "https://github.com/KumoKyaku/Megumin.Net.git?path=UnityPackage/Packages/Net"` to `Packages/manifest.json`.
+
+>If you want to set a target version, uses the `*.*.*` release tag so you can specify a version like `#2.1.0`. For example `https://github.com/KumoKyaku/Megumin.Net.git?path=UnityPackage/Packages/Net#2.1.0`.
+
 # 优势
 - 支持Tcp，Udp，Kcp。
 - 使用内存池和多线程处理收发，可配置线程调度，无需担心网络模块性能问题。
