@@ -10,7 +10,7 @@ namespace Net.Remote
     /// </summary>
     public interface ITransportable : IConnectable, ISocketSendable
     {
-        void Send(int rpcID, object message, object options = null);
+        void Send<T>(int rpcID, T message, object options = null);
 
         /// <summary>
         /// 实际连接的Socket

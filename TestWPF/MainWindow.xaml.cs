@@ -361,6 +361,11 @@ public class TestWPFRemote : RpcRemote
 
         base.ProcessBody(bodyBytes, RpcID, CMD, MessageID, options);
     }
+
+    async void Test()
+    {
+        var rest = await this.SendSafeAwait<DateTime>(20);
+    }
 }
 
 public class DisconnectHandle : IDisconnectHandler

@@ -169,18 +169,34 @@ namespace Megumin.Remote
         public virtual ValueTask<(RpcResult result, Exception exception)>
             Send<RpcResult>(object message, object options = null)
         {
-            return RpcLayer.Send<RpcResult>(message, this, options);
+            return RpcLayer.Send<object, RpcResult>(message, this, options);
         }
 
         public virtual ValueTask<RpcResult> SendSafeAwait<RpcResult>
             (object message, object options = null, Action<Exception> onException = null)
         {
-            return RpcLayer.SendSafeAwait<RpcResult>(message, this, options, onException);
+            return RpcLayer.SendSafeAwait<object, RpcResult>(message, this, options, onException);
         }
 
-        public virtual void OnSendSafeAwaitException(object request, object response, Action<Exception> onException, Exception finnalException)
+        public virtual void OnSendSafeAwaitException<T, RpcResult>(T request,
+                                                                   RpcResult response,
+                                                                   Action<Exception> onException,
+                                                                   Exception finnalException)
         {
             onException?.Invoke(finnalException);
+        }
+
+
+        public virtual ValueTask<(RpcResult result, Exception exception)>
+            Send<T, RpcResult>(T message, object options = null)
+        {
+            return RpcLayer.Send<T, RpcResult>(message, this, options);
+        }
+
+        public virtual ValueTask<RpcResult> SendSafeAwait<T, RpcResult>
+            (T message, object options = null, Action<Exception> onException = null)
+        {
+            return RpcLayer.SendSafeAwait<T, RpcResult>(message, this, options, onException);
         }
     }
 }

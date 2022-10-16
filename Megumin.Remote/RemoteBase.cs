@@ -222,7 +222,7 @@ namespace Megumin.Remote
         /// <summary>
         /// 发送rpcID和消息
         /// </summary>
-        public virtual void Send(int rpcID, object message, object options = null)
+        public virtual void Send<T>(int rpcID, T message, object options = null)
         {
             Transport?.Send(rpcID, message, options);
         }

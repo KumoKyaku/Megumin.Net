@@ -9,7 +9,7 @@ namespace Megumin.Remote.Rpc
 {
     public interface IRpcCallback<in K>
     {
-        void Send(K rpcID, object message, object options = null);
+        void Send<T>(K rpcID, T message, object options = null);
         /// <summary>
         ///  <see cref="ISendCanAwaitable.SendSafeAwait{RpcResult}(object, object, Action{Exception})"/>收到obj response后，如果是异常，处理异常的逻辑。
         /// </summary>
@@ -17,7 +17,7 @@ namespace Megumin.Remote.Rpc
         /// <param name="response"></param>
         /// <param name="onException"></param>
         /// <param name="finnalException"></param>
-        void OnSendSafeAwaitException(object request, object response, Action<Exception> onException, Exception finnalException);
+        void OnSendSafeAwaitException<T, RpcResult>(T request, RpcResult response, Action<Exception> onException, Exception finnalException);
     }
 
     /// <summary>
@@ -152,7 +152,7 @@ namespace Megumin.Remote.Rpc
         /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual IMiniAwaitable<(object result, Exception exception)>
-            InnerRpcSend(object message, IRpcCallback<int> callback, object options = null)
+            InnerRpcSend<T>(T message, IRpcCallback<int> callback, object options = null)
         {
             var (rpcID, source) = Regist(options);
 
@@ -170,7 +170,7 @@ namespace Megumin.Remote.Rpc
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual async ValueTask<(RpcResult result, Exception exception)>
-            Send<RpcResult>(object message, IRpcCallback<int> callback, object options = null)
+            Send<T, RpcResult>(T message, IRpcCallback<int> callback, object options = null)
         {
             //可以在这里重写异常堆栈信息。
             //StackTrace stackTrace = new System.Diagnostics.StackTrace();
@@ -182,8 +182,8 @@ namespace Megumin.Remote.Rpc
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual async ValueTask<RpcResult> SendSafeAwait<RpcResult>
-             (object message, IRpcCallback<int> callback, object options = null, Action<Exception> onException = null)
+        public virtual async ValueTask<RpcResult> SendSafeAwait<T, RpcResult>
+             (T message, IRpcCallback<int> callback, object options = null, Action<Exception> onException = null)
         {
             var (tempresp, tempex) = await InnerRpcSend(message, callback, options);
 

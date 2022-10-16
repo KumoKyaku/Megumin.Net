@@ -268,7 +268,7 @@ namespace Megumin.Remote
 
         protected virtual UdpBufferWriter SendWriter { get; } = new UdpBufferWriter(8192 * 4);
 
-        public virtual void Send(int rpcID, object message, object options = null)
+        public virtual void Send<T>(int rpcID, T message, object options = null)
         {
             if (Client == null || Closer?.IsDisconnecting == true)
             {
