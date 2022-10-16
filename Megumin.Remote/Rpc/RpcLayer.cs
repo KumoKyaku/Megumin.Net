@@ -1,6 +1,7 @@
 ﻿using Net.Remote;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,7 +25,7 @@ namespace Megumin.Remote.Rpc
     /// </summary>
     public class RpcLayer
     {
-        public ObjectRpcCallbackPool RpcCallbackPool { get; } = new ObjectRpcCallbackPool();
+        protected ObjectRpcCallbackPool RpcCallbackPool { get; } = new ObjectRpcCallbackPool();
 
         /// <summary>
         /// 如果rpcID为负数，是rpc返回回复，返回true,此消息由RpcLayer处理。
@@ -33,6 +34,7 @@ namespace Megumin.Remote.Rpc
         /// <param name="rpcID"></param>
         /// <param name="message"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryInput(int rpcID, object message)
         {
             if (rpcID < 0)
@@ -44,6 +46,23 @@ namespace Megumin.Remote.Rpc
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TrySetException(int rpcID, Exception exception)
+        {
+            return RpcCallbackPool.TrySetException(rpcID, exception);
+        }
+
+        /// <summary>
+        /// DeserializeSuccess后设置回调线程，只有PostThreadSetting含有Key并且值为null时才设置。
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="trans"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void TrySetUseThreadScheduleResult(int rpcID, bool trans)
+        {
+            RpcCallbackPool.TrySetUseThreadScheduleResult(rpcID, trans);
+        }
+
         /// <summary>
         /// 验证resp空引用和返回类型,补充和转化异常
         /// </summary>
@@ -53,6 +72,7 @@ namespace Megumin.Remote.Rpc
         /// <param name="ex"></param>
         /// <param name="options"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual (RpcResult result, Exception exception)
             ValidResult<RpcResult>(object request,
                                    object resp,
@@ -105,6 +125,7 @@ namespace Megumin.Remote.Rpc
         /// <see cref="RpcCallbackPool{K, M, A}.TrySetResult(K, M)"/>
         /// <see cref="MiniTask{T}.SetResult(T)"/>
         /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual IMiniAwaitable<(object result, Exception exception)>
             InnerRpcSend(object message, IRpcCallback<int> callback, object options = null)
         {
@@ -122,6 +143,7 @@ namespace Megumin.Remote.Rpc
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual async ValueTask<(RpcResult result, Exception exception)>
             Send<RpcResult>(object message, IRpcCallback<int> callback, object options = null)
         {
@@ -134,6 +156,7 @@ namespace Megumin.Remote.Rpc
             return ValidResult<RpcResult>(message, resp, ex, options);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual async ValueTask<RpcResult> SendSafeAwait<RpcResult>
              (object message, IRpcCallback<int> callback, object options = null, Action<Exception> onException = null)
         {

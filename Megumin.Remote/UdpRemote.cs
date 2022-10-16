@@ -276,7 +276,7 @@ namespace Megumin.Remote
                 if (rpcID > 0)
                 {
                     //对于已经注册了Rpc的消息,直接触发异常。
-                    RemoteCore.RpcLayer.RpcCallbackPool.TrySetException(rpcID, new SocketException(-1));
+                    RemoteCore.RpcLayer.TrySetException(rpcID, new SocketException(-1));
                     return;
                 }
                 else

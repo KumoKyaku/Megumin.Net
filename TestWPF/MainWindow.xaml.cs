@@ -1,17 +1,14 @@
 ﻿using Megumin.Message;
 using Megumin.Remote;
-using Megumin.Remote.Test;
+using Net.Remote;
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using TestWPF;
-using System.Collections.Generic;
-using Net.Remote;
-using Megumin.Remote;
 
 namespace TestWPF
 {

@@ -128,7 +128,7 @@ namespace Megumin.Remote
             //所以现在先分流决定走Rpc流程还是Recevie流程，每个流程自己处理线程调度。
 
             //Rpc线程转换在RpcLayer 内部处理
-            this.RpcLayer.RpcCallbackPool.TrySetUseThreadScheduleResult(rpcID, post);
+            this.RpcLayer.TrySetUseThreadScheduleResult(rpcID, post);
 
             if (!RpcLayer.TryInput(rpcID, message))
             {
