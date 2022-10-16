@@ -47,7 +47,7 @@
 `发送一个消息，并等待一个消息返回` 是类库的全部内容。 
 
 ---
-## 1. [ISendCanAwaitable.Send](Image/callstep.png)
+## 1. [ISendAsyncable.SendAsync](Image/callstep.png)
 从结果值返回异常是有意义的：1.省去了try catch ,写法更简单（注意，没有提高处理异常的性能）2.用来支持异常在分布式服务器中传递，避免try catch 控制流。
 
 ```cs
@@ -58,7 +58,7 @@ public async void TestSend()
 {
     Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
     ///                                         泛型类型为期待返回的类型
-    var (result, exception) = await remote.Send<LoginResult>(login);
+    var (result, exception) = await remote.SendAsync<LoginResult>(login);
     ///如果没有遇到异常，那么我们可以得到远端发回的返回值
     if (exception == null)
     {
@@ -68,11 +68,11 @@ public async void TestSend()
 ```
 
 ---
-## 2. ISendCanAwaitable.SendSafeAwait
+## 2. ISendAsyncable.SendAsyncSafeAwait
 方法签名：  
 
 ```cs
-ValueTask<RpcResult> SendSafeAwait<RpcResult>(object message, Action<Exception> OnException = null, object options = null);   
+ValueTask<Result> SendAsyncSafeAwait<Result>(object message, object options = null, Action<Exception> onException = null);  
 ```
 
 结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，不会抛出异常，所以不用try catch。`异步方法的后续部分不会触发`，所以后续部分可以省去空检查。  
@@ -84,7 +84,7 @@ public async void TestSend()
 {
     Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
     ///                                           泛型类型为期待返回的类型
-    LoginResult result = await remote.SendSafeAwait<LoginResult>(login, (ex)=>{});
+    LoginResult result = await remote.SendAsyncSafeAwait<LoginResult>(login, (ex)=>{});
     ///后续代码 不用任何判断，也不用担心异常。
     Console.WriteLine(result.IsSuccess);
 }
@@ -104,7 +104,7 @@ async void Test(IRemote remote){
     Req req = new Req();
     ///泛型中填写所有期待返回类型的基类，然后根据类型分别处理。
     ///如果泛型处仅使用一种类型，那么服务器回复另一种类型时，底层会转换为 InvalidCastException 进如异常处理逻辑。
-    var ret = await remote.SendSafeAwait<object>(req);
+    var ret = await remote.SendAsyncSafeAwait<object>(req);
     if(ret is ErrorCode ec)
     {
 
@@ -218,7 +218,14 @@ Heartbeat，RTT，Timestamp Synchronization等功能都由此机制实现。
 - ~~使用返回消息池来实现接收过程构造返回消息实例无Alloc（这需要序列化类库的支持和明确的生命周期管理）。  
 ``你可以为每个Remote指定一个MessagePipeline实例，如果没有指定，默认使用MessagePipeline.Default。``~~
 
-2.0 版本删除MessagePipeline，改为多个Remote实现中可重写的函数，在工程实践中发现，将消息管线与Remote拆离没有意义，是过度设计。如果需要同时定制3个协议Remote的管线，可以由用户自行拆分，框架不做处理。
+2.0 版本删除MessagePipeline，改为多个Remote实现中可重写的函数，在工程实践中发现，将消息管线与Remote拆离没有意义，是过度设计。如果需要同时定制3个协议Remote的管线，可以由用户自行拆分，框架不做处理。  
+
+`人生就是反反复复。`  
+3.0版本决定改回最开始设计，第一版本的设计思路更好。  
+经过工程实践发现，2.0的设计并不方便重写，用户相同的重写代码在针对不同的协议时需要重写多份，分别从TcpRemote，UdpRemote，Kcpremote继承，每次修改时也要同时修改多份，十分笨重。  
+用户主要重写接收消息部分和断线部分，断线重连部分针对不同协议处理方式也不同。  
+所以将Transport和IDisconnectHandler从Remote拆分出来。  
+本质上说，3.0的Remote等于1.0的MessagePipeline。3.0的Transport等于1.0的Remote。  
 
 # MessageLUT是什么？
 MessageLUT（Message Serialize Deserialize callback look-up table）是MessageStandard的核心类。MessagePipeline 通过查找MessageLUT中注册的函数进行序列化。**``因此在程序最开始你需要进行函数注册``**。  
@@ -328,19 +335,12 @@ namespace Message
 - 多目标框架支持 `<TargetFrameworks>netstandard2.0;netstandard2.1;net5;net6</TargetFrameworks>`。
 
 
-# 2.0版本
+# 3.0版本
+- Remote：负责序列化和Rpc，消息接收。  
+- Transport：负责传输层数据收发。  
+- IDisconnectHandler： 负责断线处理。  
 
-原则： 协议无关的定义在基类。
 
-目前将TcpRemote 拆为3层， RemoteBase定义了必要消息处理流程的函数和抽象函数。是原MessagePipeline的体现。
-RpcRemote 是 实现Rpc功能的必要实现，主要处理收到消息Rpc分流问题。
-
-前两层不涉及到数据保存。不涉及数据清理逻辑，基本与协议无关。
-
-TcpRemote处理Socket数据相关，为最后一层。
-Udp 后面只需要继承和重写就可以了。
-
-<span id="jump1"></span>
 # `时间和空间上的折衷`
 
 ~~序列化之前无法确定消息大小，因此需要传递一个足够大的buffer到序列化层。如果不进行拷贝，直接将整个大buffer传递到发送层，由于异步特性，无法准确得知发送过程的生命周期，可能在发送层积累大量的大buffer，严重消耗内存，因此类库在序列化层和发送层之间做了一次拷贝。~~  
@@ -350,6 +350,8 @@ Udp 后面只需要继承和重写就可以了。
 
 - 0.2版本。没有精确测试，Task的使用确实影响了一部分性能，但是是值得的。经过简单本机测试单进程维持了15000+ Tcp连接。
 - 2.0版本性能可能会比之前版本低一些，还没有实际测试。
+- 3.0版本性能得到极大优化，超过历史版本。性能上可以满足99%的项目。  
+  本机测试峰值达到15000+连接，收发26000 0000 字节每秒，网络模块性能已经不在是问题。
 
 # 其他信息
 
