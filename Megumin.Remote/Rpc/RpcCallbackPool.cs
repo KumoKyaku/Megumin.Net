@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Sources;
 
 //namespace Megumin.Remote
 //{
@@ -355,6 +356,8 @@ namespace Megumin.Remote.Rpc
     /// <summary>
     /// Rpc回调注册池
     /// 每个session大约每秒30个包，超时时间默认为30秒；
+    /// <para></para>
+    /// 写到最后发现本质就是<see cref="IValueTaskSource"/>,只不过token是内部自动的，而不是外部传进来的。
     /// </summary>
     public abstract class RpcCallbackPool<K, M, A>
     {
@@ -562,50 +565,6 @@ namespace Megumin.Remote.Rpc
                 return true;
             }
             return false;
-        }
-    }
-
-    /// <summary>
-    /// <inheritdoc/>
-    /// </summary>
-    /// <remarks>
-    /// <para/>Q:为什么用IMiniAwaitable 而不是ValueTask?
-    /// <para/>A:开始时这个类直接和Send耦合，需要返回值一致，现在没有修改必要。性能要比ValueTask高那么一丁点。
-    /// </remarks>
-    public sealed class ObjectRpcCallbackPool :
-        RpcCallbackPool<int, object, (int rpcID, IMiniAwaitable<(object result, Exception exception)>)>
-    {
-        int rpcCursor = 0;
-        readonly object rpcCursorLock = new object();
-
-        /// <summary>
-        /// 原子操作 取得RpcId,发送方的的RpcID为正数，回复的RpcID为负数，正负一一对应
-        /// <para>0,int.MinValue 为无效值</para> 
-        /// </summary>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override int GetRpcID()
-        {
-            lock (rpcCursorLock)
-            {
-                if (rpcCursor == int.MaxValue)
-                {
-                    rpcCursor = 1;
-                }
-                else
-                {
-                    rpcCursor++;
-                }
-
-                return rpcCursor;
-            }
-        }
-
-        public override (int rpcID, IMiniAwaitable<(object result, Exception exception)>) Regist(object options = null)
-        {
-            var source = MiniTask<(object result, Exception exception)>.Rent();
-            var rpcID = Regist(source.SetResult, options);
-            return (rpcID, source);
         }
     }
 }

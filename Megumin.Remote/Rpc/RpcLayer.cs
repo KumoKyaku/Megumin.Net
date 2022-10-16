@@ -21,12 +21,54 @@ namespace Megumin.Remote.Rpc
     }
 
     /// <summary>
+    /// <inheritdoc/>
+    /// </summary>
+    /// <remarks>
+    /// <para/>Q:为什么用IMiniAwaitable 而不是ValueTask?
+    /// <para/>A:开始时这个类直接和Send耦合，需要返回值一致，现在没有修改必要。性能要比ValueTask高那么一丁点。
+    /// </remarks>
+    public partial class RpcLayer :
+        RpcCallbackPool<int, object, (int rpcID, IMiniAwaitable<(object result, Exception exception)>)>
+    {
+        int rpcCursor = 0;
+        readonly object rpcCursorLock = new object();
+
+        /// <summary>
+        /// 原子操作 取得RpcId,发送方的的RpcID为正数，回复的RpcID为负数，正负一一对应
+        /// <para>0,int.MinValue 为无效值</para> 
+        /// </summary>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected override int GetRpcID()
+        {
+            lock (rpcCursorLock)
+            {
+                if (rpcCursor == int.MaxValue)
+                {
+                    rpcCursor = 1;
+                }
+                else
+                {
+                    rpcCursor++;
+                }
+
+                return rpcCursor;
+            }
+        }
+
+        public override (int rpcID, IMiniAwaitable<(object result, Exception exception)>) Regist(object options = null)
+        {
+            var source = MiniTask<(object result, Exception exception)>.Rent();
+            var rpcID = Regist(source.SetResult, options);
+            return (rpcID, source);
+        }
+    }
+
+    /// <summary>
     /// 独立的Rpc层
     /// </summary>
-    public class RpcLayer
+    public partial class RpcLayer
     {
-        protected ObjectRpcCallbackPool RpcCallbackPool { get; } = new ObjectRpcCallbackPool();
-
         /// <summary>
         /// 如果rpcID为负数，是rpc返回回复，返回true,此消息由RpcLayer处理。
         /// <para> 否则返回false，RpcLayer忽略此消息。</para>
@@ -40,27 +82,10 @@ namespace Megumin.Remote.Rpc
             if (rpcID < 0)
             {
                 //这个消息是rpc返回（回复的RpcID为负数）
-                RpcCallbackPool?.TrySetResult(rpcID * -1, message);
+                TrySetResult(rpcID * -1, message);
                 return true;
             }
             return false;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TrySetException(int rpcID, Exception exception)
-        {
-            return RpcCallbackPool.TrySetException(rpcID, exception);
-        }
-
-        /// <summary>
-        /// DeserializeSuccess后设置回调线程，只有PostThreadSetting含有Key并且值为null时才设置。
-        /// </summary>
-        /// <param name="rpcID"></param>
-        /// <param name="trans"></param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void TrySetUseThreadScheduleResult(int rpcID, bool trans)
-        {
-            RpcCallbackPool.TrySetUseThreadScheduleResult(rpcID, trans);
         }
 
         /// <summary>
@@ -129,7 +154,7 @@ namespace Megumin.Remote.Rpc
         protected virtual IMiniAwaitable<(object result, Exception exception)>
             InnerRpcSend(object message, IRpcCallback<int> callback, object options = null)
         {
-            var (rpcID, source) = RpcCallbackPool.Regist(options);
+            var (rpcID, source) = Regist(options);
 
             try
             {
@@ -138,7 +163,7 @@ namespace Megumin.Remote.Rpc
             }
             catch (Exception e)
             {
-                RpcCallbackPool.TrySetException(rpcID, e);
+                TrySetException(rpcID, e);
                 return source;
             }
         }
