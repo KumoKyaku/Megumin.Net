@@ -1,18 +1,10 @@
-﻿using Megumin.Remote.Rpc;
-using Net.Remote;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Megumin.Remote
+﻿namespace Megumin.Remote
 {
     public class BaseTransport
     {
         public RpcRemote RemoteCore { get; set; }
         public System.Diagnostics.TraceListener TraceListener { get; set; }
     }
-
-    
 }
 
 
