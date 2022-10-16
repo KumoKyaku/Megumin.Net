@@ -227,7 +227,7 @@ namespace Megumin.Remote
             Transport?.Send(rpcID, message, options);
         }
 
-        public void Send(object message, object options = null)
+        public void Send<T>(T message, object options = null)
         {
             Send(0, message, options);
         }

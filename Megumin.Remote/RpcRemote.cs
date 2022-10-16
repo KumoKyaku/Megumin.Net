@@ -15,7 +15,7 @@ namespace Megumin.Remote
     /// 没有设计成扩展函数或者静态函数是方便子类重写。
     /// </summary>
     /// <remarks>一些与RPC支持相关的函数写在这里。</remarks>
-    public class RpcRemote : RemoteBase, IDealMessageable, ISendCanAwaitable, IRemoteUID<int>, IRpcCallback<int>, IRemote
+    public partial class RpcRemote : RemoteBase, IDealMessageable, IRemoteUID<int>, IRpcCallback<int>, IRemote
     {
         public virtual int UID { get; set; }
         public RpcLayer RpcLayer { get; set; } = new RpcLayer();
@@ -92,16 +92,16 @@ namespace Megumin.Remote
         /// <param name="rpcID"></param>
         /// <param name="reply"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual async void DealRelay(int rpcID, object reply)
+        protected virtual async void DealRelay<T>(int rpcID, T reply)
         {
             if (reply != null)
             {
-                if (reply is Task<object> task)
+                if (reply is Task<T> task)
                 {
                     reply = await task.ConfigureAwait(false);
                 }
 
-                if (reply is ValueTask<object> vtask)
+                if (reply is ValueTask<T> vtask)
                 {
                     reply = await vtask.ConfigureAwait(false);
                 }
@@ -158,7 +158,7 @@ namespace Megumin.Remote
         [System.Diagnostics.DebuggerHidden]
         protected void Push2MessageThreadTransducer(int rpcID, short cmd, int messageID, object message, object options = null)
         {
-            MessageThreadTransducer.Push(this, rpcID, cmd, messageID, message);
+            MessageThreadTransducer.Push(this, rpcID, cmd, messageID, message, options);
         }
 
         void IDealMessageable.Deal(int rpcID, short cmd, int messageID, object message, object options)
@@ -166,37 +166,39 @@ namespace Megumin.Remote
             ProcessRecevie(rpcID, cmd, messageID, message, options);
         }
 
-        public virtual ValueTask<(RpcResult result, Exception exception)>
-            Send<RpcResult>(object message, object options = null)
-        {
-            return RpcLayer.Send<object, RpcResult>(message, this, options);
-        }
-
-        public virtual ValueTask<RpcResult> SendSafeAwait<RpcResult>
-            (object message, object options = null, Action<Exception> onException = null)
-        {
-            return RpcLayer.SendSafeAwait<object, RpcResult>(message, this, options, onException);
-        }
-
-        public virtual void OnSendSafeAwaitException<T, RpcResult>(T request,
-                                                                   RpcResult response,
+        public virtual void OnSendSafeAwaitException<T, Result>(T request,
+                                                                   Result response,
                                                                    Action<Exception> onException,
                                                                    Exception finnalException)
         {
             onException?.Invoke(finnalException);
         }
+    }
 
-
-        public virtual ValueTask<(RpcResult result, Exception exception)>
-            Send<T, RpcResult>(T message, object options = null)
+    public partial class RpcRemote : ISendCanAwaitable
+    {
+        public virtual ValueTask<(Result result, Exception exception)>
+            Send<T, Result>(T message, object options = null)
         {
-            return RpcLayer.Send<T, RpcResult>(message, this, options);
+            return RpcLayer.Send<T, Result>(message, this, options);
         }
 
-        public virtual ValueTask<RpcResult> SendSafeAwait<T, RpcResult>
+        public virtual ValueTask<Result> SendSafeAwait<T, Result>
             (T message, object options = null, Action<Exception> onException = null)
         {
-            return RpcLayer.SendSafeAwait<T, RpcResult>(message, this, options, onException);
+            return RpcLayer.SendSafeAwait<T, Result>(message, this, options, onException);
+        }
+
+        public ValueTask<(Result result, Exception exception)>
+            Send<Result>(object message, object options = null)
+        {
+            return Send<object, Result>(message, options);
+        }
+
+        public ValueTask<Result> SendSafeAwait<Result>
+            (object message, object options = null, Action<Exception> onException = null)
+        {
+            return SendSafeAwait<object, Result>(message, options, onException);
         }
     }
 }

@@ -108,7 +108,7 @@ namespace Net.Remote
         /// <param name="message"></param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
         /// <remarks>序列化开销不大，放在调用线程执行比使用单独的序列化线程更好</remarks>
-        void Send(object message, object options = null);
+        void Send<T>(T message, object options = null);
         ///// <summary>
         ///// 发送消息，无阻塞立刻返回
         ///// </summary>
@@ -121,7 +121,7 @@ namespace Net.Remote
     /// </summary>
     /// <remarks>
     /// 为了通用性和框架兼容性，object message导致值类型装箱是可以妥协的。
-    /// RpcResult已经是泛型了，如果message也使用泛型，则需要使用2个泛型，调用出没办法自动类型推导，需要明确指定，严重影响易用性。
+    /// Result已经是泛型了，如果message也使用泛型，则需要使用2个泛型，调用出没办法自动类型推导，需要明确指定，严重影响易用性。
     /// <para/> --------
     /// <para/> 在这里吐槽几句，可能有人觉得这两个API比较像Go。https://www.zhihu.com/question/451484968
     /// <para/> 其实本质含义不一样,设计初衷是禁止异常抛出到Send处。
@@ -130,33 +130,60 @@ namespace Net.Remote
     ///         所以折衷将异常以返回值的形式传递回调用者处。
     /// <para/> 这里的精髓是，当后续代码读取结果时，结果一定符合预期，如果不符合预期，后续代码则不会被执行。
     ///         当出现异常时，允许不触发异步延续，后续代码执行全被吃掉，这是Go所不具备的。
-    /// <para/> SendSafeAwait才是设计的最终目的。而ValueTask(RpcResult result, Exception exception) Send只是对特殊需求的补丁API。
+    /// <para/> <see cref="SendSafeAwait{T, Result}(T, object, Action{Exception})"/> 才是设计的最终目的。
+    ///         而<see cref="Send{T, Result}(T, object)"/>只是对特殊需求的补丁API。
     /// </remarks>
     public interface ISendCanAwaitable
     {
         /// <summary>
         /// 异步发送消息，封装Rpc过程。
         /// </summary>
-        /// <typeparam name="RpcResult">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
+        /// <typeparam name="Result">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
         /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表 MessageLUT 中指定ID和序列化函数</param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
         /// <returns>需要检测空值</returns>
-        ValueTask<(RpcResult result, Exception exception)> Send<RpcResult>(object message, object options = null);
+        ValueTask<(Result result, Exception exception)> Send<Result>(object message, object options = null);
 
         /// <summary>
         /// 异步发送消息，封装Rpc过程
         /// 结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，不会抛出异常，所以不用try catch。
         /// 异步方法的后续部分不会触发，所以后续部分可以省去空检查。
-        /// <para>****千万注意，只有在RpcResult有返回值的情况下，后续异步方法才会执行。
+        /// <para>****千万注意，只有在Result有返回值的情况下，后续异步方法才会执行。
         /// 这不是语言特性，也不是语法特性。这由具体实现的类库保证。*****</para>
         /// </summary>
-        /// <typeparam name="RpcResult"></typeparam>
+        /// <typeparam name="Result"></typeparam>
         /// <param name="message"></param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
         /// <param name="onException">发生异常时的回调函数</param>
         /// <returns></returns>
         /// <remarks></remarks>
-        ValueTask<RpcResult> SendSafeAwait<RpcResult>(object message, object options = null, Action<Exception> onException = null);
+        ValueTask<Result> SendSafeAwait<Result>(object message, object options = null, Action<Exception> onException = null);
+
+        /// <summary>
+        /// 异步发送消息，封装Rpc过程。
+        /// </summary>
+        /// <typeparam name="T">发送消息类型</typeparam>
+        /// <typeparam name="Result">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
+        /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表 MessageLUT 中指定ID和序列化函数</param>
+        /// <param name="options">参数项，在整个发送管线中传递</param>
+        /// <returns>需要检测空值</returns>
+        ValueTask<(Result result, Exception exception)> Send<T, Result>(T message, object options = null);
+
+        /// <summary>
+        /// 异步发送消息，封装Rpc过程
+        /// 结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，不会抛出异常，所以不用try catch。
+        /// 异步方法的后续部分不会触发，所以后续部分可以省去空检查。
+        /// <para>****千万注意，只有在Result有返回值的情况下，后续异步方法才会执行。
+        /// 这不是语言特性，也不是语法特性。这由具体实现的类库保证。*****</para>
+        /// </summary>
+        /// <typeparam name="T">发送消息类型</typeparam>
+        /// <typeparam name="Result"></typeparam>
+        /// <param name="message"></param>
+        /// <param name="options">参数项，在整个发送管线中传递</param>
+        /// <param name="onException">发生异常时的回调函数</param>
+        /// <returns></returns>
+        /// <remarks></remarks>
+        ValueTask<Result> SendSafeAwait<T, Result>(T message, object options = null, Action<Exception> onException = null);
     }
 
     //广播一定是个静态方法，没法通过接口调用

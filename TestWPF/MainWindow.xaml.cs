@@ -364,7 +364,7 @@ public class TestWPFRemote : RpcRemote
 
     async void Test()
     {
-        var rest = await this.SendSafeAwait<DateTime>(20);
+        var rest = await this.SendSafeAwait<int,DateTime>(20);
     }
 }
 

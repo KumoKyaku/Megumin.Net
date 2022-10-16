@@ -8,6 +8,6 @@ namespace Megumin.DCS
     {
         IRemote Remote { get; }
 
-        Task<rpcResult> Send<rpcResult>(object testMessage);
+        Task<Result> Send<Result>(object testMessage);
     }
 }

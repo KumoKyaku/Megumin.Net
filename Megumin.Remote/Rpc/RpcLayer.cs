@@ -10,14 +10,15 @@ namespace Megumin.Remote.Rpc
     public interface IRpcCallback<in K>
     {
         void Send<T>(K rpcID, T message, object options = null);
+
         /// <summary>
-        ///  <see cref="ISendCanAwaitable.SendSafeAwait{RpcResult}(object, object, Action{Exception})"/>收到obj response后，如果是异常，处理异常的逻辑。
+        ///  <see cref="ISendCanAwaitable.SendSafeAwait{Result}(object, object, Action{Exception})"/>收到obj response后，如果是异常，处理异常的逻辑。
         /// </summary>
         /// <param name="request"></param>
         /// <param name="response"></param>
         /// <param name="onException"></param>
         /// <param name="finnalException"></param>
-        void OnSendSafeAwaitException<T, RpcResult>(T request, RpcResult response, Action<Exception> onException, Exception finnalException);
+        void OnSendSafeAwaitException<T, Result>(T request, Result response, Action<Exception> onException, Exception finnalException);
     }
 
     /// <summary>
@@ -91,23 +92,23 @@ namespace Megumin.Remote.Rpc
         /// <summary>
         /// 验证resp空引用和返回类型,补充和转化异常
         /// </summary>
-        /// <typeparam name="RpcResult"></typeparam>
+        /// <typeparam name="Result"></typeparam>
         /// <param name="request"></param>
         /// <param name="resp"></param>
         /// <param name="ex"></param>
         /// <param name="options"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual (RpcResult result, Exception exception)
-            ValidResult<RpcResult>(object request,
+        protected virtual (Result result, Exception exception)
+            ValidResult<Result>(object request,
                                    object resp,
                                    Exception ex,
                                    object options = null)
         {
-            RpcResult result = default;
+            Result result = default;
             if (ex == null)
             {
-                if (resp is RpcResult castedValue)
+                if (resp is Result castedValue)
                 {
                     result = castedValue;
                 }
@@ -120,8 +121,8 @@ namespace Megumin.Remote.Rpc
                     else
                     {
                         ///转换类型错误
-                        ex = new InvalidCastException($"Return {resp.GetType()} type, cannot be converted to {typeof(RpcResult)}" +
-                            $"/返回{resp.GetType()}类型，无法转换为{typeof(RpcResult)}");
+                        ex = new InvalidCastException($"Return {resp.GetType()} type, cannot be converted to {typeof(Result)}" +
+                            $"/返回{resp.GetType()}类型，无法转换为{typeof(Result)}");
                     }
 
                 }
@@ -131,7 +132,7 @@ namespace Megumin.Remote.Rpc
                 if (ex is RcpTimeoutException timeout)
                 {
                     timeout.RequstType = request.GetType();
-                    timeout.ResponseType = typeof(RpcResult);
+                    timeout.ResponseType = typeof(Result);
                 }
             }
 
@@ -169,8 +170,8 @@ namespace Megumin.Remote.Rpc
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual async ValueTask<(RpcResult result, Exception exception)>
-            Send<T, RpcResult>(T message, IRpcCallback<int> callback, object options = null)
+        public virtual async ValueTask<(Result result, Exception exception)>
+            Send<T, Result>(T message, IRpcCallback<int> callback, object options = null)
         {
             //可以在这里重写异常堆栈信息。
             //StackTrace stackTrace = new System.Diagnostics.StackTrace();
@@ -178,22 +179,22 @@ namespace Megumin.Remote.Rpc
 
             //这里是TaskPool线程或者MessageThreadTransducer线程
 
-            return ValidResult<RpcResult>(message, resp, ex, options);
+            return ValidResult<Result>(message, resp, ex, options);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual async ValueTask<RpcResult> SendSafeAwait<T, RpcResult>
+        public virtual async ValueTask<Result> SendSafeAwait<T, Result>
              (T message, IRpcCallback<int> callback, object options = null, Action<Exception> onException = null)
         {
             var (tempresp, tempex) = await InnerRpcSend(message, callback, options);
 
             //这里是TaskPool线程或者MessageThreadTransducer线程
-            var validResult = ValidResult<RpcResult>(message, tempresp, tempex, options);
+            var validResult = ValidResult<Result>(message, tempresp, tempex, options);
 
             //这里使用tempsource,来达到出现异常取消异步后续的目的
 
             ////相当于一个TaskCompletionSource实例
-            //TaskCompletionSource<RpcResult> source = new TaskCompletionSource<RpcResult>();
+            //TaskCompletionSource<Result> source = new TaskCompletionSource<Result>();
             //if (validResult.exception == null)
             //{
             //    source.SetResult(validResult.result);
@@ -207,7 +208,7 @@ namespace Megumin.Remote.Rpc
 
             //return await source.Task;
 
-            IMiniAwaitable<RpcResult> tempsource = MiniTask<RpcResult>.Rent();
+            IMiniAwaitable<Result> tempsource = MiniTask<Result>.Rent();
 
             if (validResult.exception == null)
             {
