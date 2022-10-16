@@ -189,7 +189,7 @@ namespace Megumin.Remote
             }
         }
 
-        public override void Send<T>(int rpcID, T message, object options = null)
+        public override void Send<T>(T message, int rpcID, object options = null)
         {
             if (Client == null || Closer?.IsDisconnecting == true)
             {
@@ -208,7 +208,7 @@ namespace Megumin.Remote
 
             if (options is IForceUdpDataOnKcpRemote force && force.ForceUdp)
             {
-                base.Send(rpcID, message, options);
+                base.Send(message, rpcID, options);
             }
             else
             {

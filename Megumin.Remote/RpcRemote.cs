@@ -55,7 +55,7 @@ namespace Megumin.Remote
                 {
                     //将一个Rpc应答回复给远端
                     //将rpcID * -1，区分上行下行
-                    Send(rpcID * -1, reply);
+                    Send(reply, rpcID * -1);
                 }
             }
 
@@ -80,7 +80,7 @@ namespace Megumin.Remote
                     {
                         //将一个Rpc应答回复给远端
                         //将rpcID * -1，区分上行下行
-                        Send(rpcID * -1, reply);
+                        Send(reply, rpcID * -1);
                     }
                 }
             }
@@ -110,7 +110,7 @@ namespace Megumin.Remote
                 {
                     //将一个Rpc应答回复给远端
                     //将rpcID * -1，区分上行下行
-                    Send(rpcID * -1, reply);
+                    Send(reply, rpcID * -1);
                 }
             }
         }

@@ -221,14 +221,14 @@ namespace Megumin.Remote
         /// <summary>
         /// 发送rpcID和消息
         /// </summary>
-        public virtual void Send<T>(int rpcID, T message, object options = null)
+        public virtual void Send<T>(T message, int rpcID, object options = null)
         {
-            Transport?.Send(rpcID, message, options);
+            Transport?.Send(message, rpcID, options);
         }
 
         public void Send<T>(T message, object options = null)
         {
-            Send(0, message, options);
+            Send(message, 0, options);
         }
     }
 

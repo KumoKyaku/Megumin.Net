@@ -7,7 +7,7 @@ namespace Megumin.Remote.Rpc
 {
     public interface IRpcCallback<in K>
     {
-        void Send<T>(K rpcID, T message, object options = null);
+        void Send<T>(T message, K rpcID, object options = null);
 
         /// <summary>
         ///  <see cref="ISendAsyncable.SendAsyncSafeAwait{Result}(object, object, Action{Exception})"/>收到obj response后，如果是异常，处理异常的逻辑。
@@ -157,7 +157,7 @@ namespace Megumin.Remote.Rpc
 
             try
             {
-                callback.Send(rpcID, message, options);
+                callback.Send(message, rpcID, options);
                 return source;
             }
             catch (Exception e)

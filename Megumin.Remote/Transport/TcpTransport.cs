@@ -209,7 +209,7 @@ namespace Megumin.Remote
 
     public partial class TcpTransport
     {
-        public virtual void Send<T>(int rpcID, T message, object options = null)
+        public virtual void Send<T>(T message, int rpcID, object options = null)
         {
             //todo 检查当前是否允许发送，可能已经处于断开阶段，不在允许新消息进入发送缓存区
             var allowSend = RemoteState == WorkState.Working || RemoteState == WorkState.NotStart;
