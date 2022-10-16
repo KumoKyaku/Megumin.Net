@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.NetworkInformation;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Megumin
 {
@@ -102,7 +101,6 @@ namespace Megumin
             prop.Note.text = note;
         }
 
-        [Button]
         public void DebugLogNetworkInterfaceInfo()
         {
             foreach (var item in NetworkInterface.GetAllNetworkInterfaces())

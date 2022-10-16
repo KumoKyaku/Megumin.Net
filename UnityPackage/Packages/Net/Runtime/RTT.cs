@@ -25,7 +25,7 @@ namespace Megumin
 
         }
 
-        internal void SetTarget(ISendAsyncable client)
+        public void SetTarget(ISendAsyncable client)
         {
             this.Target = client;
             cancellation?.Cancel();
