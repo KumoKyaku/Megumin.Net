@@ -1,8 +1,8 @@
-﻿using Megumin.Remote.Rpc;
-using Net.Remote;
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Megumin.Remote.Rpc;
+using Net.Remote;
 
 namespace Megumin.Remote
 {

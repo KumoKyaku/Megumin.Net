@@ -1,10 +1,10 @@
-﻿using Net.Remote;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Net.Remote;
 
 namespace Megumin.Remote
 {

@@ -1,7 +1,7 @@
-﻿using Net.Remote;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Net.Sockets;
+using Net.Remote;
 
 namespace Megumin.Remote
 {

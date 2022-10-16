@@ -1,10 +1,9 @@
-﻿using Megumin.Message;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
+using Megumin.Message;
 
 namespace Megumin.Remote
 {
