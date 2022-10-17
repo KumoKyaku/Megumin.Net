@@ -449,7 +449,7 @@
         </member>
         <member name="M:Megumin.Remote.Rpc.IRpcCallback`1.OnSendSafeAwaitException``2(``0,``1,System.Action{System.Exception},System.Exception)">
             <summary>
-             <see cref="M:Net.Remote.ISendAsyncable.SendAsyncSafeAwait``1(System.Object,System.Object,System.Action{System.Exception})"/>收到obj response后，如果是异常，处理异常的逻辑。
+             <see cref="!:ISendAsyncable.SendAsyncSafeAwait&lt;Result&gt;(object, object, Action&lt;Exception&gt;)"/>收到obj response后，如果是异常，处理异常的逻辑。
             </summary>
             <param name="request"></param>
             <param name="response"></param>
