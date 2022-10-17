@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -138,35 +139,12 @@ namespace Net.Remote
         /// <summary>
         /// 异步发送消息，封装Rpc过程。
         /// </summary>
-        /// <typeparam name="Result">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
-        /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表 MessageLUT 中指定ID和序列化函数</param>
-        /// <param name="options">参数项，在整个发送管线中传递</param>
-        /// <returns>需要检测空值</returns>
-        ValueTask<(Result result, Exception exception)> SendAsync<Result>(object message, object options = null);
-
-        /// <summary>
-        /// 异步发送消息，封装Rpc过程
-        /// 结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，不会抛出异常，所以不用try catch。
-        /// 异步方法的后续部分不会触发，所以后续部分可以省去空检查。
-        /// <para>****千万注意，只有在Result有返回值的情况下，后续异步方法才会执行。
-        /// 这不是语言特性，也不是语法特性。这由具体实现的类库保证。*****</para>
-        /// </summary>
-        /// <typeparam name="Result"></typeparam>
-        /// <param name="message"></param>
-        /// <param name="options">参数项，在整个发送管线中传递</param>
-        /// <param name="onException">发生异常时的回调函数</param>
-        /// <returns></returns>
-        /// <remarks></remarks>
-        ValueTask<Result> SendAsyncSafeAwait<Result>(object message, object options = null, Action<Exception> onException = null);
-
-        /// <summary>
-        /// 异步发送消息，封装Rpc过程。
-        /// </summary>
         /// <typeparam name="T">发送消息类型</typeparam>
         /// <typeparam name="Result">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
         /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表 MessageLUT 中指定ID和序列化函数</param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
         /// <returns>需要检测空值</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ValueTask<(Result result, Exception exception)> SendAsync<T, Result>(T message, object options = null);
 
         /// <summary>
@@ -183,6 +161,7 @@ namespace Net.Remote
         /// <param name="onException">发生异常时的回调函数</param>
         /// <returns></returns>
         /// <remarks></remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ValueTask<Result> SendAsyncSafeAwait<T, Result>(T message, object options = null, Action<Exception> onException = null);
     }
 
