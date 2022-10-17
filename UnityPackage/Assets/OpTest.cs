@@ -70,13 +70,14 @@ public class OpTest : MonoBehaviour
                     listener?.Stop();
                     var rl = new TcpRemoteListener(port);
                     Log($"开始监听 {ProtocolType}");
+                    rl.Start();
                     while (true)
                     {
                         EchoRemote remote = new EchoRemote();
                         remote.SetTransport(new TcpTransport());
                         await rl.ReadAsync(remote);
-                        Console.text += $"\n 收到连接 {remote.Transport.Client.RemoteEndPoint} ";
-                        Log($"收到连接 {remote.Transport.Client.RemoteEndPoint}");
+                        Console.text += $"\n 收到连接 {remote.Transport.RemoteEndPoint} ";
+                        Log($"收到连接 {remote.Transport.RemoteEndPoint}");
                         serverSide = remote;
                     }
                 }
@@ -86,13 +87,14 @@ public class OpTest : MonoBehaviour
                     listener?.Stop();
                     var rl = new UdpRemoteListener(port, AddressFamily.InterNetwork);
                     Log($"开始监听 {ProtocolType}");
+                    rl.Start();
                     while (true)
                     {
                         EchoRemote remote = new EchoRemote();
                         remote.SetTransport(new UdpTransport());
                         await rl.ReadAsync(remote);
-                        Console.text += $"\n 收到连接 {remote.Transport.Client.RemoteEndPoint} ";
-                        Log($"收到连接 {remote.Transport.Client.RemoteEndPoint}");
+                        Console.text += $"\n 收到连接 {remote.Transport.RemoteEndPoint} ";
+                        Log($"收到连接 {remote.Transport.RemoteEndPoint}");
                         serverSide = remote;
                     }
                 }
@@ -102,13 +104,14 @@ public class OpTest : MonoBehaviour
                     listener?.Stop();
                     var rl = new KcpRemoteListener(port);
                     Log($"开始监听 {ProtocolType}");
+                    rl.Start();
                     while (true)
                     {
                         EchoRemote remote = new EchoRemote();
                         remote.SetTransport(new KcpTransport());
                         await rl.ReadAsync(remote);
-                        Console.text += $"\n 收到连接 {remote.Transport.Client.RemoteEndPoint} ";
-                        Log($"收到连接 {remote.Transport.Client.RemoteEndPoint}");
+                        Console.text += $"\n 收到连接 {remote.Transport.RemoteEndPoint} ";
+                        Log($"收到连接 {remote.Transport.RemoteEndPoint}");
                         serverSide = remote;
                     }
                 }
