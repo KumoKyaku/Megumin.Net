@@ -535,6 +535,10 @@ namespace Megumin.Remote
 
         public async ValueTask ReadAsync(UdpTransport transport)
         {
+            if (ListenerSocket == null)
+            {
+                TraceListener?.Fail("ListenerSocket is null.");
+            }
             TaskCompletionSource<int> source = new TaskCompletionSource<int>();
             remoteCreators.Write((transport, () =>
             {

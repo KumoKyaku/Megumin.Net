@@ -168,6 +168,10 @@ namespace Megumin.Remote
 
         public async ValueTask ReadAsync(TcpTransport transport)
         {
+            if (tcpListener == null)
+            {
+                TraceListener?.Fail("TcpListener is null.");
+            }
             var socket = await AcceptedSockets.ReadAsync().ConfigureAwait(false);
             transport.SetSocket(socket);
             transport.StartWork();
