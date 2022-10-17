@@ -128,7 +128,7 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="endPoint"></param>
         /// <param name="recvbuffer"></param>
-        protected virtual void DealAuthBuffer(IPEndPoint endPoint, byte[] recvbuffer)
+        protected virtual void DealAuthBuffer(IPEndPoint endPoint, Span<byte> recvbuffer)
         {
             var auth = UdpAuthRequest.Deserialize(recvbuffer);
             //创建认证回复消息
@@ -401,7 +401,7 @@ namespace Megumin.Remote
             switch (messageType)
             {
                 case UdpRemoteMessageDefine.UdpAuthRequest:
-                    DealAuthBuffer(endPoint, recvbuffer);
+                    DealAuthBuffer(endPoint, new Span<byte>(recvbuffer, start, count));
                     break;
                 case UdpRemoteMessageDefine.UdpAuthResponse:
                     //主动侧不处理验证应答。

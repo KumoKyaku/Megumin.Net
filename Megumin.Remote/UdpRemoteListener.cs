@@ -327,6 +327,8 @@ namespace Megumin.Remote
             else
             {
                 var answer = await authHelper.Auth(endPoint, ListenerSocket).ConfigureAwait(false);
+                //TODO,认证返回也需要带上IPEndPoint，并比较触发认证的地址和认证结果地址是否一致。
+                //不一致时应该舍弃。
 
                 lock (lut)
                 {
@@ -341,10 +343,20 @@ namespace Megumin.Remote
                         {
                             if (udpRemote.ConnectIPEndPoint != endPoint)
                             {
+                                var oldEndPoint = udpRemote.ConnectIPEndPoint;
+
                                 //重绑定远端
-                                connected.Remove(udpRemote.ConnectIPEndPoint);
                                 udpRemote.ConnectIPEndPoint = endPoint;
                                 connected.Add(endPoint, udpRemote);
+
+                                //Udp数据是无序的，可能后续仍然收到旧地址的数据，延迟一堆时间移除，
+                                //防止旧地址触发重新认证
+                                Task.Run(async () =>
+                                {
+                                    await Task.Delay(12000);
+                                    connected.Remove(oldEndPoint);
+                                });
+
                             }
 
                             return udpRemote;
@@ -416,6 +428,8 @@ namespace Megumin.Remote
                 /// Q:为什么不立刻移除？
                 /// A:Udp是不保证顺序的，可能断开的短时间内还有之前发送的包收到。如果立刻移除会触发重新认证。
                 await Task.Delay(120000);
+
+                //TODO,应该遍历所有连接比对UdpTransport移除，防止内存泄露。
                 connected.Remove(endPoint);
                 if (transport.GUID.HasValue)
                 {
