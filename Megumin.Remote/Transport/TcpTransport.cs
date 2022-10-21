@@ -247,7 +247,7 @@ namespace Megumin.Remote
             }
 
             //StartWork(); 不主动开启SendPipe.ReadNext，改为Log。精准手动控制。
-            //开启接受和处理消息
+            //开启接受和处理消息,StartWork中已经开启接收一次，这里每次发送在调用一次，防止意外停止接受。也可以省略的。
             FillRecvPipe(RecvPipe.Writer);
             StartReadRecvPipe(RecvPipe.Reader);
             if (IsSocketSending == false)
@@ -492,7 +492,7 @@ namespace Megumin.Remote
                     }
                     IsMessageReceiving = true;
                 }
-                var result = await pipeReader.ReadAsync();
+                var result = await pipeReader.ReadAsync().ConfigureAwait(false);
 
                 //剩余未处理消息buffer
                 var unDealBuffer = result.Buffer;

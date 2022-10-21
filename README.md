@@ -391,12 +391,15 @@ namespace Message
 # 参考
 - [介绍 KCP：新的低延迟、安全网络堆栈](https://www.improbable.io/blog/kcp-a-new-low-latency-secure-network-stack) SpatialOS 的官网有几个协议的详细评测
 - [MessagePack for C# v2, new era of .NET Core(Unity) I/O Pipelines](https://neuecc.medium.com/messagepack-for-c-v2-new-era-of-net-core-unity-i-o-pipelines-6950643c1053)  优化中的一些技巧和问题.
+- [IOCP(I/O Completion Ports)](https://www.cnblogs.com/cdaniu/p/15782962.html)
+- [IOCP threads - Clarification?](https://stackoverflow.com/questions/28690815/iocp-threads-clarification)
+- [Understanding Worker Thread And I/O Completion Port (IOCP)](https://www.c-sharpcorner.com/article/understanding-worker-thread-and-io-completion-port-iocp/)
+  
++ [C++11中的线程是系统级的还是用户级的呢 比如说thread？](https://www.zhihu.com/question/365982400/answer/1007702207)
++ [Is the thread created in C# user level or kernel level?](https://stackoverflow.com/questions/49524899/is-the-thread-created-in-c-sharp-user-level-or-kernel-level)
+
 - [Unity网络代码](https://docs-multiplayer.unity3d.com/netcode/current/about)
 - [Unity网络代码路线图](https://portal.productboard.com/36ukwpc4kysiqwfanhjdglcd/tabs/30-netcode-for-gameobjects)
-
-
-
-
 
 
 
