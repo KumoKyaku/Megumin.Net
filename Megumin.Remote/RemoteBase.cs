@@ -129,13 +129,20 @@ namespace Megumin.Remote
             //写入rpcID CMD
             var span = writer.GetSpan(6);
             span.Write(rpcID);
+            short cmd = GetCmd(options);
+            span.Slice(4).Write(cmd);
+            writer.Advance(6);
+        }
+
+        public virtual short GetCmd(object options = null)
+        {
             short cmd = 0;
             if (options is ICmdOption cmdOption)
             {
                 cmd = cmdOption.Cmd;
             }
-            span.Slice(4).Write(cmd);
-            writer.Advance(6);
+
+            return cmd;
         }
 
         /// <summary>
@@ -282,7 +289,7 @@ namespace Megumin.Remote
         {
             stopReceive = true;
 
-            if ((cmd & 0b0000_0001) != 0)
+            if ((cmd & 0b0000_0000_0000_0001) != 0)
             {
                 //Echo
                 return new ValueTask<object>(result: message);

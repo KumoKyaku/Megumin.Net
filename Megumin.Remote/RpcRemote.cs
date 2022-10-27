@@ -20,7 +20,7 @@ namespace Megumin.Remote
         public virtual int UID { get; set; }
         public RpcLayer RpcLayer { get; set; } = new RpcLayer();
 
-        public void SetTransport<T>(T transport) where T : BaseTransport, ITransportable
+        public virtual void SetTransport<T>(T transport) where T : BaseTransport, ITransportable
         {
             transport.RemoteCore = this;
             Transport = transport;
