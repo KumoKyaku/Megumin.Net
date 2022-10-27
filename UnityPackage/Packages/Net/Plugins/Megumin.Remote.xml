@@ -526,6 +526,16 @@
             rpc时只能自己这面能UDP，对面返回时还是Kcp
             </summary>
         </member>
+        <member name="T:Megumin.Remote.SimulateRemote">
+            <summary>
+            模拟一个远端
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.SimulateRemote.Delay">
+            <summary>
+            模拟延迟
+            </summary>
+        </member>
         <member name="T:Megumin.Remote.SocketCloser">
             <summary>
             安全关闭一个socket很麻烦，根本搞不清楚调用那个函数会抛出异常。
@@ -841,7 +851,7 @@
             <param name="cancellationToken"></param>
             <returns></returns>
         </member>
-        <member name="M:Megumin.Remote.UdpTransport.DealAuthBuffer(System.Net.IPEndPoint,System.Byte[])">
+        <member name="M:Megumin.Remote.UdpTransport.DealAuthBuffer(System.Net.IPEndPoint,System.Span{System.Byte})">
             <summary>
             处理认证
             </summary>
