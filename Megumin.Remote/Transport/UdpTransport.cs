@@ -283,7 +283,7 @@ namespace Megumin.Remote
                 }
             }
 
-            ///发送时线程安全
+            ///每个消息序列化时使用新的writer实例，保证发送时线程安全
             var writer = new UdpBufferWriter(0x10000);
             writer.WriteHeader(UdpRemoteMessageDefine.UdpData);
             if (RemoteCore.TrySerialize(writer, rpcID, message, options))
@@ -299,6 +299,7 @@ namespace Megumin.Remote
         /// <summary>
         /// 网络层实际发送数据位置
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async void SocketSend(IBufferBlock sendBlock)
         {
             await SocketSend(sendBlock.BlockSegment).ConfigureAwait(false);

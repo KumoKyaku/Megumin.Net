@@ -62,6 +62,17 @@ namespace Megumin.Remote.Tests
             Assert.AreEqual(true, (cmd & 0b1111_1111_1111_1111) != 0);
             Assert.AreEqual("0b1111_1111_1111_1111", str);
         }
+
+        [TestMethod()]
+        public void TestN()
+        {
+            int a = int.MinValue;
+            var b = a * -1;
+            var c = int.MaxValue;
+            var d = c + 1;
+            var e = a -1;
+            e.ToString();
+        }
     }
 }
 

@@ -214,8 +214,7 @@ Heartbeat，RTT，Timestamp Synchronization等功能都由此机制实现。
   | 4byte                                              | 4byte        | 2byte        | 4byte        | byte[].Lenght |
 
 - **与其他语言或者网络库对接**  
-**`当服务器不使用本库，或者不是C#语言时。满足报头格式，即可支持本库所有特性。`**   
-请求时RpcID大于0，响应消息时RpcID小于0，并且等于请求RpcID*-1。0和int.MinValue表示非Rpc消息，为无效RpcID。  
+**`当服务器不使用本库，或者不是C#语言时。满足报头格式，即可支持本库所有特性。`**    
 
 # ~~MessagePipeline是什么？~~
 ~~MessagePipeline 是 Megumin.Remote 分离出来的一部分功能。   
@@ -330,7 +329,9 @@ namespace Message
 ---
 
 # 一些细节
-- `RPC功能`：保证了请求和返回消息一对一匹配。发送时RPCID为正数，返回时RPCID*-1，用正负区分上下行。0和int.minValue为RPCID无效值。
+- `RPC功能`：保证了请求和返回消息一对一匹配。发送时RPCID为负数，返回时RPCID*-1 为正数，用正负区分上下行。  
+  + 0和int.minValue为无效RPCID值。  
+  + 0是普通消息。int.minValue是广播消息。
 - `内存分配`：通过使用`内存池`，减少alloc。
 - ~~[发送过程数据拷贝](#jump1)了2次，接收过程数据无拷贝(各个序列化类库不同)。~~ 2.0版本中做了调整。
 - `内存池`：标准库内存池，`ArrayPool<byte>.Shared`。

@@ -119,6 +119,9 @@ namespace Megumin.Remote
         }
     }
 
+    /// <summary>
+    /// 起始位置总是预留4个字节，写入消息总长度
+    /// </summary>
     public class TcpBufferWriter : BaseBufferWriter
     {
         public TcpBufferWriter(int bufferLenght = 1024 * 8)

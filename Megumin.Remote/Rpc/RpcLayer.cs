@@ -33,8 +33,9 @@ namespace Megumin.Remote.Rpc
         readonly object rpcCursorLock = new object();
 
         /// <summary>
-        /// 原子操作 取得RpcId,发送方的的RpcID为正数，回复的RpcID为负数，正负一一对应
-        /// <para>0,int.MinValue 为无效值</para> 
+        /// 原子操作 取得RpcId,发送方的的RpcID为负数，回复的RpcID为正数，正负一一对应
+        /// <para>0,为无效值</para> 
+        /// int.MinValue 为广播消息。
         /// </summary>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -42,13 +43,13 @@ namespace Megumin.Remote.Rpc
         {
             lock (rpcCursorLock)
             {
-                if (rpcCursor == int.MaxValue)
+                if (rpcCursor < -999999999)
                 {
-                    rpcCursor = 1;
+                    rpcCursor = -1000;
                 }
                 else
                 {
-                    rpcCursor++;
+                    rpcCursor--;
                 }
 
                 return rpcCursor;
@@ -69,7 +70,7 @@ namespace Megumin.Remote.Rpc
     public partial class RpcLayer
     {
         /// <summary>
-        /// 如果rpcID为负数，是rpc返回回复，返回true,此消息由RpcLayer处理。
+        /// 如果rpcID大于0为正数，是rpc返回回复，返回true,此消息由RpcLayer处理。
         /// <para> 否则返回false，RpcLayer忽略此消息。</para>
         /// </summary>
         /// <param name="rpcID"></param>
@@ -78,9 +79,11 @@ namespace Megumin.Remote.Rpc
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryInput(int rpcID, object message)
         {
-            if (rpcID < 0)
+            //rpcID为负数为发送，正数改为回复，这样此处判断一次就可以了。不用额外判断 0 和 int.MinValue。
+            //获取ID时int.MinValue直接无效。
+            if (rpcID > 0)
             {
-                //这个消息是rpc返回（回复的RpcID为负数）
+                //这个消息是rpc返回（回复的RpcID为正数）
                 TrySetResult(rpcID * -1, message);
                 return true;
             }

@@ -45,7 +45,7 @@ public static class RemoteExtension_1D96E84960F84A7DBFCE21028A82F32A
     {
         var writer = new TcpBufferWriter();
 
-        if (BroadCastHelper.TrySerialize(writer, 0, message, options))
+        if (BroadCastHelper.TrySerialize(writer, int.MinValue, message, options))
         {
             writer.WriteLengthOnHeader();
             foreach (var item in remotes)
@@ -68,7 +68,7 @@ public static class RemoteExtension_1D96E84960F84A7DBFCE21028A82F32A
     {
         var writer = new UdpBufferWriter(0x10000);
         writer.WriteHeader(UdpRemoteMessageDefine.UdpData);
-        if (BroadCastHelper.TrySerialize(writer, 0, message, options))
+        if (BroadCastHelper.TrySerialize(writer, int.MinValue, message, options))
         {
             foreach (var item in remotes)
             {
@@ -90,7 +90,7 @@ public static class RemoteExtension_1D96E84960F84A7DBFCE21028A82F32A
         where R : IEnumerable<IRemote>
     {
         var writer = new UdpBufferWriter(0x10000);
-        if (BroadCastHelper.TrySerialize(writer, 0, message, options))
+        if (BroadCastHelper.TrySerialize(writer, int.MinValue, message, options))
         {
             foreach (var item in remotes)
             {
