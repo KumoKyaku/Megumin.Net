@@ -70,12 +70,9 @@ namespace Megumin.Remote
         T UID { get; set; }
     }
 
-    public class Utility
+    public static class Utility
     {
-        public static void BroadCast(object message, object options, params TcpTransport[] transport)
-        {
-            throw new NotImplementedException();
-        }
+        
     }
 
     /// <summary>

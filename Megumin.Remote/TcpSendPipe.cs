@@ -183,7 +183,7 @@ namespace Megumin.Remote
         /// 取得一个可用写入器
         /// </summary>
         /// <returns></returns>
-        internal IWriter GetWriter()
+        internal Writer GetWriter()
         {
             return new Writer(this);
         }

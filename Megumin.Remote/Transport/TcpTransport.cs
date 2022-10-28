@@ -260,7 +260,7 @@ namespace Megumin.Remote
         /// 发送管道
         /// </summary>
         /// <remarks>发送管道没有涵盖所有案例，尽量不要给外界访问</remarks>
-        protected TcpSendPipe SendPipe { get; set; } = new TcpSendPipe();
+        internal protected TcpSendPipe SendPipe { get; set; } = new TcpSendPipe();
 
         public bool IsSocketSending { get; protected set; }
         /// <summary>
