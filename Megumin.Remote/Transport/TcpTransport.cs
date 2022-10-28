@@ -301,12 +301,12 @@ namespace Megumin.Remote
                     }
 
 #if NET5_0_OR_GREATER
-                    var length = target.SendMemory.Length;
-                    var result = await Client.SendAsync(target.SendMemory,
+                    var length = target.BlockMemory.Length;
+                    var result = await Client.SendAsync(target.BlockMemory,
                                                         SocketFlags.None).ConfigureAwait(false);
 #else
-                    var length = target.SendSegment.Count;
-                    var result = await Client.SendAsync(target.SendSegment, SocketFlags.None).ConfigureAwait(false);
+                    var length = target.BlockSegment.Count;
+                    var result = await Client.SendAsync(target.BlockSegment, SocketFlags.None).ConfigureAwait(false);
 #endif
 
                     if (result == length)

@@ -299,10 +299,10 @@ namespace Megumin.Remote
         /// <summary>
         /// 网络层实际发送数据位置
         /// </summary>
-        public async void SocketSend(ISendBlock sendBlock)
+        public async void SocketSend(IBufferBlock sendBlock)
         {
-            await SocketSend(sendBlock.SendSegment).ConfigureAwait(false);
-            sendBlock.SendSuccess();
+            await SocketSend(sendBlock.BlockSegment).ConfigureAwait(false);
+            sendBlock.Free();
         }
 
         /// <summary>

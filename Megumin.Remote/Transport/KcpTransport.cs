@@ -215,8 +215,8 @@ namespace Megumin.Remote
                 var writer = new UdpBufferWriter(0x10000);
                 if (RemoteCore.TrySerialize(writer, rpcID, message, options))
                 {
-                    KcpCore.Send(writer.SendMemory.Span);
-                    writer.SendSuccess();
+                    KcpCore.Send(writer.BlockMemory.Span);
+                    writer.Free();
                 }
                 else
                 {
@@ -237,7 +237,7 @@ namespace Megumin.Remote
                 await KcpCore.Recv(kcprecv).ConfigureAwait(false);
                 try
                 {
-                    RemoteCore.ProcessBody(kcprecv.SendMemory.Span);
+                    RemoteCore.ProcessBody(kcprecv.BlockMemory.Span);
                 }
                 catch (Exception e)
                 {
@@ -245,7 +245,7 @@ namespace Megumin.Remote
                 }
                 finally
                 {
-                    kcprecv.SendSuccess();
+                    kcprecv.Free();
                 }
             }
         }

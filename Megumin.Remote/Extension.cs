@@ -74,8 +74,8 @@ public static class RemoteExtension_1D96E84960F84A7DBFCE21028A82F32A
             {
                 if (item.Transport is UdpTransport udpTransport)
                 {
-                    ///不要用<see cref="UdpTransport.SocketSend(ISendBlock)"/>,不应该调用 sendBlock.SendSuccess();
-                    udpTransport.SocketSend(writer.SendSegment);
+                    ///不要用<see cref="UdpTransport.SocketSend(IBufferBlock)"/>,不应该调用 sendBlock.SendSuccess();
+                    udpTransport.SocketSend(writer.BlockSegment);
                 }
             }
         }
@@ -96,10 +96,10 @@ public static class RemoteExtension_1D96E84960F84A7DBFCE21028A82F32A
             {
                 if (item.Transport is KcpTransport kcpTransport)
                 {
-                    kcpTransport.KcpCore.Send(writer.SendMemory.Span);
+                    kcpTransport.KcpCore.Send(writer.BlockMemory.Span);
                 }
             }
-            writer.SendSuccess();
+            writer.Free();
         }
         else
         {

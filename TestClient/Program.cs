@@ -16,7 +16,7 @@ public static class TestConfig
     {
         TCP, UDP, KCP
     }
-    public static Mode PMode = TestConfig.Mode.TCP;
+    public static Mode PMode = TestConfig.Mode.KCP;
     public static int Port = 54321;
     public static int MessageCount = 10;
     /// <summary>

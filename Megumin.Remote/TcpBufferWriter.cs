@@ -7,41 +7,36 @@ using Megumin.Message;
 namespace Megumin.Remote
 {
     /// <summary>
-    /// 要发送的字节块
+    /// 要发送/接收的字节块
     /// </summary>
-    public interface ISendBlock
+    public interface IBufferBlock
     {
         /// <summary>
-        /// 发送成功
+        /// 发送/接收 成功,释放内存块。
         /// </summary>
-        void SendSuccess();
+        void Free();
         /// <summary>
-        /// 要发送的内存块
+        /// 要 发送/接收 的内存块
         /// </summary>
-        ReadOnlyMemory<byte> SendMemory { get; }
+        ReadOnlyMemory<byte> BlockMemory { get; }
         /// <summary>
-        /// 要发送的内存块
+        /// 要 发送/接收 的内存块
         /// </summary>
-        ArraySegment<byte> SendSegment { get; }
+        ArraySegment<byte> BlockSegment { get; }
     }
 
     /// <summary>
     /// 消息字节写入器
     /// </summary>
-    public interface ITcpWriter : IBufferWriter<byte>
+    public interface ITransportWriter : IBufferWriter<byte>
     {
         /// <summary>
         /// 放弃发送，废弃当前写入器
         /// </summary>
         void Discard();
-        /// <summary>
-        /// 将总长度写入消息4位
-        /// </summary>
-        /// <returns>消息总长度</returns>
-        int WriteLengthOnHeader();
     }
 
-    public abstract class BaseBufferWriter : IBufferWriter<byte>, ISendBlock
+    public abstract class BaseBufferWriter : IBufferWriter<byte>, IBufferBlock, ITransportWriter
     {
         protected int defaultCount = 1024 * 8;
         protected byte[] buffer;
@@ -50,8 +45,8 @@ namespace Megumin.Remote
         /// </summary>
         protected int index = 0;
         protected readonly object syncLock = new object();
-        public ReadOnlyMemory<byte> SendMemory => new ReadOnlyMemory<byte>(buffer, 0, index);
-        public ArraySegment<byte> SendSegment => new ArraySegment<byte>(buffer, 0, index);
+        public ReadOnlyMemory<byte> BlockMemory => new ReadOnlyMemory<byte>(buffer, 0, index);
+        public ArraySegment<byte> BlockSegment => new ArraySegment<byte>(buffer, 0, index);
 
         public void Advance(int count)
         {
@@ -118,13 +113,13 @@ namespace Megumin.Remote
             Reset();
         }
 
-        public void SendSuccess()
+        public void Free()
         {
             Reset();
         }
     }
 
-    public class TcpBufferWriter : BaseBufferWriter, ITcpWriter
+    public class TcpBufferWriter : BaseBufferWriter
     {
         public TcpBufferWriter(int bufferLenght = 1024 * 8)
         {
@@ -161,11 +156,11 @@ namespace Megumin.Remote
     {
         public int DefaultWriterSize { get; set; } = 8192;
 
-        ConcurrentQueue<ISendBlock> sendQueue = new ConcurrentQueue<ISendBlock>();
+        ConcurrentQueue<IBufferBlock> sendQueue = new ConcurrentQueue<IBufferBlock>();
 
         protected readonly object _pushLock = new object();
 
-        internal protected void Push2Queue(ISendBlock sendblock)
+        internal protected void Push2Queue(IBufferBlock sendblock)
         {
             lock (_pushLock)
             {
@@ -192,13 +187,13 @@ namespace Megumin.Remote
             return new TcpBufferWriter(DefaultWriterSize);
         }
 
-        TaskCompletionSource<ISendBlock> source;
+        TaskCompletionSource<IBufferBlock> source;
 
         /// <summary>
         /// 取得下一个待发送消息。
         /// </summary>
         /// <returns></returns>
-        public ValueTask<ISendBlock> ReadNext()
+        public ValueTask<IBufferBlock> ReadNext()
         {
             if (source != null)
             {
@@ -209,18 +204,18 @@ namespace Megumin.Remote
             {
                 if (sendQueue.TryPeek(out var block))
                 {
-                    return new ValueTask<ISendBlock>(block);
+                    return new ValueTask<IBufferBlock>(block);
                 }
                 else
                 {
                     //todo IValueTaskSource
-                    source = new TaskCompletionSource<ISendBlock>();
-                    return new ValueTask<ISendBlock>(source.Task);
+                    source = new TaskCompletionSource<IBufferBlock>();
+                    return new ValueTask<IBufferBlock>(source.Task);
                 }
             }
         }
 
-        public bool Advance(ISendBlock sendBlock)
+        public bool Advance(IBufferBlock sendBlock)
         {
             if (sendQueue.TryDequeue(out var first))
             {
@@ -228,7 +223,7 @@ namespace Megumin.Remote
                 {
                     throw new InvalidOperationException($"发送队列出现排序错误");
                 }
-                sendBlock.SendSuccess();
+                sendBlock.Free();
                 return true;
             }
 
