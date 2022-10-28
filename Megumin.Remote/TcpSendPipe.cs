@@ -43,16 +43,16 @@ namespace Megumin.Remote
 
     public class TcpBufferWriter : IBufferWriter<byte>, ITcpWriter, ISendBlock
     {
-        private TcpSendPipe sendPipe;
+        private int defaultCount;
         private byte[] buffer;
         /// <summary>
         /// 当前游标位置
         /// </summary>
         int index = 4;
         readonly object syncLock = new object();
-        public TcpBufferWriter(TcpSendPipe sendPipe)
+        public TcpBufferWriter(int bufferLenght = 1024 * 8)
         {
-            this.sendPipe = sendPipe;
+            this.defaultCount = bufferLenght;
             Reset();
         }
 
@@ -101,7 +101,7 @@ namespace Megumin.Remote
         {
             if (buffer == null)
             {
-                var size = Math.Max(sizeHint, sendPipe.DefaultWriterSize);
+                var size = Math.Max(sizeHint, defaultCount);
                 buffer = ArrayPool<byte>.Shared.Rent(size);
                 if (buffer == null)
                 {
@@ -185,7 +185,7 @@ namespace Megumin.Remote
         /// <returns></returns>
         internal TcpBufferWriter GetWriter()
         {
-            return new TcpBufferWriter(this);
+            return new TcpBufferWriter(DefaultWriterSize);
         }
 
         TaskCompletionSource<ISendBlock> source;
