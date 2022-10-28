@@ -239,6 +239,7 @@ namespace Megumin.Remote
                 //序列化成功
                 var len = writer.WriteLengthOnHeader();
                 //Logger?.Log($"序列化{message.GetType().Name}成功,总长度{len}");
+                SendPipe.Push2Queue(writer);
             }
             else
             {

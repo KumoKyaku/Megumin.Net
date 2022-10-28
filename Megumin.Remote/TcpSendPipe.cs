@@ -143,8 +143,7 @@ namespace Megumin.Remote
             {
                 var len = index;
                 buffer.AsSpan().Write(index);//在起始位置写入长度
-                sendPipe.Push2Queue(this);
-                return len; //直接返回index可能会有多线程错误，Push2Queue后直接发送并释放，导致index重置。
+                return len; 
             }
 
             public void SendSuccess()
