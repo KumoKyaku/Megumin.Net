@@ -233,6 +233,7 @@ namespace Megumin.Remote
                 }
             }
 
+            ///每个writer都是一个新的实例，所以这里是线程安全的。
             var writer = SendPipe.GetWriter();
             if (RemoteCore.TrySerialize(writer, rpcID, message, options))
             {

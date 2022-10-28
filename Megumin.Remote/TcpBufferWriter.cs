@@ -41,34 +41,17 @@ namespace Megumin.Remote
         int WriteLengthOnHeader();
     }
 
-    public class TcpBufferWriter : IBufferWriter<byte>, ITcpWriter, ISendBlock
+    public abstract class BaseBufferWriter : IBufferWriter<byte>, ISendBlock
     {
-        private int defaultCount;
-        private byte[] buffer;
+        protected int defaultCount = 1024 * 8;
+        protected byte[] buffer;
         /// <summary>
         /// 当前游标位置
         /// </summary>
-        int index = 4;
-        readonly object syncLock = new object();
-        public TcpBufferWriter(int bufferLenght = 1024 * 8)
-        {
-            this.defaultCount = bufferLenght;
-            Reset();
-        }
-
-        void Reset()
-        {
-            lock (syncLock)
-            {
-                index = 4;
-
-                if (buffer != null)
-                {
-                    ArrayPool<byte>.Shared.Return(buffer);
-                    buffer = null;
-                }
-            }
-        }
+        protected int index = 0;
+        protected readonly object syncLock = new object();
+        public ReadOnlyMemory<byte> SendMemory => new ReadOnlyMemory<byte>(buffer, 0, index);
+        public ArraySegment<byte> SendSegment => new ArraySegment<byte>(buffer, 0, index);
 
         public void Advance(int count)
         {
@@ -97,7 +80,7 @@ namespace Megumin.Remote
         /// 确保当前buffer足够大
         /// </summary>
         /// <param name="sizeHint"></param>
-        void Ensure(int sizeHint)
+        protected virtual void Ensure(int sizeHint)
         {
             if (buffer == null)
             {
@@ -128,9 +111,39 @@ namespace Megumin.Remote
             }
         }
 
+        protected abstract void Reset();
+
         public void Discard()
         {
             Reset();
+        }
+
+        public void SendSuccess()
+        {
+            Reset();
+        }
+    }
+
+    public class TcpBufferWriter : BaseBufferWriter, ITcpWriter
+    {
+        public TcpBufferWriter(int bufferLenght = 1024 * 8)
+        {
+            this.defaultCount = bufferLenght;
+            Reset();
+        }
+
+        protected override void Reset()
+        {
+            lock (syncLock)
+            {
+                index = 4;
+
+                if (buffer != null)
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                    buffer = null;
+                }
+            }
         }
 
         public int WriteLengthOnHeader()
@@ -139,16 +152,6 @@ namespace Megumin.Remote
             buffer.AsSpan().Write(index);//在起始位置写入长度
             return len;
         }
-
-        public void SendSuccess()
-        {
-            Reset();
-        }
-
-        public ReadOnlyMemory<byte> SendMemory => new ReadOnlyMemory<byte>(buffer, 0, index);
-
-        public ArraySegment<byte> SendSegment => new ArraySegment<byte>(buffer, 0, index);
-
     }
 
     /// <summary>
@@ -181,6 +184,7 @@ namespace Megumin.Remote
 
         /// <summary>
         /// 取得一个可用写入器
+        /// 每个writer都是一个新的实例，保证序列化时缓冲区线程安全。
         /// </summary>
         /// <returns></returns>
         internal TcpBufferWriter GetWriter()

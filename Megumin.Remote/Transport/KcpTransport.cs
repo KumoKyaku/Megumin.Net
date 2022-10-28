@@ -177,15 +177,14 @@ namespace Megumin.Remote
     public partial class KcpTransport
     {
         // 发送===================================================================
-        protected UdpBufferWriter kcpout = new UdpBufferWriter(BufferSizer);
         async void KcpOutput()
         {
             while (true)
             {
-                kcpout.WriteHeader(UdpRemoteMessageDefine.KcpData);
-                await KcpCore.Output(kcpout).ConfigureAwait(false);
-                var (buffer, lenght) = kcpout.Pop();
-                SocketSend(buffer, lenght);
+                var writer = new UdpBufferWriter(BufferSizer);
+                writer.WriteHeader(UdpRemoteMessageDefine.KcpData);
+                await KcpCore.Output(writer).ConfigureAwait(false);
+                SocketSend(writer);
             }
         }
 
@@ -212,16 +211,16 @@ namespace Megumin.Remote
             }
             else
             {
-                if (RemoteCore.TrySerialize(SendWriter, rpcID, message, options))
+                ///发送时线程安全
+                var writer = new UdpBufferWriter(0x10000);
+                if (RemoteCore.TrySerialize(writer, rpcID, message, options))
                 {
-                    var (buffer, lenght) = SendWriter.Pop();
-                    KcpCore.Send(buffer.Memory.Span.Slice(0, lenght));
-                    buffer.Dispose();
+                    KcpCore.Send(writer.SendMemory.Span);
+                    writer.SendSuccess();
                 }
                 else
                 {
-                    var (buffer, lenght) = SendWriter.Pop();
-                    buffer.Dispose();
+                    writer.Discard();
                 }
             }
         }
@@ -230,26 +229,24 @@ namespace Megumin.Remote
     public partial class KcpTransport
     {
         ///接收===================================================================
-
-        protected UdpBufferWriter kcprecv = new UdpBufferWriter(BufferSizer);
         async void KCPRecv()
         {
             while (true)
             {
+                var kcprecv = new UdpBufferWriter(0x10000);
                 await KcpCore.Recv(kcprecv).ConfigureAwait(false);
-                var (buffer, lenght) = kcprecv.Pop();
-                if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
+                try
                 {
-                    try
-                    {
-                        RemoteCore.ProcessBody(new ReadOnlySequence<byte>(segment.Array, 0, lenght));
-                    }
-                    catch (Exception e)
-                    {
-                        TraceListener?.WriteLine(e);
-                    }
+                    RemoteCore.ProcessBody(kcprecv.SendMemory.Span);
                 }
-                buffer.Dispose();
+                catch (Exception e)
+                {
+                    TraceListener?.WriteLine(e);
+                }
+                finally
+                {
+                    kcprecv.SendSuccess();
+                }
             }
         }
 

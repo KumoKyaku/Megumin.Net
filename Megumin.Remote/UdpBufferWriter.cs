@@ -3,91 +3,12 @@ using System.Buffers;
 
 namespace Megumin.Remote
 {
-    public class UdpBufferWriter : IBufferWriter<byte>
+    public class UdpBufferWriter : BaseBufferWriter
     {
-        private int defaultCount;
-        private IMemoryOwner<byte> buffer;
-        int index = 0;
-
-        public UdpBufferWriter(int bufferLenght = 1024 * 8)
+        public UdpBufferWriter(int bufferLenght = 0x10000)
         {
             this.defaultCount = bufferLenght;
-        }
-
-        /// <summary>
-        /// 弹出一个序列化完毕的缓冲。
-        /// </summary>
-        /// <returns></returns>
-        public (IMemoryOwner<byte>, int) Pop()
-        {
-            if (buffer == null)
-            {
-                throw new NotSupportedException();
-            }
-            var old = buffer;
-            var lenght = index;
-            buffer = null;
-            index = 0;
-            return (old, lenght);
-        }
-
-        public void Advance(int count)
-        {
-            index += count;
-        }
-
-        public Memory<byte> GetMemory(int sizeHint = 0)
-        {
-            lock (syncLock)
-            {
-                Ensure(sizeHint);
-                return buffer.Memory.Slice(index, buffer.Memory.Length - index);
-            }
-        }
-
-        readonly object syncLock = new object();
-        public Span<byte> GetSpan(int sizeHint = 0)
-        {
-            lock (syncLock)
-            {
-                Ensure(sizeHint);
-                return buffer.Memory.Span.Slice(index, buffer.Memory.Length - index);
-            }
-        }
-
-        /// <summary>
-        /// 确保当前buffer足够大
-        /// </summary>
-        /// <param name="sizeHint"></param>
-        void Ensure(int sizeHint)
-        {
-            if (buffer == null)
-            {
-                var size = Math.Max(sizeHint, defaultCount);
-                buffer = MemoryPool<byte>.Shared.Rent(size);
-                if (buffer == null)
-                {
-                    //内存池用尽.todo 这里应该有个log
-                    Console.WriteLine($" MemoryPool<byte>.Shared.Rent(size) 返回null");
-                    buffer = new ManagedMemoryOwner(size);
-                }
-                return;
-            }
-
-            var leftLength = buffer.Memory.Length - index;
-            if (leftLength >= sizeHint && leftLength > 0)
-            {
-                //现有数组足够长；
-            }
-            else
-            {
-                //扩容 每次增加4096比较合适，可根据生产环境修改。
-                var newCount = ((buffer.Memory.Length + sizeHint) / 4096 + 1) * 4096;
-                var newbuffer = MemoryPool<byte>.Shared.Rent(newCount);
-                buffer.Memory.CopyTo(newbuffer.Memory);
-                buffer.Dispose();
-                buffer = newbuffer;
-            }
+            Reset();
         }
 
         public void WriteHeader(byte header)
@@ -95,6 +16,20 @@ namespace Megumin.Remote
             var span = GetSpan(1);
             span[0] = header;
             Advance(1);
+        }
+
+        protected override void Reset()
+        {
+            lock (syncLock)
+            {
+                index = 0;
+
+                if (buffer != null)
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                    buffer = null;
+                }
+            }
         }
     }
 

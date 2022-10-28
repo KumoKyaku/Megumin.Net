@@ -2,7 +2,7 @@
 using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Megumin.Message;
@@ -266,8 +266,6 @@ namespace Megumin.Remote
     {
         //发送==========================================================
 
-        protected virtual UdpBufferWriter SendWriter { get; } = new UdpBufferWriter(8192 * 4);
-
         public virtual void Send<T>(T message, int rpcID, object options = null)
         {
             if (Client == null || Closer?.IsDisconnecting == true)
@@ -285,34 +283,35 @@ namespace Megumin.Remote
                 }
             }
 
-            SendWriter.WriteHeader(UdpRemoteMessageDefine.UdpData);
-            if (RemoteCore.TrySerialize(SendWriter, rpcID, message, options))
+            ///发送时线程安全
+            var writer = new UdpBufferWriter(0x10000);
+            writer.WriteHeader(UdpRemoteMessageDefine.UdpData);
+            if (RemoteCore.TrySerialize(writer, rpcID, message, options))
             {
-                var (buffer, lenght) = SendWriter.Pop();
-                SocketSend(buffer, lenght);
+                SocketSend(writer);
             }
             else
             {
-                var (buffer, lenght) = SendWriter.Pop();
-                buffer.Dispose();
+                writer.Discard();
             }
         }
 
         /// <summary>
         /// 网络层实际发送数据位置
         /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="lenght"></param>
-        protected async void SocketSend(IMemoryOwner<byte> buffer, int lenght)
+        public async void SocketSend(ISendBlock sendBlock)
         {
-            if (MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var segment))
-            {
-                var target = new ArraySegment<byte>(segment.Array, 0, lenght);
-                await Client.SendToAsync(target, SocketFlags.None, ConnectIPEndPoint)
-                    .ConfigureAwait(false);
-            }
+            await SocketSend(sendBlock.SendSegment).ConfigureAwait(false);
+            sendBlock.SendSuccess();
+        }
 
-            buffer.Dispose();
+        /// <summary>
+        /// 网络层实际发送数据位置
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task<int> SocketSend(ArraySegment<byte> buffer)
+        {
+            return Client.SendToAsync(buffer, SocketFlags.None, ConnectIPEndPoint);
         }
 
         public bool IsSocketSending { get; }
@@ -359,13 +358,13 @@ namespace Megumin.Remote
                 {
                     break;
                 }
-                var cache = ArrayPool<byte>.Shared.Rent(0x10000);
+                var temp = ArrayPool<byte>.Shared.Rent(0x10000);
                 try
                 {
-                    ArraySegment<byte> buffer = new ArraySegment<byte>(cache);
+                    ArraySegment<byte> buffer = new ArraySegment<byte>(temp);
                     var res = await Client.ReceiveFromAsync(buffer, SocketFlags.None, remoteEndPoint).ConfigureAwait(false);
                     LastReceiveTime = DateTimeOffset.UtcNow;
-                    InnerDeal(res.RemoteEndPoint as IPEndPoint, cache, 0, res.ReceivedBytes);
+                    InnerDeal(res.RemoteEndPoint as IPEndPoint, temp, 0, res.ReceivedBytes);
                 }
                 catch (ObjectDisposedException e)
                 {
@@ -379,7 +378,7 @@ namespace Megumin.Remote
                 }
                 finally
                 {
-                    ArrayPool<byte>.Shared.Return(cache);
+                    ArrayPool<byte>.Shared.Return(temp);
                 }
             }
 

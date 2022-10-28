@@ -16,7 +16,7 @@ public static class TestConfig
     {
         TCP, UDP, KCP
     }
-    public static Mode PMode = TestConfig.Mode.KCP;
+    public static Mode PMode = TestConfig.Mode.TCP;
     public static int Port = 54321;
     public static int MessageCount = 10;
     /// <summary>
@@ -25,7 +25,7 @@ public static class TestConfig
     /// Upd 测试5000连接比较稳定。
     /// Kcp测试10000连接没有成功。5000也不性。推测应该是UdpListenner一个端口无法处理这么大流量，大量丢包。
     /// </summary>
-    public static int RemoteCount = 1000;
+    public static int RemoteCount = 10;
 }
 
 namespace TestClient
@@ -120,6 +120,8 @@ namespace TestClient
             {
                 item.Value?.Send(msg, SendOption.Echo);
             }
+
+            //AllClient.Values.BroadCast(msg, SendOption.Never);
         }
 
         /// <summary>
