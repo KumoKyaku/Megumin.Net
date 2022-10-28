@@ -28,7 +28,7 @@ namespace Megumin.Remote
     /// <summary>
     /// 消息字节写入器
     /// </summary>
-    public interface IWriter : IBufferWriter<byte>
+    public interface ITcpWriter : IBufferWriter<byte>
     {
         /// <summary>
         /// 放弃发送，废弃当前写入器
@@ -41,121 +41,122 @@ namespace Megumin.Remote
         int WriteLengthOnHeader();
     }
 
+    public class TcpBufferWriter : IBufferWriter<byte>, ITcpWriter, ISendBlock
+    {
+        private TcpSendPipe sendPipe;
+        private byte[] buffer;
+        /// <summary>
+        /// 当前游标位置
+        /// </summary>
+        int index = 4;
+        readonly object syncLock = new object();
+        public TcpBufferWriter(TcpSendPipe sendPipe)
+        {
+            this.sendPipe = sendPipe;
+            Reset();
+        }
+
+        void Reset()
+        {
+            lock (syncLock)
+            {
+                index = 4;
+
+                if (buffer != null)
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                    buffer = null;
+                }
+            }
+        }
+
+        public void Advance(int count)
+        {
+            index += count;
+        }
+
+        public Memory<byte> GetMemory(int sizeHint = 0)
+        {
+            lock (syncLock)
+            {
+                Ensure(sizeHint);
+                return new Memory<byte>(buffer, index, buffer.Length - index);
+            }
+        }
+
+        public Span<byte> GetSpan(int sizeHint = 0)
+        {
+            lock (syncLock)
+            {
+                Ensure(sizeHint);
+                return new Span<byte>(buffer, index, buffer.Length - index);
+            }
+        }
+
+        /// <summary>
+        /// 确保当前buffer足够大
+        /// </summary>
+        /// <param name="sizeHint"></param>
+        void Ensure(int sizeHint)
+        {
+            if (buffer == null)
+            {
+                var size = Math.Max(sizeHint, sendPipe.DefaultWriterSize);
+                buffer = ArrayPool<byte>.Shared.Rent(size);
+                if (buffer == null)
+                {
+                    //内存池用尽.todo 这里应该有个log
+                    Console.WriteLine($" ArrayPool<byte>.Shared.Rent(size) 返回null");
+                    buffer = new byte[size];
+                }
+                return;
+            }
+
+            var leftLength = buffer.Length - index;
+            if (leftLength >= sizeHint && leftLength > 0)
+            {
+                //现有数组足够长；
+            }
+            else
+            {
+                //扩容 每次增加4096比较合适，可根据生产环境修改。
+                var newCount = ((buffer.Length + sizeHint) / 4096 + 1) * 4096;
+                var newbuffer = ArrayPool<byte>.Shared.Rent(newCount);
+                buffer.AsSpan().CopyTo(newbuffer);
+                ArrayPool<byte>.Shared.Return(buffer);
+                buffer = newbuffer;
+            }
+        }
+
+        public void Discard()
+        {
+            Reset();
+        }
+
+        public int WriteLengthOnHeader()
+        {
+            var len = index;
+            buffer.AsSpan().Write(index);//在起始位置写入长度
+            return len;
+        }
+
+        public void SendSuccess()
+        {
+            Reset();
+        }
+
+        public ReadOnlyMemory<byte> SendMemory => new ReadOnlyMemory<byte>(buffer, 0, index);
+
+        public ArraySegment<byte> SendSegment => new ArraySegment<byte>(buffer, 0, index);
+
+    }
+
     /// <summary>
     /// Tcp发送管道 存在并发/异步函数重入问题
     /// </summary>
     public class TcpSendPipe
     {
         public int DefaultWriterSize { get; set; } = 8192;
-        public class Writer : IBufferWriter<byte>, IWriter, ISendBlock
-        {
-            private TcpSendPipe sendPipe;
-            private byte[] buffer;
-            /// <summary>
-            /// 当前游标位置
-            /// </summary>
-            int index = 4;
-            readonly object syncLock = new object();
-            public Writer(TcpSendPipe sendPipe)
-            {
-                this.sendPipe = sendPipe;
-                Reset();
-            }
-
-            void Reset()
-            {
-                lock (syncLock)
-                {
-                    index = 4;
-
-                    if (buffer != null)
-                    {
-                        ArrayPool<byte>.Shared.Return(buffer);
-                        buffer = null;
-                    }
-                }
-            }
-
-            public void Advance(int count)
-            {
-                index += count;
-            }
-
-            public Memory<byte> GetMemory(int sizeHint = 0)
-            {
-                lock (syncLock)
-                {
-                    Ensure(sizeHint);
-                    return new Memory<byte>(buffer, index, buffer.Length - index);
-                }
-            }
-
-            public Span<byte> GetSpan(int sizeHint = 0)
-            {
-                lock (syncLock)
-                {
-                    Ensure(sizeHint);
-                    return new Span<byte>(buffer, index, buffer.Length - index);
-                }
-            }
-
-            /// <summary>
-            /// 确保当前buffer足够大
-            /// </summary>
-            /// <param name="sizeHint"></param>
-            void Ensure(int sizeHint)
-            {
-                if (buffer == null)
-                {
-                    var size = Math.Max(sizeHint, sendPipe.DefaultWriterSize);
-                    buffer = ArrayPool<byte>.Shared.Rent(size);
-                    if (buffer == null)
-                    {
-                        //内存池用尽.todo 这里应该有个log
-                        Console.WriteLine($" ArrayPool<byte>.Shared.Rent(size) 返回null");
-                        buffer = new byte[size];
-                    }
-                    return;
-                }
-
-                var leftLength = buffer.Length - index;
-                if (leftLength >= sizeHint && leftLength > 0)
-                {
-                    //现有数组足够长；
-                }
-                else
-                {
-                    //扩容 每次增加4096比较合适，可根据生产环境修改。
-                    var newCount = ((buffer.Length + sizeHint) / 4096 + 1) * 4096;
-                    var newbuffer = ArrayPool<byte>.Shared.Rent(newCount);
-                    buffer.AsSpan().CopyTo(newbuffer);
-                    ArrayPool<byte>.Shared.Return(buffer);
-                    buffer = newbuffer;
-                }
-            }
-
-            public void Discard()
-            {
-                Reset();
-            }
-
-            public int WriteLengthOnHeader()
-            {
-                var len = index;
-                buffer.AsSpan().Write(index);//在起始位置写入长度
-                return len; 
-            }
-
-            public void SendSuccess()
-            {
-                Reset();
-            }
-
-            public ReadOnlyMemory<byte> SendMemory => new ReadOnlyMemory<byte>(buffer, 0, index);
-
-            public ArraySegment<byte> SendSegment => new ArraySegment<byte>(buffer, 0, index);
-
-        }
 
         ConcurrentQueue<ISendBlock> sendQueue = new ConcurrentQueue<ISendBlock>();
 
@@ -182,9 +183,9 @@ namespace Megumin.Remote
         /// 取得一个可用写入器
         /// </summary>
         /// <returns></returns>
-        internal Writer GetWriter()
+        internal TcpBufferWriter GetWriter()
         {
-            return new Writer(this);
+            return new TcpBufferWriter(this);
         }
 
         TaskCompletionSource<ISendBlock> source;
