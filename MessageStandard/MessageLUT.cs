@@ -560,30 +560,4 @@ namespace Megumin.Remote
         public override long Length { get; } = long.MaxValue;
         public override long Position { get; set; }
     }
-
-
-    [Obsolete("Use TraceListener instead.", true)]
-    public interface ILogger
-    {
-        void Log(object message, object state = null);
-        void LogError(object message, object state = null);
-        void LogWarning(object message, object state = null);
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    [Obsolete("Use TraceListener instead.", true)]
-    public static class DebugLogger
-    {
-        public static ILogger Logger { get; set; }
-        public static void Log(object message, object state = null)
-            => Logger?.Log(message, state);
-
-        public static void LogError(object message, object state = null)
-            => Logger?.LogError(message, state);
-
-        public static void LogWarning(object message, object state = null)
-            => Logger?.LogWarning(message, state);
-    }
 }

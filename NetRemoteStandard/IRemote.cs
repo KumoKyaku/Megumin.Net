@@ -221,11 +221,6 @@ namespace Net.Remote
     /// <remarks>不要定义OnReceive函数，由于具体业务逻辑不同，这个函数的签名可能有很多中变化，不能标准化。</remarks>
     public interface IReceiveMessage
     {
-        ///// <summary>
-        ///// 最后一次收到消息的时间
-        ///// </summary>
-        //[Obsolete("DateTime 开销太大，使用时间戳代替")]
-        //DateTime LastReceiveTime { get; }
         /// <summary>
         /// 最后一次收到消息的时间戳,因为Unity中时间戳是float
         /// </summary>
@@ -266,11 +261,6 @@ namespace Net.Remote
     /// </summary>
     public interface IRpcTimeoutOption
     {
-        /// <summary>
-        /// 指定毫秒后超时，-1表示永不超时。
-        /// </summary>
-        [Obsolete("Use MillisecondsTimeout instead.", true)]
-        int MillisecondsDelay { get; }
         /// <summary>
         /// 指定毫秒后超时，-1表示永不超时。
         /// </summary>

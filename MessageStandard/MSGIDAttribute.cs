@@ -93,11 +93,6 @@ namespace Megumin.Remote
         public const int UdpConnectMessageID = 101;
         public const int Authentication = 150;
         /// <summary>
-        /// 心跳包ID，255好识别，buffer[10-13]=[255,0,0,0]
-        /// </summary>
-        [Obsolete("Use Heartbeat")]
-        public const int Heartbeats = 255;
-        /// <summary>
         /// 心跳包ID，256好识别，buffer[10-13]=[255,1,0,0]
         /// </summary>
         public const int Heartbeat = 256;

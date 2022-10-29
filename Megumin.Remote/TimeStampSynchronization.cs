@@ -100,17 +100,12 @@ namespace Megumin.Remote
 
         protected static readonly SendOption sendOption = new SendOption()
         {
-            MillisecondsDelay = 2000,
+            MillisecondsTimeout = 2000,
             RpcComplatePost2ThreadScheduler = false,
         };
 
         public async Task<OffsetValue> GetOffset(ISendAsyncable remote, int index = 0)
         {
-            SendOption sendOption = new SendOption()
-            {
-                MillisecondsDelay = 2000,
-                RpcComplatePost2ThreadScheduler = false,
-            };
             var sendTime = DateTimeOffset.UtcNow;
             var (remotetime, ex) = await remote.SendAsync<DateTimeOffset>(new GetTime(), options: sendOption).ConfigureAwait(false);
 

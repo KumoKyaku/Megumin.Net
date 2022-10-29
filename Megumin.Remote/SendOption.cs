@@ -27,9 +27,8 @@ namespace Megumin.Remote
 
     public class SendOption : IRpcTimeoutOption, ICmdOption, IRpcThreadOption, IForceUdpDataOnKcpRemote
     {
-        public static readonly SendOption Never = new SendOption() { MillisecondsDelay = -1, MillisecondsTimeout = -1 };
-        public static readonly SendOption Echo = new SendOption() { MillisecondsDelay = 30000, MillisecondsTimeout = 30000, Cmd = 1 };
-        public int MillisecondsDelay { get; set; } = 30000;
+        public static readonly SendOption Never = new SendOption() { MillisecondsTimeout = -1 };
+        public static readonly SendOption Echo = new SendOption() { MillisecondsTimeout = 30000, Cmd = 1 };
         public int MillisecondsTimeout { get; set; } = 30000;
         public short Cmd { get; set; } = 0;
         public bool? RpcComplatePost2ThreadScheduler { get; set; } = null;
