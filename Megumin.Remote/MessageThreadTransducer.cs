@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using DealWorkQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Remote.DealWork>;
 using RequestWorkQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.Remote.RequestWork>;
@@ -300,6 +302,39 @@ namespace Megumin.Remote
         }
     }
 
+    public class MessageCtx : SynchronizationContext
+    {
+        public static readonly MessageCtx Default = new MessageCtx();
+
+        readonly DealWorkQueue dealWorkQueue = new DealWorkQueue();
+        public void Update()
+        {
+
+        }
+
+        /// <summary>
+        /// 专用函数,比<see cref="Switch"/>性能高,但是通用性不好
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="rpcID"></param>
+        /// <param name="cmd"></param>
+        /// <param name="messageID"></param>
+        /// <param name="message"></param>
+        /// <param name="options"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Push(IDealMessageable r, int rpcID, short cmd, int messageID, object message, object options = null)
+        {
+            if (r == null)
+            {
+                throw new ArgumentNullException();
+            }
+
+            //这里是性能敏感区域，使用结构体优化，不使用action闭包
+            DealWork work = new DealWork(r, rpcID, cmd, messageID, message, options);
+            dealWorkQueue.Enqueue(work);
+        }
+    }
 
     /// <summary>
     /// 通用线程切换器,查看meguminexplosion 库

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Megumin.Message;
 using Net.Remote;
@@ -266,6 +267,29 @@ namespace Megumin.Remote
                 return controlable.ReceiveThreadPost2ThreadScheduler.Value;
             }
             return Post2ThreadScheduler;
+        }
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        public SynchronizationContext DeserializeSuccessCtx { get; set; } = null;
+
+        /// <summary>
+        /// TODO 重构MessageThreadTransducer，使用SynchronizationContext代替。
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="cmd"></param>
+        /// <param name="messageID"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual SynchronizationContext UseSynchronizationContext(int rpcID, short cmd, int messageID, object message)
+        {
+            if (message is IReceiveThreadControlable controlable && controlable.ReceiveThreadPost2ThreadScheduler.HasValue)
+            {
+                return MessageCtx.Default;
+            }
+            return DeserializeSuccessCtx;
         }
 
         /// <summary>
