@@ -201,11 +201,6 @@
             Rpc回调池参数，具体由实现库支持
             </summary>
         </member>
-        <member name="P:Net.Remote.IRpcTimeoutOption.MillisecondsDelay">
-            <summary>
-            指定毫秒后超时，-1表示永不超时。
-            </summary>
-        </member>
         <member name="P:Net.Remote.IRpcTimeoutOption.MillisecondsTimeout">
             <summary>
             指定毫秒后超时，-1表示永不超时。

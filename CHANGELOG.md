@@ -16,6 +16,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -->
 
 ---
+## [Unreleased] - YYYY-MM-NN
+
+## [3.1.0] - 2022-10-29
+### Added   
+- Listener没有Start时调用接收，增加一个错误日志
+- 增加模拟远端，用于测试
+- 增加广播方法
+- 公开 TcpBufferWriter
+### Changed  
+- `破坏性改动`：RpcID 发送时由正数改为负数，返回时由负数改为正数。
+- 0是普通消息。int.minValue是广播消息。
+- 拆分 interface ISendAsyncable 改为扩展函数。
+### Removed 
+- 移除不必要引用
+- 删除过时代码
+### Fixed  
+- UdpRemoteListener 延迟移除旧地址
+- 修复unity监听测试
+- 重构bufferwriter。增加Udp Send 序列化多线程安全。
+
 ## [3.0.0] - 2022-10-16
 
 ### Added   

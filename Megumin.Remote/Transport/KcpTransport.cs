@@ -183,7 +183,7 @@ namespace Megumin.Remote
             {
                 var writer = new UdpBufferWriter(BufferSizer);
                 writer.WriteHeader(UdpRemoteMessageDefine.KcpData);
-                await KcpCore.Output(writer).ConfigureAwait(false);
+                await KcpCore.OutputAsync(writer).ConfigureAwait(false);
                 SocketSend(writer);
             }
         }
@@ -234,7 +234,7 @@ namespace Megumin.Remote
             while (true)
             {
                 var kcprecv = new UdpBufferWriter(0x10000);
-                await KcpCore.Recv(kcprecv).ConfigureAwait(false);
+                await KcpCore.RecvAsync(kcprecv).ConfigureAwait(false);
                 try
                 {
                     RemoteCore.ProcessBody(kcprecv.BlockMemory.Span);

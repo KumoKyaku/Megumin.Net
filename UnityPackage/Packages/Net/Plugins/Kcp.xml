@@ -23,10 +23,14 @@
             <returns>不需要返回值</returns>
             <remarks>通过增加 avalidLength 能够在协议栈中有效的减少数据拷贝</remarks>
         </member>
-        <member name="T:System.Net.Sockets.Kcp.IKcpOutputer">
+        <member name="T:System.Net.Sockets.Kcp.IKcpOutputWriter">
             <summary>
             Kcp回调
             </summary>
+            <remarks>
+            失败设计，<see cref="M:System.Net.Sockets.Kcp.KcpOutputWriter.Output(System.Buffers.IMemoryOwner{System.Byte},System.Int32)"/>。IMemoryOwner是没有办法代替的。
+            这里只相当于把 IKcpCallback 和 IRentable 和并。
+            </remarks>
         </member>
         <member name="T:System.Net.Sockets.Kcp.IRentable">
             <summary>
@@ -101,13 +105,22 @@
             kcp协议输入输出标准接口
             </summary>
         </member>
-        <member name="M:System.Net.Sockets.Kcp.IKcpIO.Recv(System.Buffers.IBufferWriter{System.Byte},System.Object)">
+        <member name="M:System.Net.Sockets.Kcp.IKcpIO.RecvAsync(System.Buffers.IBufferWriter{System.Byte},System.Object)">
             <summary>
             从kcp中取出一个整合完毕的数据包
             </summary>
             <returns></returns>
         </member>
-        <member name="M:System.Net.Sockets.Kcp.IKcpIO.Output(System.Buffers.IBufferWriter{System.Byte},System.Object)">
+        <member name="M:System.Net.Sockets.Kcp.IKcpIO.RecvAsync(System.ArraySegment{System.Byte},System.Object)">
+            <summary>
+            从kcp中取出一个整合完毕的数据包
+            </summary>
+            <param name="buffer"></param>
+            <param name=""></param>
+            <param name="options"></param>
+            <returns>接收数据长度</returns>
+        </member>
+        <member name="M:System.Net.Sockets.Kcp.IKcpIO.OutputAsync(System.Buffers.IBufferWriter{System.Byte},System.Object)">
             <summary>
             从kcp协议中取出需要发送到网络的数据。
             </summary>
@@ -266,57 +279,63 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="F:System.Net.Sockets.Kcp.KcpConst.IKCP_CMD_PUSH">
+            <summary>
+            数据报文
+            </summary>
+        </member>
+        <member name="F:System.Net.Sockets.Kcp.KcpConst.IKCP_CMD_ACK">
+            <summary>
+            确认报文
+            </summary>
+        </member>
+        <member name="F:System.Net.Sockets.Kcp.KcpConst.IKCP_CMD_WASK">
+            <summary>
+            窗口探测报文,询问对端剩余接收窗口的大小.
+            </summary>
+        </member>
+        <member name="F:System.Net.Sockets.Kcp.KcpConst.IKCP_CMD_WINS">
+            <summary>
+            窗口通知报文,通知对端剩余接收窗口的大小.
+            </summary>
+        </member>
+        <member name="F:System.Net.Sockets.Kcp.KcpConst.IKCP_ASK_SEND">
+            <summary>
+            IKCP_ASK_SEND表示请求远端告知窗口大小
+            </summary>
+        </member>
+        <member name="F:System.Net.Sockets.Kcp.KcpConst.IKCP_ASK_TELL">
+            <summary>
+            IKCP_ASK_TELL表示告知远端窗口大小。
+            </summary>
+        </member>
+        <member name="F:System.Net.Sockets.Kcp.KcpConst.IKCP_WND_RCV">
+            <summary>
+            接收窗口默认值。必须大于最大分片数
+            </summary>
+        </member>
+        <member name="F:System.Net.Sockets.Kcp.KcpConst.IKCP_MTU_DEF">
+            <summary>
+            默认最大传输单元 常见路由值 1492 1480  默认1400保证在路由层不会被分片
+            </summary>
+        </member>
+        <member name="F:System.Net.Sockets.Kcp.KcpConst.IKCP_PROBE_INIT">
+            <summary>
+            窗口探查CD
+            </summary>
+        </member>
+        <member name="F:System.Net.Sockets.Kcp.KcpConst.IsLittleEndian">
+            <summary>
+            <para>https://github.com/skywind3000/kcp/issues/53</para>
+            按照 C版 设计，使用小端字节序
+            </summary>
+        </member>
         <member name="T:System.Net.Sockets.Kcp.KcpCore`1">
             <summary>
             https://luyuhuang.tech/2020/12/09/kcp.html
             https://github.com/skywind3000/kcp/wiki/Network-Layer
             <para>外部buffer ----拆分拷贝----等待列表 -----移动----发送列表----拷贝----发送buffer---output</para>
             https://github.com/skywind3000/kcp/issues/118#issuecomment-338133930
-            </summary>
-        </member>
-        <member name="F:System.Net.Sockets.Kcp.KcpCore`1.IKCP_CMD_PUSH">
-            <summary>
-            数据报文
-            </summary>
-        </member>
-        <member name="F:System.Net.Sockets.Kcp.KcpCore`1.IKCP_CMD_ACK">
-            <summary>
-            确认报文
-            </summary>
-        </member>
-        <member name="F:System.Net.Sockets.Kcp.KcpCore`1.IKCP_CMD_WASK">
-            <summary>
-            窗口探测报文,询问对端剩余接收窗口的大小.
-            </summary>
-        </member>
-        <member name="F:System.Net.Sockets.Kcp.KcpCore`1.IKCP_CMD_WINS">
-            <summary>
-            窗口通知报文,通知对端剩余接收窗口的大小.
-            </summary>
-        </member>
-        <member name="F:System.Net.Sockets.Kcp.KcpCore`1.IKCP_ASK_SEND">
-            <summary>
-            IKCP_ASK_SEND表示请求远端告知窗口大小
-            </summary>
-        </member>
-        <member name="F:System.Net.Sockets.Kcp.KcpCore`1.IKCP_ASK_TELL">
-            <summary>
-            IKCP_ASK_TELL表示告知远端窗口大小。
-            </summary>
-        </member>
-        <member name="F:System.Net.Sockets.Kcp.KcpCore`1.IKCP_WND_RCV">
-            <summary>
-            接收窗口默认值。必须大于最大分片数
-            </summary>
-        </member>
-        <member name="F:System.Net.Sockets.Kcp.KcpCore`1.IKCP_MTU_DEF">
-            <summary>
-            默认最大传输单元 常见路由值 1492 1480  默认1400保证在路由层不会被分片
-            </summary>
-        </member>
-        <member name="F:System.Net.Sockets.Kcp.KcpCore`1.IKCP_PROBE_INIT">
-            <summary>
-            窗口探查CD
             </summary>
         </member>
         <member name="P:System.Net.Sockets.Kcp.KcpCore`1.conv">
@@ -464,10 +483,10 @@
             是否采用流传输模式
             </summary>
         </member>
-        <member name="F:System.Net.Sockets.Kcp.KcpCore`1.IsLittleEndian">
+        <member name="F:System.Net.Sockets.Kcp.KcpCore`1.snd_queueLock">
             <summary>
-            <para>https://github.com/skywind3000/kcp/issues/53</para>
-            按照 C版 设计，使用小端字节序
+            增加锁保证发送线程安全，否则可能导致2个消息的分片交替入队。
+            <para/> 用例：普通发送和广播可能会导致多个线程同时调用Send方法。
             </summary>
         </member>
         <member name="F:System.Net.Sockets.Kcp.KcpCore`1.acklist">
@@ -551,7 +570,7 @@
             flush pending data
             </summary>
         </member>
-        <member name="M:System.Net.Sockets.Kcp.KcpCore`1.Update(System.DateTime@)">
+        <member name="M:System.Net.Sockets.Kcp.KcpCore`1.Update(System.DateTimeOffset@)">
             <summary>
             update state (call it repeatedly, every 10ms-100ms), or you can ask
             ikcp_check when to call it again (without ikcp_input/_send calling).
@@ -593,6 +612,13 @@
             <para></para>这是个简单的实现,更复杂使用微软官方实现<see cref="!:System.Threading.Channels.Channel.CreateBounded&lt;T&gt;(int)"/>
             </summary>
             <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:System.Net.Sockets.Kcp.KcpOutputWriter.Output(System.Buffers.IMemoryOwner{System.Byte},System.Int32)">
+            <summary>
+            Socket发送是要pin byte[],为了不阻塞KcpFlush，动态缓存是必须的。
+            </summary>
+            <param name="buffer"></param>
+            <param name="avalidLength"></param>
         </member>
         <member name="T:System.Net.Sockets.Kcp.KcpSegment">
             <summary>

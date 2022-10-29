@@ -268,11 +268,6 @@
             只有<see cref="M:Megumin.Remote.BufferWriterBytesSteam.Write(System.Byte[],System.Int32,System.Int32)"/>函数起作用。
             </summary>
         </member>
-        <member name="T:Megumin.Remote.DebugLogger">
-            <summary>
-            
-            </summary>
-        </member>
         <member name="T:Megumin.Remote.MSGID">
             <summary>
             使用MessageID来为每一个消息指定一个唯一ID(-999~999 被框架占用)。
@@ -309,11 +304,6 @@
         <member name="F:Megumin.Remote.MSGID.UdpConnectMessageID">
             <summary>
             Udp握手连接使用的消息ID编号
-            </summary>
-        </member>
-        <member name="F:Megumin.Remote.MSGID.Heartbeats">
-            <summary>
-            心跳包ID，255好识别，buffer[10-13]=[255,0,0,0]
             </summary>
         </member>
         <member name="F:Megumin.Remote.MSGID.Heartbeat">

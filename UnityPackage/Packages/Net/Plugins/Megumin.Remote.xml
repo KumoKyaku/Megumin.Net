@@ -4,6 +4,29 @@
         <name>Megumin.Remote</name>
     </assembly>
     <members>
+        <member name="M:RemoteExtension_1D96E84960F84A7DBFCE21028A82F32A.BroadCast``2(``0,``1,System.Object)">
+            <summary>
+            广播。
+            没有优化，每个Remote都会序列化一次
+            </summary>
+            <typeparam name="R"></typeparam>
+            <typeparam name="T"></typeparam>
+            <param name="remotes"></param>
+            <param name="message"></param>
+            <param name="options"></param>
+        </member>
+        <member name="M:RemoteExtension_1D96E84960F84A7DBFCE21028A82F32A.BroadCastTcp``2(``0,``1,System.Object)">
+            <summary>
+            Tcp广播。
+            默认序列化。所有Remote只序列化一次。如果重写了序列化规则或者报头就不能用这个方法了。
+            具体用例还要具体优化。交给用户自行处理。
+            </summary>
+            <typeparam name="R"></typeparam>
+            <typeparam name="T"></typeparam>
+            <param name="remotes"></param>
+            <param name="message"></param>
+            <param name="options"></param>
+        </member>
         <member name="T:Megumin.Remote.KcpRemoteListenerOld">
             <summary>
             Kcp测试10000连接没有成功。5000也不性。推测应该是UdpListenner一个端口无法处理这么大流量，大量丢包。
@@ -470,14 +493,15 @@
         </member>
         <member name="M:Megumin.Remote.Rpc.RpcLayer.GetRpcID">
             <summary>
-            原子操作 取得RpcId,发送方的的RpcID为正数，回复的RpcID为负数，正负一一对应
-            <para>0,int.MinValue 为无效值</para> 
+            原子操作 取得RpcId,发送方的的RpcID为负数，回复的RpcID为正数，正负一一对应
+            <para>0,为无效值</para> 
+            int.MinValue 为广播消息。
             </summary>
             <returns></returns>
         </member>
         <member name="M:Megumin.Remote.Rpc.RpcLayer.TryInput(System.Int32,System.Object)">
             <summary>
-            如果rpcID为负数，是rpc返回回复，返回true,此消息由RpcLayer处理。
+            如果rpcID大于0为正数，是rpc返回回复，返回true,此消息由RpcLayer处理。
             <para> 否则返回false，RpcLayer忽略此消息。</para>
             </summary>
             <param name="rpcID"></param>
@@ -541,67 +565,61 @@
             安全关闭一个socket很麻烦，根本搞不清楚调用那个函数会抛出异常。
             </summary>
         </member>
-        <member name="M:Megumin.Remote.TcpRemoteListenerOld.ListenAsync``1(System.Func{``0})">
+        <member name="T:Megumin.Remote.IBufferBlock">
             <summary>
-            创建TCPRemote并开始接收
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="T:Megumin.Remote.ISendBlock">
-            <summary>
-            要发送的字节块
+            要发送/接收的字节块
             </summary>
         </member>
-        <member name="M:Megumin.Remote.ISendBlock.SendSuccess">
+        <member name="M:Megumin.Remote.IBufferBlock.Free">
             <summary>
-            发送成功
+            发送/接收 成功,释放内存块。
             </summary>
         </member>
-        <member name="P:Megumin.Remote.ISendBlock.SendMemory">
+        <member name="P:Megumin.Remote.IBufferBlock.BlockMemory">
             <summary>
-            要发送的内存块
+            要 发送/接收 的内存块
             </summary>
         </member>
-        <member name="P:Megumin.Remote.ISendBlock.SendSegment">
+        <member name="P:Megumin.Remote.IBufferBlock.BlockSegment">
             <summary>
-            要发送的内存块
+            要 发送/接收 的内存块
             </summary>
         </member>
-        <member name="T:Megumin.Remote.IWriter">
+        <member name="T:Megumin.Remote.ITransportWriter">
             <summary>
             消息字节写入器
             </summary>
         </member>
-        <member name="M:Megumin.Remote.IWriter.Discard">
+        <member name="M:Megumin.Remote.ITransportWriter.Discard">
             <summary>
             放弃发送，废弃当前写入器
             </summary>
         </member>
-        <member name="M:Megumin.Remote.IWriter.WriteLengthOnHeader">
+        <member name="F:Megumin.Remote.BaseBufferWriter.index">
             <summary>
-            将总长度写入消息4位
+            当前游标位置
             </summary>
-            <returns>消息总长度</returns>
+        </member>
+        <member name="M:Megumin.Remote.BaseBufferWriter.Ensure(System.Int32)">
+            <summary>
+            确保当前buffer足够大
+            </summary>
+            <param name="sizeHint"></param>
+        </member>
+        <member name="T:Megumin.Remote.TcpBufferWriter">
+            <summary>
+            起始位置总是预留4个字节，写入消息总长度
+            </summary>
         </member>
         <member name="T:Megumin.Remote.TcpSendPipe">
             <summary>
             Tcp发送管道 存在并发/异步函数重入问题
             </summary>
         </member>
-        <member name="F:Megumin.Remote.TcpSendPipe.Writer.index">
-            <summary>
-            当前游标位置
-            </summary>
-        </member>
-        <member name="M:Megumin.Remote.TcpSendPipe.Writer.Ensure(System.Int32)">
-            <summary>
-            确保当前buffer足够大
-            </summary>
-            <param name="sizeHint"></param>
-        </member>
         <member name="M:Megumin.Remote.TcpSendPipe.GetWriter">
             <summary>
             取得一个可用写入器
+            每个writer都是一个新的实例，保证序列化时缓冲区线程安全。
             </summary>
             <returns></returns>
         </member>
@@ -619,6 +637,12 @@
             会导致Socket发送循环中断，需要重新调用ReadSendPipe。
             用于断线重连时，将旧的Remote的SendPipe，赋值给新的Remote，并取消旧的Remote的pending。
             </remarks>
+        </member>
+        <member name="M:Megumin.Remote.TcpRemoteListenerOld.ListenAsync``1(System.Func{``0})">
+            <summary>
+            创建TCPRemote并开始接收
+            </summary>
+            <returns></returns>
         </member>
         <member name="T:Megumin.Remote.TimeStampSynchronization">
             <summary>
@@ -647,7 +671,7 @@
             工程实践中由于消息是不间断的，总是出现打嗝卡顿，后续消息会触发fastack。假死现象要比测试少一点。
             </summary>
         </member>
-        <member name="F:Megumin.Remote.KcpTransport.kcprecv">
+        <member name="M:Megumin.Remote.KcpTransport.KCPRecv">
             接收===================================================================
         </member>
         <member name="T:Megumin.Remote.TcpTransport">
@@ -868,12 +892,15 @@
             <param name="triggerOnDisConnect"></param>
             <param name="waitSendQueue"></param>
         </member>
-        <member name="M:Megumin.Remote.UdpTransport.SocketSend(System.Buffers.IMemoryOwner{System.Byte},System.Int32)">
+        <member name="M:Megumin.Remote.UdpTransport.SocketSend(Megumin.Remote.IBufferBlock)">
             <summary>
             网络层实际发送数据位置
             </summary>
-            <param name="buffer"></param>
-            <param name="lenght"></param>
+        </member>
+        <member name="M:Megumin.Remote.UdpTransport.SocketSend(System.ArraySegment{System.Byte})">
+            <summary>
+            网络层实际发送数据位置
+            </summary>
         </member>
         <member name="M:Megumin.Remote.UdpTransport.ConnectSideSocketReceive">
             <summary>
@@ -906,18 +933,6 @@
             <summary>
             Udp认证应答
             </summary>
-        </member>
-        <member name="M:Megumin.Remote.UdpBufferWriter.Pop">
-            <summary>
-            弹出一个序列化完毕的缓冲。
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:Megumin.Remote.UdpBufferWriter.Ensure(System.Int32)">
-            <summary>
-            确保当前buffer足够大
-            </summary>
-            <param name="sizeHint"></param>
         </member>
         <member name="T:Megumin.Remote.UdpRemoteListenerOld">
             <summary>
@@ -971,7 +986,7 @@
             <param name="endPoint"></param>
             <param name="transport"></param>
         </member>
-        <member name="F:Megumin.Remote.UdpRemoteListener.recvBuffer">
+        <member name="F:Megumin.Remote.UdpRemoteListener.receiveLock">
             <summary>
             0x10000 = 65535 Udp报头len占16位。
             UDP允许传输的最大长度理论上2^16 - udp head - iphead（ 65507 字节 = 65535 - 20 - 8）
