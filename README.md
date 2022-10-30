@@ -26,11 +26,8 @@ or add `"com.megumin.net": "https://github.com/KumoKyaku/Megumin.Net.git?path=Un
 >If you want to set a target version, uses the `*.*.*` release tag so you can specify a version like `#2.1.0`. For example `https://github.com/KumoKyaku/Megumin.Net.git?path=UnityPackage/Packages/Net#2.1.0`.
 
 # 入门教程
-+ [入门视频教程](https://www.bilibili.com/video/BV1We4y1J7EU/)  
-
-<div>
-<iframe src="//player.bilibili.com/player.html?aid=646691132&bvid=BV1We4y1J7EU&cid=865960827&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
-</div>
+- [入门视频教程](https://www.bilibili.com/video/BV1We4y1J7EU/)    
+  [<img src="http://i2.hdslb.com/bfs/archive/7f79a0fe4f98624abb1619dfb6a34090fcca4967.png">](https://www.bilibili.com/video/BV1We4y1J7EU/)   
 
 ---
 ---
