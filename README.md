@@ -25,6 +25,11 @@ or add `"com.megumin.net": "https://github.com/KumoKyaku/Megumin.Net.git?path=Un
 
 >If you want to set a target version, uses the `*.*.*` release tag so you can specify a version like `#2.1.0`. For example `https://github.com/KumoKyaku/Megumin.Net.git?path=UnityPackage/Packages/Net#2.1.0`.
 
+# 入门教程
++ [入门视频教程](https://www.bilibili.com/video/BV1We4y1J7EU/)  
+<iframe src="//player.bilibili.com/player.html?aid=646691132&bvid=BV1We4y1J7EU&cid=865960827&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+---
+---
 # 优势
 - 支持Tcp，Udp，Kcp。
 - 使用内存池和多线程处理收发，可配置线程调度，无需担心网络模块性能问题。
@@ -403,10 +408,7 @@ namespace Message
 - [Unity网络代码路线图](https://portal.productboard.com/36ukwpc4kysiqwfanhjdglcd/tabs/30-netcode-for-gameobjects)
 
 + [clumsy](https://github.com/jagt/clumsy) 能在 Windows 平台下人工造成不稳定的网络状况，方便你调试应用程序在极端网络状况下的表现。
-+ [入门视频教程](https://www.bilibili.com/video/BV1We4y1J7EU/)  
-  <iframe src="//player.bilibili.com/player.html?aid=646691132&bvid=BV1We4y1J7EU&cid=865960827&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
 
----
 
 
 
