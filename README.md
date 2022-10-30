@@ -27,8 +27,10 @@ or add `"com.megumin.net": "https://github.com/KumoKyaku/Megumin.Net.git?path=Un
 
 # 入门教程
 + [入门视频教程](https://www.bilibili.com/video/BV1We4y1J7EU/)  
-<iframe src="//player.bilibili.com/player.html?aid=646691132&bvid=BV1We4y1J7EU&cid=865960827&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
 
+<div>
+<iframe src="//player.bilibili.com/player.html?aid=646691132&bvid=BV1We4y1J7EU&cid=865960827&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+</div>
 
 ---
 ---
