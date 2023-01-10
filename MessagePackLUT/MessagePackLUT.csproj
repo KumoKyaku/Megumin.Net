@@ -3,15 +3,16 @@
   <!--主配置-->
   <PropertyGroup>
     <Authors>云却</Authors>
-    
+
     <!--版本配置-->
     <Version>1.1.0.0</Version>
     <AssemblyVersion>1.1.0.0</AssemblyVersion>
     <FileVersion>1.1.0.0</FileVersion>
-    
+
     <!--包配置-->
     <Product>MeguminNet</Product>
-    <PackageId>Megumin.MessagePackLUT</PackageId><!--指定生成的包的名称。 如果未指定，pack 操作将默认使用 AssemblyName 或目录名称作为包的名称。-->
+    <!--指定生成的包的名称。 如果未指定，pack 操作将默认使用 AssemblyName 或目录名称作为包的名称。-->
+    <PackageId>Megumin.MessagePackLUT</PackageId>
     <AssemblyName>Megumin.MessagePackLUT</AssemblyName>
     <RootNamespace>Megumin.Message</RootNamespace>
     <PackageTags>net,dotnetstandard2.0,unity</PackageTags>
@@ -19,12 +20,12 @@
     <RepositoryUrl>https://github.com/KumoKyaku/Megumin.Net</RepositoryUrl>
     <PackageProjectUrl>https://github.com/KumoKyaku/Megumin.Net</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    
-  </PropertyGroup> 
+
+  </PropertyGroup>
 
   <!--目标框架配置-->
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net5.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0</TargetFrameworks>
   </PropertyGroup>
 
   <!--依赖配置-->
@@ -35,7 +36,7 @@
   </ItemGroup>
 
   <!--以下是项目通用配置-->
-  
+
   <!--基本配置-->
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
@@ -43,21 +44,21 @@
     <NoWarn>
       1701;1702;1591;1587
     </NoWarn>
-    
+
     <!--打包配置-->
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\OpenSource.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    
+
     <!--xml注释生成-->
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-    
+
     <!--版权配置-->
     <Copyright>Copyright (c) 2019 云却</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-  </PropertyGroup> 
-  
+  </PropertyGroup>
+
   <!--许可证文件配置-->
   <ItemGroup>
     <None Include="..\LICENSE">
@@ -65,7 +66,7 @@
       <PackagePath></PackagePath>
     </None>
   </ItemGroup>
-  
+
   <!--调试符号配置-->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG</DefineConstants>
@@ -73,7 +74,7 @@
     <Optimize>false</Optimize>
     <DebugType>portable</DebugType>
   </PropertyGroup>
-  
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DefineConstants>TRACE</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
