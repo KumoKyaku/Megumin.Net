@@ -11,6 +11,7 @@
         <Button x:Name="Listen" Content="Listen" HorizontalAlignment="Left" Margin="47,29,0,0" VerticalAlignment="Top" Width="222" Click="Listen_Click"/>
         <Button x:Name="BeginRecv" Content="BeginRecv" HorizontalAlignment="Left" Margin="47,69,0,0" VerticalAlignment="Top" Width="222" Click="BeginRecv_Click"/>
         <Button x:Name="ClearLog" Content="ClearLog" HorizontalAlignment="Left" Margin="425,29,0,0" VerticalAlignment="Top" Width="328" Click="ClearLog_Click"/>
+        <Button x:Name="LogRecvBufferSize" Content="LogRecvBufferSize" HorizontalAlignment="Left" Margin="425,69,0,0" VerticalAlignment="Top" Width="328" Click="LogRecvBufferSize_Click"/>
 
     </Grid>
 </Window>

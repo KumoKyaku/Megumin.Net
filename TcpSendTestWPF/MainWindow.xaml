@@ -5,14 +5,17 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TcpSendTestWPF"
         mc:Ignorable="d"
-        Title="MainWindow" Height="1028" Width="805">
+        Title="MainWindow" Height="800" Width="805">
     <Grid Margin="0,0,0,-781">
         <Button x:Name="Connect" Content="Connect" HorizontalAlignment="Left" Margin="75,30,0,0" VerticalAlignment="Top" Width="225" Click="Connect_Click"/>
         <Button x:Name="Send1000" Content="Send" HorizontalAlignment="Left" Margin="75,66,0,0" VerticalAlignment="Top" Width="225" Click="Send1000_Click"/>
         <Button x:Name="LogTest" Content="LogTest" HorizontalAlignment="Left" Margin="379,30,0,0" VerticalAlignment="Top" Width="346" Click="LogTest_Click"/>
-        <TextBlock x:Name="Log" TextWrapping="Wrap" Width="631" Background="#FF7F7F7F" ScrollViewer.CanContentScroll="True" Margin="75,131,99,478"/>
         <Button x:Name="SendAsync" Content="SendAsync" HorizontalAlignment="Left" Margin="75,90,0,0" VerticalAlignment="Top" Width="225" Click="SendAsync_Click"/>
         <Button x:Name="ClearLog" Content="ClearLog" HorizontalAlignment="Left" Margin="379,66,0,0" VerticalAlignment="Top" Width="346" Click="ClearLog_Click"/>
+        <Button x:Name="WhileSend" Content="WhileSend" HorizontalAlignment="Left" Margin="75,114,0,0" VerticalAlignment="Top" Width="225" Click="WhileSend_Click"/>
+        <ScrollViewer Margin="78,152,77,841">
+            <TextBlock x:Name="Log" TextWrapping="Wrap" Width="633" Background="#FF7F7F7F" ScrollViewer.CanContentScroll="True" Height="1185"/>
+        </ScrollViewer>
 
 
     </Grid>

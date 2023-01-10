@@ -42,14 +42,15 @@ namespace TcpRecvTestWPF
         {
             Log.Dispatcher.Invoke(() =>
             {
-                Log.Text += message + "\n";
+                Log.Text = message + "\n" + Log.Text;
             });
         }
 
-        const int buffercount = 1024 * 10000;
+        const int buffercount = 1024 * 1024 * 10;
         byte[] buffer = new byte[buffercount];
         private void BeginRecv_Click(object sender, RoutedEventArgs e)
         {
+            LogAppend($"开始接收 userbuffer {buffercount}");
             server.BeginReceive(buffer, 0, buffercount, SocketFlags.None, RecvCallback, buffer);
         }
 
@@ -57,7 +58,7 @@ namespace TcpRecvTestWPF
         {
             int recvCount = server.EndReceive(ar);
             byte[] buffer = ar.AsyncState as byte[];
-            LogAppend($"接收 {buffer[0]} {ar.IsCompleted} {recvCount}");
+            LogAppend($"接收成功： {buffer[0]} {ar.IsCompleted} {recvCount}");
 
         }
 
@@ -67,6 +68,11 @@ namespace TcpRecvTestWPF
             {
                 Log.Text = null;
             });
+        }
+
+        private void LogRecvBufferSize_Click(object sender, RoutedEventArgs e)
+        {
+            LogAppend($"ReceiveBufferSize: {server.ReceiveBufferSize}");
         }
     }
 }
