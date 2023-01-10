@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>.net5</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <NoWarn>
       1701;1702;1591;1587
     </NoWarn>
