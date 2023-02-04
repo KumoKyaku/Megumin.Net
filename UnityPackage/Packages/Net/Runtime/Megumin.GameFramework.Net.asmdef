@@ -11,6 +11,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.megumin.explosion4unity",
+            "expression": "4.0.0",
+            "define": "MEGUMIN_EXPLOSION4UNITY"
+        }
+    ],
     "noEngineReferences": false
 }
