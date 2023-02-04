@@ -169,6 +169,18 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:Megumin.Remote.MessageCtx.Push(Megumin.Remote.IDealMessageable,System.Int32,System.Int16,System.Int32,System.Object,System.Object)">
+            <summary>
+            专用函数,比<see cref="T:System.Diagnostics.Switch"/>性能高,但是通用性不好
+            </summary>
+            <param name="r"></param>
+            <param name="rpcID"></param>
+            <param name="cmd"></param>
+            <param name="messageID"></param>
+            <param name="message"></param>
+            <param name="options"></param>
+            <exception cref="T:System.ArgumentNullException"></exception>
+        </member>
         <member name="T:Megumin.Remote.ThreadSwitcher">
             <summary>
             通用线程切换器,查看meguminexplosion 库
@@ -307,6 +319,21 @@
             <param name="message"></param>
             <returns></returns>
             <remarks>在Unity中也可以重写这个函数，判断调用线程是不是unity主线程，如果是则不需要转化线程</remarks>
+        </member>
+        <member name="P:Megumin.Remote.RemoteBase.DeserializeSuccessCtx">
+            <summary>
+            TODO
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.UseSynchronizationContext(System.Int32,System.Int16,System.Int32,System.Object)">
+            <summary>
+            TODO 重构MessageThreadTransducer，使用SynchronizationContext代替。
+            </summary>
+            <param name="rpcID"></param>
+            <param name="cmd"></param>
+            <param name="messageID"></param>
+            <param name="message"></param>
+            <returns></returns>
         </member>
         <member name="F:Megumin.Remote.RemoteBase.NullResult">
             <summary>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -60,15 +61,7 @@ namespace Megumin
             {
                 foreach (var ip in ipProperties.UnicastAddresses)
                 {
-                    string note = null;
-                    if (ip.Address.IsLAN())
-                    {
-                        note = "Local Area Network";
-                    }
-                    else
-                    {
-                        note = "Wide Area Network";
-                    }
+                    string note = GetNetworkAreaType(ip.Address);
                     InitProperty("UnicastAddresses", ip.Address, note);
                 }
 
@@ -82,6 +75,24 @@ namespace Megumin
             InitProperty("IsReceiveOnly", net.IsReceiveOnly);
             InitProperty("SupportsMulticast", net.SupportsMulticast);
             //InitProperty("Speed", net.Speed);
+        }
+
+        static string GetNetworkAreaType(IPAddress address)
+        {
+            string note = "Unknown";
+
+#if MEGUMIN_EXPLOSION4UNITY
+            if (address.IsLAN())
+            {
+                note = "Local Area Network";
+            }
+            else
+            {
+                note = "Wide Area Network";
+            }
+#endif
+
+            return note;
         }
 
         private void DestroyAllProp()
@@ -128,7 +139,7 @@ namespace Megumin
                 info += $"   UnicastAddresses: \n";
                 foreach (var ip in ipProperties.UnicastAddresses)
                 {
-                    info += $"       Address: {ip.Address}    {(ip.Address.IsLAN()? "Local Area Network" : "Wide Area Network")}\n";
+                    info += $"       Address: {ip.Address}    {GetNetworkAreaType(ip.Address)}\n";
                     info += $"       AddressFamily: {ip.Address.AddressFamily}\n";
                     info += $"       \n";
                 }

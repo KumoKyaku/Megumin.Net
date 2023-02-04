@@ -389,6 +389,18 @@ namespace Message
 - 同时监听IPV4,IPV6。
 - 同时监听Tcp,Udp。
 - 同时监听多个端口，用于实现负载均衡。
+- 
+# internal buffer / kernel buffer
+- [**`Where the data stores before we invoke 'socket.read(buffer, offset, count)'?`**](https://stackoverflow.com/questions/59018603/where-the-data-stores-before-we-invoke-socket-readbuffer-offset-count/59024582#59024582)
+- [**`Doubt regarding Winsock Kernel Buffer and Nagle algorithm`**](https://stackoverflow.com/questions/1017507/doubt-regarding-winsock-kernel-buffer-and-nagle-algorithm/1017565#1017565)
+- [internal winsock buffers](https://forums.codeguru.com/showthread.php?429350-internal-winsock-buffers)  
+- [Large TCP kernel buffering cause application to fail on FIN](https://stackoverflow.com/questions/74883959/large-tcp-kernel-buffering-cause-application-to-fail-on-fin)
+- [Should I send data in chunks, or send it all at once?](https://stackoverflow.com/questions/42258274/should-i-send-data-in-chunks-or-send-it-all-at-once/42260182#42260182)
+- [网络收发过程中，缓冲区位置在哪里？](https://www.jianshu.com/p/9bf818aaa82d)
+
+
+---
+---
 
 # 友情链接
 - [Megumin.Explosion](https://github.com/KumoKyaku/Megumin.Explosion) Megumin系列类库的最底层基础库，Megumin的其他库都有可能需要引用它。
@@ -398,6 +410,14 @@ namespace Message
 
 
 # 参考
+- [**Windows TCP 功能说明**](https://learn.microsoft.com/zh-cn/troubleshoot/windows-server/networking/description-tcp-features)
+- [IO 多路复用](https://mp.weixin.qq.com/s/YdIdoZ_yusVWza1PU7lWaw)  [【备用链接】](https://zhuanlan.zhihu.com/p/359794948)  
+- [Socket缓冲区以及阻塞模式详解](http://c.biancheng.net/view/2349.html)
+  
++ [TCP 拥塞控制详解](https://zhuanlan.zhihu.com/p/144273871) 
++ [**TCP的发送缓冲区和接收缓冲区**](https://www.cnblogs.com/csiwei-229958907/articles/13530531.html)
++ [TCP Send函数的阻塞和非阻塞，以及TCP发送数据的异常情况](https://www.cnblogs.com/maji233/p/11465609.html)
+  
 - [介绍 KCP：新的低延迟、安全网络堆栈](https://www.improbable.io/blog/kcp-a-new-low-latency-secure-network-stack) SpatialOS 的官网有几个协议的详细评测
 - [MessagePack for C# v2, new era of .NET Core(Unity) I/O Pipelines](https://neuecc.medium.com/messagepack-for-c-v2-new-era-of-net-core-unity-i-o-pipelines-6950643c1053)  优化中的一些技巧和问题.
 - [IOCP(I/O Completion Ports)](https://www.cnblogs.com/cdaniu/p/15782962.html)

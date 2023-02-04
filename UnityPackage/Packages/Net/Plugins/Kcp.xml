@@ -116,7 +116,6 @@
             从kcp中取出一个整合完毕的数据包
             </summary>
             <param name="buffer"></param>
-            <param name=""></param>
             <param name="options"></param>
             <returns>接收数据长度</returns>
         </member>
@@ -568,6 +567,11 @@
         <member name="M:System.Net.Sockets.Kcp.KcpCore`1.Flush">
             <summary>
             flush pending data
+            </summary>
+        </member>
+        <member name="M:System.Net.Sockets.Kcp.KcpCore`1.Flush2">
+            <summary>
+            Test OutputWriter
             </summary>
         </member>
         <member name="M:System.Net.Sockets.Kcp.KcpCore`1.Update(System.DateTimeOffset@)">

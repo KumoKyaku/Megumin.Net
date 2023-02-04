@@ -1,0 +1,17 @@
+﻿<Window x:Class="TcpRecvTestWPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TcpRecvTestWPF"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="800" Width="800">
+    <Grid Margin="0,0,0,-5">
+        <TextBlock x:Name="Log" HorizontalAlignment="Center" Margin="0,205,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="564" Width="706" Background="#FF9A9A9A"/>
+        <Button x:Name="Listen" Content="Listen" HorizontalAlignment="Left" Margin="47,29,0,0" VerticalAlignment="Top" Width="222" Click="Listen_Click"/>
+        <Button x:Name="BeginRecv" Content="BeginRecv" HorizontalAlignment="Left" Margin="47,69,0,0" VerticalAlignment="Top" Width="222" Click="BeginRecv_Click"/>
+        <Button x:Name="ClearLog" Content="ClearLog" HorizontalAlignment="Left" Margin="425,29,0,0" VerticalAlignment="Top" Width="328" Click="ClearLog_Click"/>
+        <Button x:Name="LogRecvBufferSize" Content="LogRecvBufferSize" HorizontalAlignment="Left" Margin="425,69,0,0" VerticalAlignment="Top" Width="328" Click="LogRecvBufferSize_Click"/>
+
+    </Grid>
+</Window>
