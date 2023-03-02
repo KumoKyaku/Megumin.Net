@@ -85,6 +85,16 @@ namespace Megumin.Message
         {
             throw new NotImplementedException();
         }
+
+        public void Serialize(Stream destination, string value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     internal class IntFormatter : IMeguminFormater<int>
@@ -120,6 +130,16 @@ namespace Megumin.Message
         }
 
         public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, int value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
         {
             throw new NotImplementedException();
         }
@@ -161,6 +181,16 @@ namespace Megumin.Message
         {
             throw new NotImplementedException();
         }
+
+        public void Serialize(Stream destination, float value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     internal class LongFormatter : IMeguminFormater<long>
@@ -196,6 +226,16 @@ namespace Megumin.Message
         }
 
         public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, long value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
         {
             throw new NotImplementedException();
         }
@@ -237,6 +277,16 @@ namespace Megumin.Message
         {
             throw new NotImplementedException();
         }
+
+        public void Serialize(Stream destination, double value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     internal class DatetimeFormatter : IMeguminFormater<DateTime>
@@ -272,6 +322,16 @@ namespace Megumin.Message
         }
 
         public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, DateTime value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
         {
             throw new NotImplementedException();
         }
@@ -317,6 +377,16 @@ namespace Megumin.Message
         {
             throw new NotImplementedException();
         }
+
+        public void Serialize(Stream destination, DateTimeOffset value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     internal class ByteArrayFormatter : IMeguminFormater<byte[]>
@@ -350,6 +420,16 @@ namespace Megumin.Message
         }
 
         public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, byte[] value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
         {
             throw new NotImplementedException();
         }

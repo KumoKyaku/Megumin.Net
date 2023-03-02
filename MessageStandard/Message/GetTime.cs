@@ -57,6 +57,16 @@ namespace Megumin.Message
         {
             throw new NotImplementedException();
         }
+
+        public void Serialize(Stream destination, GetTime value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     partial class GetTime : IAutoResponseable

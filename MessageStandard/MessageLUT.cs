@@ -26,7 +26,7 @@ namespace Megumin.Remote
         ThrowException,
     }
 
-    public interface IMeguminSerializer<T>
+    public interface IMeguminSerializer<T, V>
     {
         /// <summary>
         /// 序列化函数
@@ -35,7 +35,7 @@ namespace Megumin.Remote
         /// <param name="value"></param>
         /// <param name="options"></param>
         /// <remarks>序列化函数不在提供序列化多少字节，需要在destination中自己统计</remarks>
-        void Serialize(T destination, object value, object options = null);
+        void Serialize(T destination, V value, object options = null);
     }
 
     public interface IMeguminDeserializer<T>
@@ -54,8 +54,12 @@ namespace Megumin.Remote
     /// <summary>
     /// 通用序列化库接口
     /// </summary>
+    /// <remarks>
+    /// 用户自己实现时可以不必实现所有函数，不同的协议用的是不同的函数，可以有选择的实现即可。
+    /// </remarks>
     public interface IMeguminFormater :
-        IMeguminSerializer<IBufferWriter<byte>>,
+        IMeguminSerializer<IBufferWriter<byte>, object>,
+        IMeguminSerializer<Stream, object>,
         IMeguminDeserializer<Stream>,
         IMeguminDeserializer<ReadOnlySequence<byte>>,
         IMeguminDeserializer<ReadOnlyMemory<byte>>
@@ -89,11 +93,20 @@ namespace Megumin.Remote
         /// <summary>
         /// 序列化函数
         /// </summary>
-        /// <param name="writer"></param>
+        /// <param name="destination"></param>
         /// <param name="value"></param>
         /// <param name="options"></param>
         /// <remarks>序列化函数不在提供序列化多少字节，需要在writer中自己统计</remarks>
-        void Serialize(IBufferWriter<byte> writer, T value, object options = null);
+        void Serialize(IBufferWriter<byte> destination, T value, object options = null);
+
+        /// <summary>
+        /// 序列化函数
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="value"></param>
+        /// <param name="options"></param>
+        /// <remarks>序列化函数不在提供序列化多少字节，需要在writer中自己统计</remarks>
+        void Serialize(Stream destination, T value, object options = null);
     }
 
     /// <summary>

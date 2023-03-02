@@ -107,9 +107,14 @@ namespace Megumin.Remote
             BindType = typeof(T);
         }
 
-        public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
+        public void Serialize(IBufferWriter<byte> destination, object value, object options = null)
         {
-            MessagePackSerializer.Serialize<T>(writer, (T)value, options as MessagePackSerializerOptions);
+            MessagePackSerializer.Serialize<T>(destination, (T)value, options as MessagePackSerializerOptions);
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
+        {
+            MessagePackSerializer.Serialize<T>(destination, (T)value, options as MessagePackSerializerOptions);
         }
 
         public object Deserialize(in ReadOnlySequence<byte> source, object options = null)

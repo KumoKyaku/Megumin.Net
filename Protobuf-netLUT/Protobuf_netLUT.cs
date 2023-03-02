@@ -111,6 +111,11 @@ namespace Megumin.Remote
             Serializer.Serialize<T>(writer, (T)value, options);
         }
 
+        public void Serialize(Stream destination, object value, object options = null)
+        {
+            Serializer.Serialize<T>(destination, (T)value, options);
+        }
+
         public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
         {
             var result = Serializer.Deserialize<T>(source, userState: options);

@@ -48,5 +48,15 @@ namespace Megumin.Message
         {
             throw new NotImplementedException();
         }
+
+        public void Serialize(Stream destination, Heartbeat value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

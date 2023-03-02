@@ -83,6 +83,11 @@ namespace Megumin.Message
         {
             throw new NotImplementedException();
         }
+
+        public void Serialize(Stream destination, object value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -157,6 +162,11 @@ namespace Megumin.Message
         }
 
         public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
         {
             throw new NotImplementedException();
         }
@@ -237,6 +247,11 @@ namespace Megumin.Message
         {
             throw new NotImplementedException();
         }
+
+        public void Serialize(Stream destination, object value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class TestPacket4 : IMeguminFormater, IMeguminFormater<TestPacket4>
@@ -295,6 +310,16 @@ namespace Megumin.Message
         }
 
         public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, TestPacket4 value, object options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
         {
             throw new NotImplementedException();
         }

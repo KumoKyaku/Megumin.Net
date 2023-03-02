@@ -105,10 +105,16 @@ namespace Megumin.Remote
             MessageID = messageID;
         }
 
-        public void Serialize(IBufferWriter<byte> writer, object value, object options = null)
+        public void Serialize(IBufferWriter<byte> destination, object value, object options = null)
         {
             IMessage<T> message = (IMessage<T>)value;
-            message.WriteTo(writer);
+            message.WriteTo(destination);
+        }
+
+        public void Serialize(Stream destination, object value, object options = null)
+        {
+            IMessage<T> message = (IMessage<T>)value;
+            message.WriteTo(destination);
         }
 
         public object Deserialize(in ReadOnlySequence<byte> source, object options = null)
