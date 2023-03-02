@@ -370,15 +370,15 @@ namespace Megumin.Remote
         /// 反序列化
         /// </summary>
         /// <param name="messageID"></param>
-        /// <param name="byteSequence"></param>
+        /// <param name="source"></param>
         /// <param name="options"></param>
         /// <returns></returns>
         /// <exception cref="KeyNotFoundException"></exception>
         /// <exception cref="ArgumentNullException"></exception>
-        public static object Deserialize(int messageID, in ReadOnlySequence<byte> byteSequence, object options = null)
+        public static object Deserialize(int messageID, in ReadOnlySequence<byte> source, object options = null)
         {
             var formater = IDDic[messageID];
-            var result = formater.Deserialize(byteSequence, options);
+            var result = formater.Deserialize(source, options);
             return result;
         }
 
@@ -386,15 +386,15 @@ namespace Megumin.Remote
         /// 反序列化
         /// </summary>
         /// <param name="messageID"></param>
-        /// <param name="byteSequence"></param>
+        /// <param name="source"></param>
         /// <param name="options"></param>
         /// <returns></returns>
         /// <exception cref="KeyNotFoundException"></exception>
         /// <exception cref="ArgumentNullException"></exception>
-        public static object Deserialize(int messageID, in ReadOnlySpan<byte> byteSequence, object options = null)
+        public static object Deserialize(int messageID, in ReadOnlySpan<byte> source, object options = null)
         {
             var formater = IDDic[messageID];
-            var result = formater.Deserialize(byteSequence, options);
+            var result = formater.Deserialize(source, options);
             return result;
         }
 
@@ -402,15 +402,31 @@ namespace Megumin.Remote
         /// 反序列化
         /// </summary>
         /// <param name="messageID"></param>
-        /// <param name="byteSequence"></param>
+        /// <param name="source"></param>
         /// <param name="options"></param>
         /// <returns></returns>
         /// <exception cref="KeyNotFoundException"></exception>
         /// <exception cref="ArgumentNullException"></exception>
-        public static object Deserialize(int messageID, in ReadOnlyMemory<byte> byteSequence, object options = null)
+        public static object Deserialize(int messageID, in ReadOnlyMemory<byte> source, object options = null)
         {
             var formater = IDDic[messageID];
-            var result = formater.Deserialize(byteSequence, options);
+            var result = formater.Deserialize(source, options);
+            return result;
+        }
+
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="messageID"></param>
+        /// <param name="source"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <exception cref="KeyNotFoundException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static object Deserialize(int messageID, in Stream source, object options = null)
+        {
+            var formater = IDDic[messageID];
+            var result = formater.Deserialize(source, options);
             return result;
         }
 
@@ -461,6 +477,24 @@ namespace Megumin.Remote
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidCastException"></exception>
         public static T Deserialize<T>(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            var type = typeof(T);
+            var formater = TypeDic[type];
+            var result = formater.Deserialize(source, options);
+            return (T)result;
+        }
+
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <remarks>有时即使类型不匹配也能反序列化成功，但得到的值时错误的</remarks>
+        /// <exception cref="KeyNotFoundException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidCastException"></exception>
+        public static T Deserialize<T>(in Stream source, object options = null)
         {
             var type = typeof(T);
             var formater = TypeDic[type];

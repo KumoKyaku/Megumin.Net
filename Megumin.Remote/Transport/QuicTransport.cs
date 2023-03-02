@@ -65,14 +65,9 @@ namespace Megumin.Remote
             //每个消息一个流可不可以？
             var stream = await Quic.AcceptInboundStreamAsync();
             //等发送完一起读取
-            await stream.WritesClosed;
-
-            while (stream.CanRead)
-            {
-                //循环读取知道buffer是0？
-                //还是直接将流放到反序列函数里去。
-                var buffer = await stream.ReadAsync(new byte[0x10000]);
-            }
+            await stream.WritesClosed.ConfigureAwait(false);
+            RemoteCore.ProcessBody(stream);
+            stream.Close();
         }
     }
 }

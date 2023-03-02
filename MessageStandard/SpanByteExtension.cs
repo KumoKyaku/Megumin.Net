@@ -26,6 +26,18 @@ namespace Megumin.Message
             }
         }
 
+        public static (int RpcID, short CMD, int MessageID) ReadHeader(this byte[] byteSequence)
+        {
+            unsafe
+            {
+                Span<byte> span = byteSequence;
+                var rpcID = span.ReadInt();
+                var cmd = span.Slice(4).ReadShort();
+                var msgID = span.Slice(6).ReadInt();
+                return (rpcID, cmd, msgID);
+            }
+        }
+
         public static (int RpcID, short CMD, int MessageID) ReadHeader(this in ReadOnlySpan<byte> byteSequence)
         {
             unsafe

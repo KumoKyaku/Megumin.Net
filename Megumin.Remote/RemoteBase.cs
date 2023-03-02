@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -150,23 +151,23 @@ namespace Megumin.Remote
         /// 尝试反序列化
         /// </summary>
         /// <param name="messageID"></param>
-        /// <param name="byteSequence"></param>
+        /// <param name="source"></param>
         /// <param name="message"></param>
         /// <param name="options"></param>
         /// <returns></returns>
         /// <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
         public virtual bool TryDeserialize
-            (int messageID, in ReadOnlySequence<byte> byteSequence,
+            (int messageID, in ReadOnlySequence<byte> source,
             out object message, object options = null)
         {
             try
             {
-                message = MessageLUT.Deserialize(messageID, byteSequence, options);
+                message = MessageLUT.Deserialize(messageID, source, options);
                 return true;
             }
             catch (Exception e)
             {
-                TraceListener?.WriteLine($"反序列化过程出现异常。MessageID:{messageID}--Lenght:{byteSequence.Length}。\n {e}");
+                TraceListener?.WriteLine($"反序列化过程出现异常。MessageID:{messageID}--Lenght:{source.Length}。\n {e}");
                 message = default;
                 return false;
             }
@@ -176,23 +177,23 @@ namespace Megumin.Remote
         /// 尝试反序列化
         /// </summary>
         /// <param name="messageID"></param>
-        /// <param name="byteSequence"></param>
+        /// <param name="source"></param>
         /// <param name="message"></param>
         /// <param name="options"></param>
         /// <returns></returns>
         /// <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
         public virtual bool TryDeserialize
-            (int messageID, in ReadOnlyMemory<byte> byteSequence,
+            (int messageID, in ReadOnlyMemory<byte> source,
             out object message, object options = null)
         {
             try
             {
-                message = MessageLUT.Deserialize(messageID, byteSequence, options);
+                message = MessageLUT.Deserialize(messageID, source, options);
                 return true;
             }
             catch (Exception e)
             {
-                TraceListener?.WriteLine($"反序列化过程出现异常。MessageID:{messageID}--Lenght:{byteSequence.Length}。\n {e}");
+                TraceListener?.WriteLine($"反序列化过程出现异常。MessageID:{messageID}--Lenght:{source.Length}。\n {e}");
                 message = default;
                 return false;
             }
@@ -202,23 +203,49 @@ namespace Megumin.Remote
         /// 尝试反序列化
         /// </summary>
         /// <param name="messageID"></param>
-        /// <param name="byteSequence"></param>
+        /// <param name="source"></param>
         /// <param name="message"></param>
         /// <param name="options"></param>
         /// <returns></returns>
         /// <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
         public virtual bool TryDeserialize
-            (int messageID, in ReadOnlySpan<byte> byteSequence,
+            (int messageID, in ReadOnlySpan<byte> source,
             out object message, object options = null)
         {
             try
             {
-                message = MessageLUT.Deserialize(messageID, byteSequence, options);
+                message = MessageLUT.Deserialize(messageID, source, options);
                 return true;
             }
             catch (Exception e)
             {
-                TraceListener?.WriteLine($"反序列化过程出现异常。MessageID:{messageID}--Lenght:{byteSequence.Length}。\n {e}");
+                TraceListener?.WriteLine($"反序列化过程出现异常。MessageID:{messageID}--Lenght:{source.Length}。\n {e}");
+                message = default;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 尝试反序列化
+        /// </summary>
+        /// <param name="messageID"></param>
+        /// <param name="source"></param>
+        /// <param name="message"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
+        public virtual bool TryDeserialize
+            (int messageID, in Stream source,
+            out object message, object options = null)
+        {
+            try
+            {
+                message = MessageLUT.Deserialize(messageID, source, options);
+                return true;
+            }
+            catch (Exception e)
+            {
+                TraceListener?.WriteLine($"反序列化过程出现异常。MessageID:{messageID}--Lenght:{source.Length}。\n {e}");
                 message = default;
                 return false;
             }
@@ -397,10 +424,23 @@ namespace Megumin.Remote
             ProcessBody(byteSequence.Slice(10), RpcID, CMD, MessageID, options);
         }
 
+        public virtual void ProcessBody(in Stream stream,
+                                           object options = null)
+        {
+            //读取RpcID 和 消息ID
+            byte[] header = ArrayPool<byte>.Shared.Rent(10);
+            stream.Read(header, 0, 10);
+            var (RpcID, CMD, MessageID) = header.ReadHeader();
+            ArrayPool<byte>.Shared.Return(header);
+
+            ProcessBody(stream, RpcID, CMD, MessageID, options);
+        }
+
         /// <summary>
         /// 反序列化失败时，是否将直接字节数组传递到上层。
         /// </summary>
         public bool UseByteArrayOnDeserializeError = true;
+
         /// <summary>
         /// 处理一个完整的消息包，已分离报头
         /// </summary>
@@ -422,6 +462,31 @@ namespace Megumin.Remote
                     byte[] bytes = new byte[bodyBytes.Length];
                     bodyBytes.CopyTo(bytes);
                     DeserializeSuccess(RpcID, CMD, MessageID, bytes, options);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 处理一个完整的消息包，已分离报头
+        /// </summary>
+        public virtual void ProcessBody(in Stream bodyBytes,
+                                           int RpcID,
+                                           short CMD,
+                                           int MessageID,
+                                           object options = null)
+        {
+            if (TryDeserialize(MessageID, bodyBytes, out var message, options))
+            {
+                DeserializeSuccess(RpcID, CMD, MessageID, message, options);
+            }
+            else
+            {
+                if (UseByteArrayOnDeserializeError)
+                {
+                    //反序列化失败,返回上层一个byte[] 
+                    //byte[] bytes = new byte[bodyBytes.Length];
+                    //bodyBytes.CopyTo(bytes);
+                    //DeserializeSuccess(RpcID, CMD, MessageID, bytes, options);
                 }
             }
         }
