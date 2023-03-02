@@ -21,8 +21,14 @@ namespace Megumin.Remote
 
         public async void Send<T>(T message, int rpcID, object options = null)
         {
-            await Steam.WriteAsync(new byte[0x10000]);
-            Steam.Close();
+            var stream = await Quic.OpenOutboundStreamAsync(QuicStreamType.Unidirectional);
+
+            if (RemoteCore.TrySerialize(stream, rpcID, message, options))
+            {
+                
+            }
+
+            stream.Close();
         }
 
         public Socket Client { get; }
@@ -34,7 +40,6 @@ namespace Megumin.Remote
             option.RemoteEndPoint = endPoint;
             QuicConnection quic = await QuicConnection.ConnectAsync(option,cancellationToken);
             this.Quic = quic;
-            this.Steam = await quic.OpenOutboundStreamAsync(QuicStreamType.Bidirectional);
         }
 
         public IPEndPoint ConnectIPEndPoint { get; set; }
@@ -48,7 +53,6 @@ namespace Megumin.Remote
 
         public bool IsSocketSending { get; }
         public QuicConnection Quic { get; private set; }
-        public QuicStream Steam { get; private set; }
 
         public void StartSocketSend()
         {

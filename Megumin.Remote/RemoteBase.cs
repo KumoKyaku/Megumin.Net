@@ -40,13 +40,13 @@ namespace Megumin.Remote
         /// <para></para>
         /// Lenght(总长度，包含自身报头) [int] [4] 长度由writer外部自动封装，这里不用处理。
         /// </summary>
-        /// <param name="writer"></param>
+        /// <param name="destination"></param>
         /// <param name="rpcID"></param>
         /// <param name="message"></param>
         /// <param name="options"></param>
         /// <returns></returns>
         /// <remarks>只处理 RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
-        public virtual bool TrySerialize<T>(IBufferWriter<byte> writer, int rpcID, T message, object options = null)
+        public virtual bool TrySerialize<T>(IBufferWriter<byte> destination, int rpcID, T message, object options = null)
         {
             IMeguminFormater formater;
             ///优先使用MessageLut，因为MessageLut是主动注册的。
@@ -58,22 +58,22 @@ namespace Megumin.Remote
 
             if (formater != null)
             {
-                WriteRpcIDCMD(writer, rpcID, options);
+                WriteRpcIDCMD(destination, rpcID, options);
 
                 //写入MessageID
-                var span = writer.GetSpan(4);
+                var span = destination.GetSpan(4);
                 span.Write(formater.MessageID);
-                writer.Advance(4);
+                destination.Advance(4);
 
                 try
                 {
                     if (formater is IMeguminFormater<T> gformater)
                     {
-                        gformater.Serialize(writer, message, options);
+                        gformater.Serialize(destination, message, options);
                     }
                     else
                     {
-                        formater.Serialize(writer, message, options);
+                        formater.Serialize(destination, message, options);
                     }
                 }
                 catch (Exception e)
@@ -94,21 +94,21 @@ namespace Megumin.Remote
         /// <summary>
         /// 序列化消息，转发用。转发是重写RPC 和 CMD，其他保持不动。
         /// </summary>
-        /// <param name="writer"></param>
+        /// <param name="destination"></param>
         /// <param name="rpcID"></param>
         /// <param name="sequence">MessageID + 正文序列</param>
         /// <param name="options"></param>
         /// <returns></returns>
         /// <remarks> RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
-        public virtual bool TrySerialize(IBufferWriter<byte> writer, int rpcID, in ReadOnlySequence<byte> sequence, object options = null)
+        public virtual bool TrySerialize(IBufferWriter<byte> destination, int rpcID, in ReadOnlySequence<byte> sequence, object options = null)
         {
             try
             {
-                WriteRpcIDCMD(writer, rpcID, options);
+                WriteRpcIDCMD(destination, rpcID, options);
 
                 foreach (var item in sequence)
                 {
-                    writer.Write(item.Span);
+                    destination.Write(item.Span);
                 }
 
                 return true;
@@ -121,19 +121,92 @@ namespace Megumin.Remote
         }
 
         /// <summary>
+        /// 序列化消息
+        /// <para></para>
+        /// Lenght(总长度，包含自身报头) [int] [4] 长度由writer外部自动封装，这里不用处理。
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="rpcID"></param>
+        /// <param name="message"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <remarks>只处理 RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
+        public virtual bool TrySerialize<T>(Stream destination, int rpcID, T message, object options = null)
+        {
+            IMeguminFormater formater;
+            ///优先使用MessageLut，因为MessageLut是主动注册的。
+            if (!MessageLUT.TryGetFormater(message.GetType(), out formater))
+            {
+                ///对象自身就时序列化器
+                formater = message as IMeguminFormater;
+            }
+
+            if (formater != null)
+            {
+                WriteRpcIDCMD(destination, rpcID, options);
+
+                //写入MessageID
+                destination.Write(formater.MessageID);
+
+                try
+                {
+                    if (formater is IMeguminFormater<T> gformater)
+                    {
+                        gformater.Serialize(destination, message, options);
+                    }
+                    else
+                    {
+                        formater.Serialize(destination, message, options);
+                    }
+                }
+                catch (Exception e)
+                {
+                    TraceListener?.WriteLine($"序列化过程出现异常。Message:{message}。\n {e}");
+                    return false;
+                }
+
+                return true;
+            }
+            else
+            {
+                TraceListener?.WriteLine($"没有找到Formater。Message:{message}。");
+                return false;
+            }
+        }
+
+
+        /// <summary>
         /// 写入rpcID CMD
         /// </summary>
-        /// <param name="writer"></param>
+        /// <param name="destination"></param>
         /// <param name="rpcID"></param>
         /// <param name="options"></param>
-        public virtual void WriteRpcIDCMD(IBufferWriter<byte> writer, int rpcID, object options = null)
+        public virtual void WriteRpcIDCMD(IBufferWriter<byte> destination, int rpcID, object options = null)
         {
-            //写入rpcID CMD
-            var span = writer.GetSpan(6);
+            //写入写入rpcID
+            var span = destination.GetSpan(6);
             span.Write(rpcID);
+
+            //写入CMD
             short cmd = GetCmd(options);
             span.Slice(4).Write(cmd);
-            writer.Advance(6);
+            destination.Advance(6);
+        }
+
+        /// <summary>
+        /// 写入rpcID CMD
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="rpcID"></param>
+        /// <param name="options"></param>
+        public virtual void WriteRpcIDCMD(Stream destination, int rpcID, object options = null)
+        {
+            //写入写入rpcID
+            destination.Write(rpcID);
+
+            //写入CMD
+            short cmd = GetCmd(options);
+            destination.Write(cmd);
         }
 
         public virtual short GetCmd(object options = null)

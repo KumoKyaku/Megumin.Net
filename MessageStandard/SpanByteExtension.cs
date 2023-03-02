@@ -4,6 +4,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.IO;
 
 namespace Megumin.Message
 {
@@ -124,6 +125,24 @@ namespace Megumin.Message
         public static int Write(this Span<byte> span, int value)
         {
             BinaryPrimitives.WriteInt32LittleEndian(span, value);
+            return 4;
+        }
+
+        /// <summary>
+        /// 写入一个int
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Write(this Stream stream, int value)
+        {
+            Span<byte> span = stackalloc byte[4];
+            BinaryPrimitives.WriteInt32LittleEndian(span, value);
+            stream.WriteByte(span[0]);
+            stream.WriteByte(span[1]);
+            stream.WriteByte(span[2]);
+            stream.WriteByte(span[3]);
             return 4;
         }
 
@@ -390,6 +409,22 @@ namespace Megumin.Message
         public static int Write(this Span<byte> span, short value)
         {
             BinaryPrimitives.WriteInt16LittleEndian(span, value);
+            return 2;
+        }
+
+        /// <summary>
+        /// 写入一个short
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Write(this Stream stream, short value)
+        {
+            Span<byte> span = stackalloc byte[2];
+            BinaryPrimitives.WriteInt16LittleEndian(span, value);
+            stream.WriteByte(span[0]);
+            stream.WriteByte(span[1]);
             return 2;
         }
 
