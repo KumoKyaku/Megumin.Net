@@ -2,6 +2,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Megumin.Message
@@ -41,6 +42,11 @@ namespace Megumin.Message
         public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
         {
             return Default;
+        }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
         }
     }
 }

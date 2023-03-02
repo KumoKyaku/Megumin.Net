@@ -5,6 +5,7 @@ using System.Text;
 using MessagePack;
 using System.Buffers;
 using System.Linq;
+using System.IO;
 
 namespace Megumin.Remote
 {
@@ -126,6 +127,11 @@ namespace Megumin.Remote
         }
 
         public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            return MessagePackSerializer.Deserialize<T>(source, options as MessagePackSerializerOptions);
+        }
+
+        public object Deserialize(in Stream source, object options = null)
         {
             return MessagePackSerializer.Deserialize<T>(source, options as MessagePackSerializerOptions);
         }

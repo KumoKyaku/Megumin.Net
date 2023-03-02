@@ -128,5 +128,11 @@ namespace Megumin.Remote
             var result = parser.ParseFrom(source.Span);
             return result;
         }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            var result = parser.ParseFrom(source);
+            return result;
+        }
     }
 }

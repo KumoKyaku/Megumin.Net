@@ -2,6 +2,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Megumin.Message
@@ -39,6 +40,11 @@ namespace Megumin.Message
         {
             var str = MessageLUT.Deserialize<string>(source, options);
             return new Authentication() { Token = str };
+        }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
         }
     }
 }

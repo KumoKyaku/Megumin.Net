@@ -11,7 +11,7 @@ namespace Megumin.Remote
     /// <summary>
     /// 适用于Protobuf-net协议的查找表    没有测试
     /// </summary>
-    public class Protobuf_netLUT: MessageLUT
+    public class Protobuf_netLUT : MessageLUT
     {
         static Protobuf_netLUT()
         {
@@ -124,6 +124,12 @@ namespace Megumin.Remote
         }
 
         public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
+        {
+            var result = Serializer.Deserialize<T>(source, userState: options);
+            return result;
+        }
+
+        public object Deserialize(in Stream source, object options = null)
         {
             var result = Serializer.Deserialize<T>(source, userState: options);
             return result;

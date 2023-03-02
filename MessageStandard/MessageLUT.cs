@@ -26,10 +26,39 @@ namespace Megumin.Remote
         ThrowException,
     }
 
+    public interface IMeguminSerializer<T>
+    {
+        /// <summary>
+        /// 序列化函数
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="value"></param>
+        /// <param name="options"></param>
+        /// <remarks>序列化函数不在提供序列化多少字节，需要在destination中自己统计</remarks>
+        void Serialize(T destination, object value, object options = null);
+    }
+
+    public interface IMeguminDeserializer<T>
+    {
+        /// <summary>
+        /// 反序列化函数
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <remarks>返回值不考虑泛型，泛型虽然能避免值类型消息装箱，但是调用时要使用反射去转化为
+        /// 对应类型接口，在rpc回调转型处仍然会有类型匹配失败问题，得不偿失。</remarks>
+        object Deserialize(in T source, object options = null);
+    }
+
     /// <summary>
     /// 通用序列化库接口
     /// </summary>
-    public interface IMeguminFormater
+    public interface IMeguminFormater :
+        IMeguminSerializer<IBufferWriter<byte>>,
+        IMeguminDeserializer<Stream>,
+        IMeguminDeserializer<ReadOnlySequence<byte>>,
+        IMeguminDeserializer<ReadOnlyMemory<byte>>
     {
         /// <summary>
         /// 消息识别ID
@@ -41,15 +70,6 @@ namespace Megumin.Remote
         Type BindType { get; }
 
         /// <summary>
-        /// 序列化函数
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="value"></param>
-        /// <param name="options"></param>
-        /// <remarks>序列化函数不在提供序列化多少字节，需要在writer中自己统计</remarks>
-        void Serialize(IBufferWriter<byte> writer, object value, object options = null);
-
-        /// <summary>
         /// 反序列化函数
         /// </summary>
         /// <param name="source"></param>
@@ -58,27 +78,6 @@ namespace Megumin.Remote
         /// <remarks>返回值不考虑泛型，泛型虽然能避免值类型消息装箱，但是调用时要使用反射去转化为
         /// 对应类型接口，在rpc回调转型处仍然会有类型匹配失败问题，得不偿失。</remarks>
         object Deserialize(in ReadOnlySpan<byte> source, object options = null);
-
-        /// <summary>
-        /// 反序列化函数
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        /// <remarks>返回值不考虑泛型，泛型虽然能避免值类型消息装箱，但是调用时要使用反射去转化为
-        /// 对应类型接口，在rpc回调转型处仍然会有类型匹配失败问题，得不偿失。</remarks>
-        object Deserialize(in ReadOnlySequence<byte> source, object options = null);
-
-        /// <summary>
-        /// 反序列化函数
-        /// <para></para>虽然ReadOnlyMemory可以转换为ReadOnlySpan，但是序列化库支持不一致，所以三个API都要
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        /// <remarks>返回值不考虑泛型，泛型虽然能避免值类型消息装箱，但是调用时要使用反射去转化为
-        /// 对应类型接口，在rpc回调转型处仍然会有类型匹配失败问题，得不偿失。</remarks>
-        object Deserialize(in ReadOnlyMemory<byte> source, object options = null);
     }
 
     /// <summary>

@@ -3,6 +3,7 @@ using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -79,6 +80,11 @@ namespace Megumin.Message
             return UTF8.GetString(body.ToArray());
 #endif
         }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     internal class IntFormatter : IMeguminFormater<int>
@@ -111,6 +117,11 @@ namespace Megumin.Message
         public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
         {
             return source.ReadInt();
+        }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -145,6 +156,11 @@ namespace Megumin.Message
         {
             return source.ReadFloat();
         }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     internal class LongFormatter : IMeguminFormater<long>
@@ -177,6 +193,11 @@ namespace Megumin.Message
         public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
         {
             return source.ReadLong();
+        }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -211,6 +232,11 @@ namespace Megumin.Message
         {
             return source.ReadDouble();
         }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     internal class DatetimeFormatter : IMeguminFormater<DateTime>
@@ -243,6 +269,11 @@ namespace Megumin.Message
         public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
         {
             return DateTime.FromBinary(source.ReadLong());
+        }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -281,6 +312,11 @@ namespace Megumin.Message
             var fileTime = source.ReadLong();
             return DateTimeOffset.FromFileTime(fileTime);
         }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     internal class ByteArrayFormatter : IMeguminFormater<byte[]>
@@ -311,6 +347,11 @@ namespace Megumin.Message
         public object Deserialize(in ReadOnlyMemory<byte> source, object options = null)
         {
             return source.ToArray();
+        }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
         }
     }
 }

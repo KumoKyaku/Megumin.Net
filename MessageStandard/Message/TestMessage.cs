@@ -4,6 +4,7 @@ using System.Buffers.Binary;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
 
 namespace Megumin.Message
 {
@@ -77,6 +78,11 @@ namespace Megumin.Message
             }
             return result;
         }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -148,6 +154,11 @@ namespace Megumin.Message
                 result.Value = BitConverter.ToSingle(span, 0);
             }
             return result;
+        }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -221,6 +232,11 @@ namespace Megumin.Message
             }
             return result;
         }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class TestPacket4 : IMeguminFormater, IMeguminFormater<TestPacket4>
@@ -276,6 +292,11 @@ namespace Megumin.Message
                 writer.Length = myptions.Length + 4;
             }
             return new TestPacket4() { StringValue = str, Value = intValue };
+        }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
         }
     }
 }

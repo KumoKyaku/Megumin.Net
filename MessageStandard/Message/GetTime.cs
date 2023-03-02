@@ -2,6 +2,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -50,6 +51,11 @@ namespace Megumin.Message
             result.PreReceiveType = source.Span.ReadInt();
             result.ReceiveThreadPost2ThreadScheduler = source.Span.Slice(4).ReadBoolNullable();
             return result;
+        }
+
+        public object Deserialize(in Stream source, object options = null)
+        {
+            throw new NotImplementedException();
         }
     }
 
