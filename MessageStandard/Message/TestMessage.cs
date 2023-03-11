@@ -11,7 +11,7 @@ namespace Megumin.Message
     /// <summary>
     /// 序列化后长度为1024 * 10字节
     /// </summary>
-    public class TestPacket1 : IMeguminFormater
+    public class TestPacket1 : IMeguminFormatter
     {
         private const int Size = 1024 * 10;
 
@@ -93,7 +93,7 @@ namespace Megumin.Message
     /// <summary>
     /// 序列化后长度为1024字节
     /// </summary>
-    public class TestPacket2 : IMeguminFormater
+    public class TestPacket2 : IMeguminFormatter
     {
         private const int Size = 1024;
 
@@ -175,7 +175,7 @@ namespace Megumin.Message
     /// <summary>
     /// 序列化后长度为1024 * 50字节
     /// </summary>
-    public class TestPacket3 : IMeguminFormater
+    public class TestPacket3 : IMeguminFormatter
     {
         private const int Size = 1024 * 50;
 
@@ -254,7 +254,7 @@ namespace Megumin.Message
         }
     }
 
-    public class TestPacket4 : IMeguminFormater, IMeguminFormater<TestPacket4>
+    public class TestPacket4 : IMeguminFormatter, IMeguminFormatter<TestPacket4>
     {
         public string StringValue { get; set; } = "Test String!!";
         public int Value { get; set; } = MSGID.TestPacket4;

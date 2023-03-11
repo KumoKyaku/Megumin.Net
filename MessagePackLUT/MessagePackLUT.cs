@@ -46,12 +46,12 @@ namespace Megumin.Remote
                 var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
                 if (MSGID != null)
                 {
-                    var ft = typeof(DefaultFormater<>);
+                    var ft = typeof(DefaultFormatter<>);
                     var t = ft.MakeGenericType(new Type[] { type });
                     var instance = Activator.CreateInstance(t, new object[] { MSGID.ID });
-                    if (instance is IMeguminFormater formater)
+                    if (instance is IMeguminFormatter formatter)
                     {
-                        Regist(formater, key);
+                        Regist(formatter, key);
                     }
                     else
                     {
@@ -74,7 +74,7 @@ namespace Megumin.Remote
                 var MSGID = type.GetCustomAttributes<MSGID>().FirstOrDefault();
                 if (MSGID != null)
                 {
-                    Regist(new DefaultFormater<T>(MSGID.ID), key);
+                    Regist(new DefaultFormatter<T>(MSGID.ID), key);
                 }
             }
         }
@@ -85,23 +85,23 @@ namespace Megumin.Remote
         /// <param name="key"></param>
         public static void RegistBasicType(KeyAlreadyHave key = KeyAlreadyHave.Replace)
         {
-            Regist(new DefaultFormater<string>(MSGID.String), key);
-            Regist(new DefaultFormater<int>(MSGID.Int32), key);
-            Regist(new DefaultFormater<long>(MSGID.Int64), key);
-            Regist(new DefaultFormater<float>(MSGID.Single), key);
-            Regist(new DefaultFormater<double>(MSGID.Double), key);
-            Regist(new DefaultFormater<DateTime>(MSGID.DateTime), key);
-            Regist(new DefaultFormater<DateTimeOffset>(MSGID.DateTimeOffset), key);
-            Regist(new DefaultFormater<byte[]>(MSGID.ByteArray), key);
+            Regist(new DefaultFormatter<string>(MSGID.String), key);
+            Regist(new DefaultFormatter<int>(MSGID.Int32), key);
+            Regist(new DefaultFormatter<long>(MSGID.Int64), key);
+            Regist(new DefaultFormatter<float>(MSGID.Single), key);
+            Regist(new DefaultFormatter<double>(MSGID.Double), key);
+            Regist(new DefaultFormatter<DateTime>(MSGID.DateTime), key);
+            Regist(new DefaultFormatter<DateTimeOffset>(MSGID.DateTimeOffset), key);
+            Regist(new DefaultFormatter<byte[]>(MSGID.ByteArray), key);
         }
     }
 
-    internal class DefaultFormater<T> : IMeguminFormater
+    internal class DefaultFormatter<T> : IMeguminFormatter
     {
         public int MessageID { get; }
         public Type BindType { get; }
 
-        public DefaultFormater(int messageID)
+        public DefaultFormatter(int messageID)
         {
             MessageID = messageID;
             BindType = typeof(T);

@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Megumin.Message
 {
-    public class Authentication : IMeguminFormater<Authentication>
+    public class Authentication : IMeguminFormatter<Authentication>
     {
         public string Token { get; set; }
 

@@ -10,7 +10,7 @@ namespace Megumin.Message
     /// <summary>
     /// 用于RTT时不需要控制线程转换，线程转换带来的延迟是RTT的一部分。
     /// </summary>
-    public class Heartbeat : IMeguminFormater<Heartbeat>
+    public class Heartbeat : IMeguminFormatter<Heartbeat>
     {
         public static Heartbeat Default { get; } = new Heartbeat();
 

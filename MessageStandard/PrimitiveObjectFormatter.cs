@@ -13,7 +13,7 @@ namespace Megumin.Message
     /// 内置UTF8 string 格式化器，性能低没有优化
     /// 对动态长度的类型，先用ushort写入总长度，在写入正文，实现复杂类型字段切分。实现复杂类型嵌套序列化。
     /// </summary>
-    internal class StringFormatter : IMeguminFormater<string>
+    internal class StringFormatter : IMeguminFormatter<string>
     {
         internal static readonly Encoding UTF8 = new UTF8Encoding(false);
         public void Serialize(IBufferWriter<byte> writer, string value, object options = null)
@@ -97,7 +97,7 @@ namespace Megumin.Message
         }
     }
 
-    internal class IntFormatter : IMeguminFormater<int>
+    internal class IntFormatter : IMeguminFormatter<int>
     {
         public void Serialize(IBufferWriter<byte> writer, int value, object options = null)
         {
@@ -145,7 +145,7 @@ namespace Megumin.Message
         }
     }
 
-    internal class FloatFormatter : IMeguminFormater<float>
+    internal class FloatFormatter : IMeguminFormatter<float>
     {
         public void Serialize(IBufferWriter<byte> writer, float value, object options = null)
         {
@@ -193,7 +193,7 @@ namespace Megumin.Message
         }
     }
 
-    internal class LongFormatter : IMeguminFormater<long>
+    internal class LongFormatter : IMeguminFormatter<long>
     {
         public void Serialize(IBufferWriter<byte> writer, long value, object options = null)
         {
@@ -241,7 +241,7 @@ namespace Megumin.Message
         }
     }
 
-    internal class DoubleFormatter : IMeguminFormater<double>
+    internal class DoubleFormatter : IMeguminFormatter<double>
     {
         public void Serialize(IBufferWriter<byte> writer, double value, object options = null)
         {
@@ -289,7 +289,7 @@ namespace Megumin.Message
         }
     }
 
-    internal class DatetimeFormatter : IMeguminFormater<DateTime>
+    internal class DatetimeFormatter : IMeguminFormatter<DateTime>
     {
         public void Serialize(IBufferWriter<byte> writer, DateTime value, object options = null)
         {
@@ -337,7 +337,7 @@ namespace Megumin.Message
         }
     }
 
-    internal class DatetimeOffsetFormatter : IMeguminFormater<DateTimeOffset>
+    internal class DatetimeOffsetFormatter : IMeguminFormatter<DateTimeOffset>
     {
         public void Serialize(IBufferWriter<byte> writer, DateTimeOffset value, object options = null)
         {
@@ -389,7 +389,7 @@ namespace Megumin.Message
         }
     }
 
-    internal class ByteArrayFormatter : IMeguminFormater<byte[]>
+    internal class ByteArrayFormatter : IMeguminFormatter<byte[]>
     {
         public void Serialize(IBufferWriter<byte> writer, byte[] value, object options = null)
         {

@@ -48,32 +48,32 @@ namespace Megumin.Remote
         /// <remarks>只处理 RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
         public virtual bool TrySerialize<T>(IBufferWriter<byte> destination, int rpcID, T message, object options = null)
         {
-            IMeguminFormater formater;
+            IMeguminFormatter formatter;
             ///优先使用MessageLut，因为MessageLut是主动注册的。
-            if (!MessageLUT.TryGetFormater(message.GetType(), out formater))
+            if (!MessageLUT.TryGetFormatter(message.GetType(), out formatter))
             {
                 ///对象自身就时序列化器
-                formater = message as IMeguminFormater;
+                formatter = message as IMeguminFormatter;
             }
 
-            if (formater != null)
+            if (formatter != null)
             {
                 WriteRpcIDCMD(destination, rpcID, options);
 
                 //写入MessageID
                 var span = destination.GetSpan(4);
-                span.Write(formater.MessageID);
+                span.Write(formatter.MessageID);
                 destination.Advance(4);
 
                 try
                 {
-                    if (formater is IMeguminFormater<T> gformater)
+                    if (formatter is IMeguminFormatter<T> gformatter)
                     {
-                        gformater.Serialize(destination, message, options);
+                        gformatter.Serialize(destination, message, options);
                     }
                     else
                     {
-                        formater.Serialize(destination, message, options);
+                        formatter.Serialize(destination, message, options);
                     }
                 }
                 catch (Exception e)
@@ -86,7 +86,7 @@ namespace Megumin.Remote
             }
             else
             {
-                TraceListener?.WriteLine($"没有找到Formater。Message:{message}。");
+                TraceListener?.WriteLine($"没有找到Formatter。Message:{message}。");
                 return false;
             }
         }
@@ -133,30 +133,30 @@ namespace Megumin.Remote
         /// <remarks>只处理 RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
         public virtual bool TrySerialize<T>(Stream destination, int rpcID, T message, object options = null)
         {
-            IMeguminFormater formater;
+            IMeguminFormatter formatter;
             ///优先使用MessageLut，因为MessageLut是主动注册的。
-            if (!MessageLUT.TryGetFormater(message.GetType(), out formater))
+            if (!MessageLUT.TryGetFormatter(message.GetType(), out formatter))
             {
                 ///对象自身就时序列化器
-                formater = message as IMeguminFormater;
+                formatter = message as IMeguminFormatter;
             }
 
-            if (formater != null)
+            if (formatter != null)
             {
                 WriteRpcIDCMD(destination, rpcID, options);
 
                 //写入MessageID
-                destination.Write(formater.MessageID);
+                destination.Write(formatter.MessageID);
 
                 try
                 {
-                    if (formater is IMeguminFormater<T> gformater)
+                    if (formatter is IMeguminFormatter<T> gformatter)
                     {
-                        gformater.Serialize(destination, message, options);
+                        gformatter.Serialize(destination, message, options);
                     }
                     else
                     {
-                        formater.Serialize(destination, message, options);
+                        formatter.Serialize(destination, message, options);
                     }
                 }
                 catch (Exception e)
@@ -169,7 +169,7 @@ namespace Megumin.Remote
             }
             else
             {
-                TraceListener?.WriteLine($"没有找到Formater。Message:{message}。");
+                TraceListener?.WriteLine($"没有找到Formatter。Message:{message}。");
                 return false;
             }
         }

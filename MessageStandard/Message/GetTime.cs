@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Megumin.Message
 {
-    public partial class GetTime : IMeguminFormater<GetTime>
+    public partial class GetTime : IMeguminFormatter<GetTime>
     {
         public void Serialize(IBufferWriter<byte> writer, GetTime value, object options = null)
         {

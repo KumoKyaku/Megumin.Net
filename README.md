@@ -247,7 +247,7 @@ MessageLUT（Message Serialize Deserialize callback look-up table）是MessageSt
 
 通用注册函数：  
 ```CS
-void RegistIMeguminFormater<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip) where T : class, IMeguminFormater, new() 
+void RegistIMeguminFormatter<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip) where T : class, IMeguminFormater, new() 
 ```
 
 序列化类库的中间件基于MessageLUT提供多个简单易用的API，自动生成序列化和反序列化函数。需要为协议类添加一个MSGIDAttribute来提供查找表使用的ID。因为一个ID只能对应一组序列化函数，因此每一个协议类同时只能使用一个序列化库。  

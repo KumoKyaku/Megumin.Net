@@ -57,7 +57,7 @@ namespace Megumin.Remote
     /// <remarks>
     /// 用户自己实现时可以不必实现所有函数，不同的协议用的是不同的函数，可以有选择的实现即可。
     /// </remarks>
-    public interface IMeguminFormater :
+    public interface IMeguminFormatter :
         IMeguminSerializer<IBufferWriter<byte>, object>,
         IMeguminSerializer<Stream, object>,
         IMeguminDeserializer<Stream>,
@@ -88,7 +88,7 @@ namespace Megumin.Remote
     /// 不要使用协变，会导致序列化错误
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IMeguminFormater<T> : IMeguminFormater
+    public interface IMeguminFormatter<T> : IMeguminFormatter
     {
         /// <summary>
         /// 序列化函数
@@ -113,7 +113,7 @@ namespace Megumin.Remote
     /// 对象自身就是序列化器，是MessageLut没注册时的fallback。
     /// </summary>
     [Obsolete("没有MessageLut根本就找不到类型，这个思路不成立。", true)]
-    public interface IMeguminSelfFormater : IMeguminFormater
+    public interface IMeguminSelfFormatter : IMeguminFormatter
     {
         /// <summary>
         /// 先构造对象，然后自己解析。
@@ -129,8 +129,8 @@ namespace Megumin.Remote
     /// </summary>
     public partial class MessageLUT
     {
-        static readonly Dictionary<int, IMeguminFormater> IDDic = new Dictionary<int, IMeguminFormater>();
-        static readonly Dictionary<Type, IMeguminFormater> TypeDic = new Dictionary<Type, IMeguminFormater>();
+        static readonly Dictionary<int, IMeguminFormatter> IDDic = new Dictionary<int, IMeguminFormatter>();
+        static readonly Dictionary<Type, IMeguminFormatter> TypeDic = new Dictionary<Type, IMeguminFormatter>();
 
         static MessageLUT()
         {
@@ -157,11 +157,11 @@ namespace Megumin.Remote
         /// <summary>
         /// 注册序列化器
         /// </summary>
-        /// <param name="meguminFormater"></param>
+        /// <param name="meguminFormatter"></param>
         /// <param name="key"></param>
-        public static void Regist(IMeguminFormater meguminFormater, KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        public static void Regist(IMeguminFormatter meguminFormatter, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
-            if (meguminFormater.BindType == null)
+            if (meguminFormatter.BindType == null)
             {
                 throw new ArgumentException("序列化器没有绑定类型");
             }
@@ -170,44 +170,44 @@ namespace Megumin.Remote
             {
                 case KeyAlreadyHave.Replace:
 
-                    if (IDDic.TryGetValue(meguminFormater.MessageID, out var old))
+                    if (IDDic.TryGetValue(meguminFormatter.MessageID, out var old))
                     {
                         IDDic.Remove(old.MessageID);
                         TypeDic.Remove(old.BindType);
                     }
 
-                    if (TypeDic.TryGetValue(meguminFormater.BindType, out var old2))
+                    if (TypeDic.TryGetValue(meguminFormatter.BindType, out var old2))
                     {
                         IDDic.Remove(old2.MessageID);
                         TypeDic.Remove(old2.BindType);
                     }
-                    IDDic[meguminFormater.MessageID] = meguminFormater;
-                    TypeDic[meguminFormater.BindType] = meguminFormater;
+                    IDDic[meguminFormatter.MessageID] = meguminFormatter;
+                    TypeDic[meguminFormatter.BindType] = meguminFormatter;
 
                     break;
                 case KeyAlreadyHave.Skip:
-                    if (IDDic.ContainsKey(meguminFormater.MessageID)
-                         || TypeDic.ContainsKey(meguminFormater.BindType))
+                    if (IDDic.ContainsKey(meguminFormatter.MessageID)
+                         || TypeDic.ContainsKey(meguminFormatter.BindType))
                     {
                         return;
                     }
 
-                    IDDic[meguminFormater.MessageID] = meguminFormater;
-                    TypeDic[meguminFormater.BindType] = meguminFormater;
+                    IDDic[meguminFormatter.MessageID] = meguminFormatter;
+                    TypeDic[meguminFormatter.BindType] = meguminFormatter;
                     break;
                 case KeyAlreadyHave.ThrowException:
-                    if (IDDic.ContainsKey(meguminFormater.MessageID))
+                    if (IDDic.ContainsKey(meguminFormatter.MessageID))
                     {
                         throw new ArgumentException
-                            ($"消息ID冲突，同一个ID再次注册。 当前ID:{meguminFormater.MessageID}。 当前类型:{meguminFormater.BindType.FullName}。" +
-                            $"已有类型：{IDDic[meguminFormater.MessageID].BindType.FullName}");
+                            ($"消息ID冲突，同一个ID再次注册。 当前ID:{meguminFormatter.MessageID}。 当前类型:{meguminFormatter.BindType.FullName}。" +
+                            $"已有类型：{IDDic[meguminFormatter.MessageID].BindType.FullName}");
                     }
 
-                    if (TypeDic.ContainsKey(meguminFormater.BindType))
+                    if (TypeDic.ContainsKey(meguminFormatter.BindType))
                     {
                         throw new ArgumentException
-                            ($"消息类型冲突，同一个类型再次注册。当前类型:{meguminFormater.BindType.FullName}。 当前ID:{meguminFormater.MessageID}。" +
-                            $"已有ID：{TypeDic[meguminFormater.BindType].MessageID}。");
+                            ($"消息类型冲突，同一个类型再次注册。当前类型:{meguminFormatter.BindType.FullName}。 当前ID:{meguminFormatter.MessageID}。" +
+                            $"已有ID：{TypeDic[meguminFormatter.BindType].MessageID}。");
                     }
                     break;
                 default:
@@ -220,7 +220,7 @@ namespace Megumin.Remote
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
-        public static void RegistIMeguminFormater<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip) where T : class, IMeguminFormater, new()
+        public static void RegistIMeguminFormatter<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip) where T : class, IMeguminFormatter, new()
         {
             T f = new T();
             Regist(f, key);
@@ -264,8 +264,8 @@ namespace Megumin.Remote
         public static int GetID<T>()
         {
             var type = typeof(T);
-            var formater = TypeDic[type];
-            return formater.MessageID;
+            var formatter = TypeDic[type];
+            return formatter.MessageID;
         }
 
         /// <summary>
@@ -275,8 +275,8 @@ namespace Megumin.Remote
         /// <returns></returns>
         public static int GetID(Type type)
         {
-            var formater = TypeDic[type];
-            return formater.MessageID;
+            var formatter = TypeDic[type];
+            return formatter.MessageID;
         }
 
         /// <summary>
@@ -315,14 +315,14 @@ namespace Megumin.Remote
             return false;
         }
 
-        public static bool TryGetFormater(Type type, out IMeguminFormater formater)
+        public static bool TryGetFormatter(Type type, out IMeguminFormatter formatter)
         {
-            return TypeDic.TryGetValue(type, out formater);
+            return TypeDic.TryGetValue(type, out formatter);
         }
 
-        public static bool TryGetFormater(int messageID, out IMeguminFormater formater)
+        public static bool TryGetFormatter(int messageID, out IMeguminFormatter formatter)
         {
-            return IDDic.TryGetValue(messageID, out formater);
+            return IDDic.TryGetValue(messageID, out formatter);
         }
     }
 
@@ -341,9 +341,9 @@ namespace Megumin.Remote
         //public static int Serialize(IBufferWriter<byte> writer, object value, object options = null)
         //{
         //    var type = value.GetType();
-        //    var formater = TypeDic[type];
-        //    formater.Serialize(writer, value, options);
-        //    return formater.MessageID;
+        //    var formatter = TypeDic[type];
+        //    formatter.Serialize(writer, value, options);
+        //    return formatter.MessageID;
         //}
 
         /// <summary>
@@ -363,17 +363,17 @@ namespace Megumin.Remote
             //var testtype = typeof(T);
             var type = value.GetType();
 
-            var formater = TypeDic[type];
-            if (formater is IMeguminFormater<T> gformater)
+            var formatter = TypeDic[type];
+            if (formatter is IMeguminFormatter<T> gformatter)
             {
-                gformater.Serialize(writer, value, options);
+                gformatter.Serialize(writer, value, options);
             }
             else
             {
-                formater.Serialize(writer, value, options);
+                formatter.Serialize(writer, value, options);
             }
 
-            return formater.MessageID;
+            return formatter.MessageID;
         }
     }
 
@@ -390,8 +390,8 @@ namespace Megumin.Remote
         /// <exception cref="ArgumentNullException"></exception>
         public static object Deserialize(int messageID, in ReadOnlySequence<byte> source, object options = null)
         {
-            var formater = IDDic[messageID];
-            var result = formater.Deserialize(source, options);
+            var formatter = IDDic[messageID];
+            var result = formatter.Deserialize(source, options);
             return result;
         }
 
@@ -406,8 +406,8 @@ namespace Megumin.Remote
         /// <exception cref="ArgumentNullException"></exception>
         public static object Deserialize(int messageID, in ReadOnlySpan<byte> source, object options = null)
         {
-            var formater = IDDic[messageID];
-            var result = formater.Deserialize(source, options);
+            var formatter = IDDic[messageID];
+            var result = formatter.Deserialize(source, options);
             return result;
         }
 
@@ -422,8 +422,8 @@ namespace Megumin.Remote
         /// <exception cref="ArgumentNullException"></exception>
         public static object Deserialize(int messageID, in ReadOnlyMemory<byte> source, object options = null)
         {
-            var formater = IDDic[messageID];
-            var result = formater.Deserialize(source, options);
+            var formatter = IDDic[messageID];
+            var result = formatter.Deserialize(source, options);
             return result;
         }
 
@@ -438,8 +438,8 @@ namespace Megumin.Remote
         /// <exception cref="ArgumentNullException"></exception>
         public static object Deserialize(int messageID, in Stream source, object options = null)
         {
-            var formater = IDDic[messageID];
-            var result = formater.Deserialize(source, options);
+            var formatter = IDDic[messageID];
+            var result = formatter.Deserialize(source, options);
             return result;
         }
 
@@ -456,8 +456,8 @@ namespace Megumin.Remote
         public static T Deserialize<T>(in ReadOnlySequence<byte> source, object options = null)
         {
             var type = typeof(T);
-            var formater = TypeDic[type];
-            var result = formater.Deserialize(source, options);
+            var formatter = TypeDic[type];
+            var result = formatter.Deserialize(source, options);
             return (T)result;
         }
 
@@ -474,8 +474,8 @@ namespace Megumin.Remote
         public static T Deserialize<T>(in ReadOnlySpan<byte> source, object options = null)
         {
             var type = typeof(T);
-            var formater = TypeDic[type];
-            var result = formater.Deserialize(source, options);
+            var formatter = TypeDic[type];
+            var result = formatter.Deserialize(source, options);
             return (T)result;
         }
 
@@ -492,8 +492,8 @@ namespace Megumin.Remote
         public static T Deserialize<T>(in ReadOnlyMemory<byte> source, object options = null)
         {
             var type = typeof(T);
-            var formater = TypeDic[type];
-            var result = formater.Deserialize(source, options);
+            var formatter = TypeDic[type];
+            var result = formatter.Deserialize(source, options);
             return (T)result;
         }
 
@@ -510,8 +510,8 @@ namespace Megumin.Remote
         public static T Deserialize<T>(in Stream source, object options = null)
         {
             var type = typeof(T);
-            var formater = TypeDic[type];
-            var result = formater.Deserialize(source, options);
+            var formatter = TypeDic[type];
+            var result = formatter.Deserialize(source, options);
             return (T)result;
         }
     }
