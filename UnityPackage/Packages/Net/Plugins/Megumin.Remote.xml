@@ -237,7 +237,7 @@
             <para></para>
             Lenght(总长度，包含自身报头) [int] [4] 长度由writer外部自动封装，这里不用处理。
             </summary>
-            <param name="writer"></param>
+            <param name="destination"></param>
             <param name="rpcID"></param>
             <param name="message"></param>
             <param name="options"></param>
@@ -248,18 +248,39 @@
             <summary>
             序列化消息，转发用。转发是重写RPC 和 CMD，其他保持不动。
             </summary>
-            <param name="writer"></param>
+            <param name="destination"></param>
             <param name="rpcID"></param>
             <param name="sequence">MessageID + 正文序列</param>
             <param name="options"></param>
             <returns></returns>
             <remarks> RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
         </member>
+        <member name="M:Megumin.Remote.RemoteBase.TrySerialize``1(System.IO.Stream,System.Int32,``0,System.Object)">
+            <summary>
+            序列化消息
+            <para></para>
+            Lenght(总长度，包含自身报头) [int] [4] 长度由writer外部自动封装，这里不用处理。
+            </summary>
+            <param name="destination"></param>
+            <param name="rpcID"></param>
+            <param name="message"></param>
+            <param name="options"></param>
+            <returns></returns>
+            <remarks>只处理 RpcID [int] [4] + CMD [short] [2] + MessageID [int] [4]</remarks>
+        </member>
         <member name="M:Megumin.Remote.RemoteBase.WriteRpcIDCMD(System.Buffers.IBufferWriter{System.Byte},System.Int32,System.Object)">
             <summary>
             写入rpcID CMD
             </summary>
-            <param name="writer"></param>
+            <param name="destination"></param>
+            <param name="rpcID"></param>
+            <param name="options"></param>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.WriteRpcIDCMD(System.IO.Stream,System.Int32,System.Object)">
+            <summary>
+            写入rpcID CMD
+            </summary>
+            <param name="destination"></param>
             <param name="rpcID"></param>
             <param name="options"></param>
         </member>
@@ -268,7 +289,7 @@
             尝试反序列化
             </summary>
             <param name="messageID"></param>
-            <param name="byteSequence"></param>
+            <param name="source"></param>
             <param name="message"></param>
             <param name="options"></param>
             <returns></returns>
@@ -279,7 +300,7 @@
             尝试反序列化
             </summary>
             <param name="messageID"></param>
-            <param name="byteSequence"></param>
+            <param name="source"></param>
             <param name="message"></param>
             <param name="options"></param>
             <returns></returns>
@@ -290,7 +311,18 @@
             尝试反序列化
             </summary>
             <param name="messageID"></param>
-            <param name="byteSequence"></param>
+            <param name="source"></param>
+            <param name="message"></param>
+            <param name="options"></param>
+            <returns></returns>
+            <remarks>个别消息反序列化出现异常不能抛出，防止破环整个网络连接。</remarks>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.TryDeserialize(System.Int32,System.IO.Stream@,System.Object@,System.Object)">
+            <summary>
+            尝试反序列化
+            </summary>
+            <param name="messageID"></param>
+            <param name="source"></param>
             <param name="message"></param>
             <param name="options"></param>
             <returns></returns>
@@ -391,6 +423,11 @@
             </summary>
         </member>
         <member name="M:Megumin.Remote.RemoteBase.ProcessBody(System.Buffers.ReadOnlySequence{System.Byte}@,System.Int32,System.Int16,System.Int32,System.Object)">
+            <summary>
+            处理一个完整的消息包，已分离报头
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.RemoteBase.ProcessBody(System.IO.Stream@,System.Int32,System.Int16,System.Int32,System.Object)">
             <summary>
             处理一个完整的消息包，已分离报头
             </summary>

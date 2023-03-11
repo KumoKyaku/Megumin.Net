@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## [Unreleased] - YYYY-MM-NN
 
+## [3.3.0] - 2023-03-11
+### Added   
+- 增加Tcp发送接收测试
+- 增加Tcp io测试
+- 反序列化支持stream 参数类型。
+
+### Changed  
+- 删除net5.0改为net6.0
+- 修复一个错误拼写 formater ->  formatter
+
 ## [3.1.0] - 2022-10-29
 ### Added   
 - Listener没有Start时调用接收，增加一个错误日志
