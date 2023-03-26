@@ -80,7 +80,8 @@ namespace Megumin.Remote.Rpc
         public bool TryInput(int rpcID, object message)
         {
             //rpcID为负数为发送，正数改为回复，这样此处判断一次就可以了。不用额外判断 0 和 int.MinValue。
-            //获取ID时int.MinValue直接无效。
+            //最妙的是int.MinValue * -1时仍然等于int.MinValue，即使远端回复int.MinValue也不会导致错误。
+            //GetRpcID时int.MinValue直接无效。int.MinValue通常用于广播消息，手动赋值。
             if (rpcID > 0)
             {
                 //这个消息是rpc返回（回复的RpcID为正数）
