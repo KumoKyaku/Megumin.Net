@@ -81,7 +81,6 @@ public class OpTest : MonoBehaviour
                         serverSide = remote;
                     }
                 }
-                break;
             case Protocol.Udp:
                 {
                     listener?.Stop();
@@ -98,7 +97,6 @@ public class OpTest : MonoBehaviour
                         serverSide = remote;
                     }
                 }
-                break;
             case Protocol.Kcp:
                 {
                     listener?.Stop();
@@ -115,7 +113,6 @@ public class OpTest : MonoBehaviour
                         serverSide = remote;
                     }
                 }
-                break;
             default:
                 break;
         }
