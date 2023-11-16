@@ -1,7 +1,7 @@
 {
   "name": "com.megumin.net",
   "displayName": "Megumin Net",
-  "version": "3.1.0",
+  "version": "3.4.0",
   "unity": "2021.2",
   "description": "\u8fd9\u662f\u4e00\u4e2a\u7f51\u7edc\u6a21\u5757\u7684\u901a\u7528\u89e3\u51b3\u65b9\u6848\u3002\n\u8bbe\u8ba1\u76ee\u7684\u4e3a\u5e94\u7528\u7a0b\u5e8f\u7f51\u7edc\u6a21\u5757\u63d0\u4f9b\u7edf\u4e00\u7684HighLevel\u63a5\u53e3\u3002",
   "category": "PackageWizard",

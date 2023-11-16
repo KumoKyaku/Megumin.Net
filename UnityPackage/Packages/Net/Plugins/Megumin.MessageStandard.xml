@@ -4,6 +4,50 @@
         <name>Megumin.MessageStandard</name>
     </assembly>
     <members>
+        <member name="T:Megumin.Remote.BufferWriterBytesStream">
+            <summary>
+            包装<see cref="T:System.Buffers.IBufferWriter`1"/><see cref="T:System.Byte"/>成一个长度无限的只写流，
+            只有<see cref="M:Megumin.Remote.BufferWriterBytesStream.Write(System.Byte[],System.Int32,System.Int32)"/>函数起作用。
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.IDeserializeLengthWriter">
+            <summary>
+            用于反序列化时获取长度
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.DeserializeLengthHelper">
+            <summary>
+            用于反序列化时获取长度
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.IFormatterContainer.Regist(Megumin.Remote.IMeguminFormatter,Megumin.Remote.KeyAlreadyHave)">
+            <summary>
+            注册序列化器
+            </summary>
+            <param name="meguminFormatter"></param>
+            <param name="key"></param>
+        </member>
+        <member name="M:Megumin.Remote.IFormatterContainer.RegistIMeguminFormatter``1(Megumin.Remote.KeyAlreadyHave)">
+            <summary>
+            注册序列化器
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="key"></param>
+        </member>
+        <member name="M:Megumin.Remote.FormatterContainerBase.Regist(Megumin.Remote.IMeguminFormatter,Megumin.Remote.KeyAlreadyHave)">
+            <summary>
+            注册序列化器
+            </summary>
+            <param name="meguminFormatter"></param>
+            <param name="key"></param>
+        </member>
+        <member name="M:Megumin.Remote.FormatterContainerBase.RegistIMeguminFormatter``1(Megumin.Remote.KeyAlreadyHave)">
+            <summary>
+            注册序列化器
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="key"></param>
+        </member>
         <member name="T:Megumin.Remote.KeyAlreadyHave">
             <summary>
             Key冲突改怎么做
@@ -111,6 +155,12 @@
         <member name="T:Megumin.Remote.MessageLUT">
             <summary>
             消息查找表
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.MessageLUT.FormatterContainer">
+            <summary>
+            Formatter 容器。
+            允许用户设置自定义Formatter
             </summary>
         </member>
         <member name="M:Megumin.Remote.MessageLUT.Regist(Megumin.Remote.IMeguminFormatter,Megumin.Remote.KeyAlreadyHave)">
@@ -275,22 +325,6 @@
             <exception cref="T:System.Collections.Generic.KeyNotFoundException"></exception>
             <exception cref="T:System.ArgumentNullException"></exception>
             <exception cref="T:System.InvalidCastException"></exception>
-        </member>
-        <member name="T:Megumin.Remote.IDeserializeLengthWriter">
-            <summary>
-            用于反序列化时获取长度
-            </summary>
-        </member>
-        <member name="T:Megumin.Remote.DeserializeLengthHelper">
-            <summary>
-            用于反序列化时获取长度
-            </summary>
-        </member>
-        <member name="T:Megumin.Remote.BufferWriterBytesSteam">
-            <summary>
-            包装<see cref="T:System.Buffers.IBufferWriter`1"/><see cref="T:System.Byte"/>成一个长度无限的只写流，
-            只有<see cref="M:Megumin.Remote.BufferWriterBytesSteam.Write(System.Byte[],System.Int32,System.Int32)"/>函数起作用。
-            </summary>
         </member>
         <member name="T:Megumin.Remote.MSGID">
             <summary>

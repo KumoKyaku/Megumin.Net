@@ -594,7 +594,10 @@
             </summary>
             <param name="span"></param>
             <param name="options"></param>
-            <returns></returns>
+            <returns>返回成功发送的字节数，-1 为错误，-2 为 EAGAIN</returns>
+        </member>
+        <member name="M:System.Net.Sockets.Kcp.KcpCore`1.Send(System.Buffers.ReadOnlySequence{System.Byte},System.Object)">
+            <inheritdoc cref="M:System.Net.Sockets.Kcp.KcpCore`1.Send(System.ReadOnlySpan{System.Byte},System.Object)"/>
         </member>
         <member name="M:System.Net.Sockets.Kcp.KcpCore`1.Input(System.ReadOnlySpan{System.Byte})">
             <summary>
