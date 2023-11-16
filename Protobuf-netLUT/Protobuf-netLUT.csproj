@@ -25,12 +25,12 @@
 
   <!--目标框架配置-->
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0;net8.0;</TargetFrameworks>
   </PropertyGroup>
 
   <!--依赖配置-->
   <ItemGroup>
-    <PackageReference Include="protobuf-net" Version="3.2.12" />
+    <PackageReference Include="protobuf-net" Version="3.2.26" />
     <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
   </ItemGroup>
 
@@ -45,6 +45,8 @@
     </NoWarn>
 
     <!--打包配置-->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\OpenSource.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -58,11 +60,15 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
-  <!--许可证文件配置-->
+  <!--嵌入的文件配置-->
   <ItemGroup>
     <None Include="..\LICENSE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
 
