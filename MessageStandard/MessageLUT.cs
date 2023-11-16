@@ -3,6 +3,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace Megumin.Remote
@@ -129,29 +130,29 @@ namespace Megumin.Remote
     /// </summary>
     public partial class MessageLUT
     {
-        static readonly Dictionary<int, IMeguminFormatter> IDDic = new Dictionary<int, IMeguminFormatter>();
-        static readonly Dictionary<Type, IMeguminFormatter> TypeDic = new Dictionary<Type, IMeguminFormatter>();
+        /// <summary>
+        /// Formatter 容器。
+        /// 允许用户设置自定义Formatter
+        /// </summary>
+        public static IFormatterContainer FormatterContainer { get; set; } = new MeguminFormatterContainer();
 
-        static MessageLUT()
+
+        public static Dictionary<int, IMeguminFormatter> IDDic
         {
-            //注册基础类型
-            Regist(new StringFormatter());
-            Regist(new IntFormatter());
-            Regist(new FloatFormatter());
-            Regist(new LongFormatter());
-            Regist(new DoubleFormatter());
-            Regist(new DatetimeFormatter());
-            Regist(new DatetimeOffsetFormatter());
-            Regist(new ByteArrayFormatter());
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return FormatterContainer.IDDic;
+            }
+        }
 
-            //注册内置消息
-            Regist(new TestPacket1());
-            Regist(new TestPacket2());
-            Regist(new TestPacket3());
-            Regist(new TestPacket4());
-            Regist(new Heartbeat());
-            Regist(new GetTime());
-            Regist(new Authentication());
+        public static Dictionary<Type, IMeguminFormatter> TypeDic
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return FormatterContainer.TypeDic;
+            }
         }
 
         /// <summary>
@@ -161,58 +162,7 @@ namespace Megumin.Remote
         /// <param name="key"></param>
         public static void Regist(IMeguminFormatter meguminFormatter, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
-            if (meguminFormatter.BindType == null)
-            {
-                throw new ArgumentException("序列化器没有绑定类型");
-            }
-
-            switch (key)
-            {
-                case KeyAlreadyHave.Replace:
-
-                    if (IDDic.TryGetValue(meguminFormatter.MessageID, out var old))
-                    {
-                        IDDic.Remove(old.MessageID);
-                        TypeDic.Remove(old.BindType);
-                    }
-
-                    if (TypeDic.TryGetValue(meguminFormatter.BindType, out var old2))
-                    {
-                        IDDic.Remove(old2.MessageID);
-                        TypeDic.Remove(old2.BindType);
-                    }
-                    IDDic[meguminFormatter.MessageID] = meguminFormatter;
-                    TypeDic[meguminFormatter.BindType] = meguminFormatter;
-
-                    break;
-                case KeyAlreadyHave.Skip:
-                    if (IDDic.ContainsKey(meguminFormatter.MessageID)
-                         || TypeDic.ContainsKey(meguminFormatter.BindType))
-                    {
-                        return;
-                    }
-
-                    IDDic[meguminFormatter.MessageID] = meguminFormatter;
-                    TypeDic[meguminFormatter.BindType] = meguminFormatter;
-                    break;
-                case KeyAlreadyHave.ThrowException:
-                    if (IDDic.ContainsKey(meguminFormatter.MessageID))
-                    {
-                        throw new ArgumentException
-                            ($"消息ID冲突，同一个ID再次注册。 当前ID:{meguminFormatter.MessageID}。 当前类型:{meguminFormatter.BindType.FullName}。" +
-                            $"已有类型：{IDDic[meguminFormatter.MessageID].BindType.FullName}");
-                    }
-
-                    if (TypeDic.ContainsKey(meguminFormatter.BindType))
-                    {
-                        throw new ArgumentException
-                            ($"消息类型冲突，同一个类型再次注册。当前类型:{meguminFormatter.BindType.FullName}。 当前ID:{meguminFormatter.MessageID}。" +
-                            $"已有ID：{TypeDic[meguminFormatter.BindType].MessageID}。");
-                    }
-                    break;
-                default:
-                    break;
-            }
+            FormatterContainer.Regist(meguminFormatter, key);
         }
 
         /// <summary>
@@ -220,10 +170,10 @@ namespace Megumin.Remote
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="key"></param>
-        public static void RegistIMeguminFormatter<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip) where T : class, IMeguminFormatter, new()
+        public static void RegistIMeguminFormatter<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip)
+            where T : class, IMeguminFormatter, new()
         {
-            T f = new T();
-            Regist(f, key);
+            FormatterContainer.RegistIMeguminFormatter<T>(key);
         }
 
         /// <summary>
@@ -524,86 +474,5 @@ namespace Megumin.Remote
             MessageLUT.Serialize(wr, original);
             return MessageLUT.Deserialize<T>(wr.ReadOnlySpan);
         }
-    }
-
-    /// <summary>
-    /// 用于反序列化时获取长度
-    /// </summary>
-    public interface IDeserializeLengthWriter
-    {
-        int Length { set; }
-    }
-
-    /// <summary>
-    /// 用于反序列化时获取长度
-    /// </summary>
-    public class DeserializeLengthHelper : IDeserializeLengthWriter
-    {
-        //https://learn.microsoft.com/en-us/dotnet/api/system.threadstaticattribute?redirectedfrom=MSDN&view=net-6.0
-        //[ThreadStatic]
-        //static DeserializeLengthHelper defaulthelper;
-        //public static DeserializeLengthHelper Default
-        //{
-        //    get
-        //    {
-        //        if (defaulthelper == null)
-        //        {
-        //            defaulthelper = new DeserializeLengthHelper();
-        //        }
-        //        return defaulthelper;
-        //    }
-        //}
-
-        //https://stackoverflow.com/questions/18333885/threadstatic-v-s-threadlocalt-is-generic-better-than-attribute
-        static readonly ThreadLocal<DeserializeLengthHelper> defaulthelper
-            = new ThreadLocal<DeserializeLengthHelper>(static () => new DeserializeLengthHelper());
-
-        public static DeserializeLengthHelper Default => defaulthelper.Value;
-
-        //仅将Length标记为ThreadStatic是不够的，可能在一个线程写，在另一个线程读，造成错误。
-        public int Length { get; set; }
-    }
-
-    /// <summary>
-    /// 包装<see cref="IBufferWriter{T}"/><see cref="byte"/>成一个长度无限的只写流，
-    /// 只有<see cref="Write(byte[], int, int)"/>函数起作用。
-    /// </summary>
-    public class BufferWriterBytesSteam : Stream
-    {
-        public IBufferWriter<byte> BufferWriter { get; set; }
-
-        public override void Flush()
-        {
-
-        }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void SetLength(long value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            var destination = BufferWriter.GetSpan(count);
-            var span = new Span<byte>(buffer, offset, count);
-            span.CopyTo(destination);
-            BufferWriter.Advance(count);
-        }
-
-        public override bool CanRead { get; } = false;
-        public override bool CanSeek { get; } = false;
-        public override bool CanWrite { get; } = true;
-        public override long Length { get; } = long.MaxValue;
-        public override long Position { get; set; }
     }
 }

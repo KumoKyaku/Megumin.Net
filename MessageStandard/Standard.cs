@@ -38,3 +38,7 @@ namespace Megumin.Message
         bool? ReceiveThreadPost2ThreadScheduler { get; }
     }
 }
+
+
+
+
