@@ -1,9 +1,10 @@
 # 这是什么？  
-  这是一个 ~~简单易用的~~ 网络库。  
-  这是一个网络模块的通用解决方案。设计目的为应用程序网络模块提供统一的HighLevel接口。 
+这是一个 ~~简单易用的~~ 网络库。  
+这是一个网络模块的通用解决方案。设计目的为应用程序网络模块提供统一的HighLevel接口。 
 
-  整个类库被拆分为多个dll。**简单来说：NetRemoteStandard.dll是标准，里面只有接口定义；Megumin.Remote.dll是一种实现。类比于dotnetStandard和dotnetCore的关系。** 
-
+整个类库被拆分为多个dll。**简单来说：NetRemoteStandard.dll是标准，里面只有接口定义；Megumin.Remote.dll是一种实现。类比于dotnetStandard和dotnetCore的关系。** 
+> 为什么要拆分为多个dll？  
+> 具体实现可能需要依赖很多其他dll，而接口定义并不需要这些依赖。对于只想使用接口，自定义实现的用户来说，引入额外的依赖是不必要的。例如MessageStandard，用户仅引用自己选择的序列化库即可，而不必引用多个序列化库。    
 
 # [Dll依赖关系与架构](Image/项目结构.png)
 ![依赖关系](Image/项目结构.png)
@@ -45,7 +46,7 @@ or add `"com.megumin.net": "https://github.com/KumoKyaku/Megumin.Net.git?path=Un
 - 自定义MiniTask池,针对网络功能对Task重新实现，性能更高，仅初始化时alloc。
 - 支持`Span<T>`。使用[`System.IO.Pipelines`](https://www.cnblogs.com/xxfy1/p/9290235.html)作为高性能IO缓冲区。
 - 纯C#实现，这是学习网络功能一个好的起点。
-- 2.0 版本 API设计经过真实业务需求改良。
+- 3.0 版本 API设计经过真实业务需求改良。
 - **`MIT许可证`**
   
 # 劣势
@@ -64,7 +65,9 @@ or add `"com.megumin.net": "https://github.com/KumoKyaku/Megumin.Net.git?path=Un
 
 ---
 ## 1. [ISendAsyncable.SendAsync](Image/callstep.png)
-从结果值返回异常是有意义的：1.省去了try catch ,写法更简单（注意，没有提高处理异常的性能）2.用来支持异常在分布式服务器中传递，避免try catch 控制流。
+从结果值返回异常是有意义的：  
+- 省去了try catch ,写法更简单，避免try catch 控制流。（注意，没有提高处理异常的性能）
+- 用来支持异常在分布式服务器中传递。  
 
 ```cs
 ///实际使用中的例子
