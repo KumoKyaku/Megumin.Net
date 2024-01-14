@@ -18,12 +18,12 @@ public static class NetRemoteExtension_1BF96CF42E7249EE9EBE611C57770D7C
         return send.SendAsync<object, Result>(message, options);
     }
 
-    ///<inheritdoc cref="ISendAsyncable.SendAsyncSafeAwait{T, Result}(T, object, Action{Exception})"/>
+    ///<inheritdoc cref="ISendAsyncable.SendAsyncSafeAwait{T, Result}(T, object, Action{object, Exception})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueTask<Result> SendAsyncSafeAwait<Result>(this ISendAsyncable send,
                                                                object message,
                                                                object options = null,
-                                                               Action<Exception> onException = null)
+                                                               Action<object, Exception> onException = null)
     {
         return send.SendAsyncSafeAwait<object, Result>(message, options, onException);
     }

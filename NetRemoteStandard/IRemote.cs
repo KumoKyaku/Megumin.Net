@@ -144,6 +144,10 @@ namespace Net.Remote
         /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表 MessageLUT 中指定ID和序列化函数</param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
         /// <returns>需要检测空值</returns>
+        /// <remarks>
+        /// <para/> 当message为引用类型时，使用扩展方法，不用指定泛型 <typeparamref name="T"/>。
+        /// <para/> 当message为值类型时，显示指定 <typeparamref name="T"/>，大多数情况可以避免装箱。
+        /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ValueTask<(Result result, Exception exception)> SendAsync<T, Result>(T message, object options = null);
 
@@ -158,11 +162,14 @@ namespace Net.Remote
         /// <typeparam name="Result"></typeparam>
         /// <param name="message"></param>
         /// <param name="options">参数项，在整个发送管线中传递</param>
-        /// <param name="onException">发生异常时的回调函数</param>
+        /// <param name="onException">发生异常时的回调函数。当Result转型失败时，object为真实返回值，其他情况object为null</param>
         /// <returns></returns>
-        /// <remarks></remarks>
+        /// <remarks>
+        /// <para/> 当message为引用类型时，使用扩展方法，不用指定泛型 <typeparamref name="T"/>。
+        /// <para/> 当message为值类型时，显示指定 <typeparamref name="T"/>，大多数情况可以避免装箱。
+        /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        ValueTask<Result> SendAsyncSafeAwait<T, Result>(T message, object options = null, Action<Exception> onException = null);
+        ValueTask<Result> SendAsyncSafeAwait<T, Result>(T message, object options = null, Action<object, Exception> onException = null);
     }
 
     //广播一定是个静态方法，没法通过接口调用

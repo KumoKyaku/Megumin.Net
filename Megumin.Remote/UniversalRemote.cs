@@ -6,7 +6,7 @@ namespace Megumin.Remote
 {
     public class UniversalRemote : RpcRemote
     {
-        
+
     }
 
     /// <summary>
@@ -22,13 +22,13 @@ namespace Megumin.Remote
 
     public class LogExampleRemote : RpcRemote
     {
-        public override ValueTask<Result> SendAsyncSafeAwait<T, Result>(T message, object options = null, Action<Exception> onException = null)
+        public override ValueTask<Result> SendAsyncSafeAwait<T, Result>(T message, object options = null, Action<object, Exception> onException = null)
         {
             if (onException == null)
             {
                 //保存原始调用处堆栈。
                 string stack = new StackTrace().ToString();
-                onException += (ex) =>
+                onException += (resp, ex) =>
                 {
                     string err = ex + stack;
                     Debug.Write(err);

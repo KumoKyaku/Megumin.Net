@@ -208,7 +208,7 @@ namespace TestClient
         private static async Task TestRpc(int clientIndex, IRemote remote)
         {
             var res2 = await remote.SendAsyncSafeAwait<TestPacket2>(new TestPacket2() { Value = clientIndex },
-                            onException: (ex) =>
+                            onException: (resp, ex) =>
                             {
                                 if (ex is TimeoutException timeout)
                                 {

@@ -167,11 +167,11 @@ namespace Megumin.Remote
         }
 
         public virtual void OnSendSafeAwaitException<T, Result>(T request,
-                                                                   Result response,
-                                                                   Action<Exception> onException,
-                                                                   Exception finnalException)
+                                                                Result response,
+                                                                Action<object, Exception> onException,
+                                                                Exception finnalException)
         {
-            onException?.Invoke(finnalException);
+            onException?.Invoke(response, finnalException);
         }
     }
 
@@ -186,7 +186,7 @@ namespace Megumin.Remote
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual ValueTask<Result> SendAsyncSafeAwait<T, Result>
-            (T message, object options = null, Action<Exception> onException = null)
+            (T message, object options = null, Action<object, Exception> onException = null)
         {
             return RpcLayer.SendAsyncSafeAwait<T, Result>(message, this, options, onException);
         }

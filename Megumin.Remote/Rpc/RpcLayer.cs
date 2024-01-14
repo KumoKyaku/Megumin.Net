@@ -10,13 +10,13 @@ namespace Megumin.Remote.Rpc
         void Send<T>(T message, K rpcID, object options = null);
 
         /// <summary>
-        ///  <see cref="ISendAsyncable.SendAsyncSafeAwait{Result}(object, object, Action{Exception})"/>收到obj response后，如果是异常，处理异常的逻辑。
+        ///  <see cref="ISendAsyncable.SendAsyncSafeAwait{T, Result}(T, object, Action{object, Exception})"/>收到obj response后，如果是异常，处理异常的逻辑。
         /// </summary>
         /// <param name="request"></param>
         /// <param name="response"></param>
         /// <param name="onException"></param>
         /// <param name="finnalException"></param>
-        void OnSendSafeAwaitException<T, Result>(T request, Result response, Action<Exception> onException, Exception finnalException);
+        void OnSendSafeAwaitException<T, Result>(T request, Result response, Action<object, Exception> onException, Exception finnalException);
     }
 
     /// <summary>
@@ -186,7 +186,7 @@ namespace Megumin.Remote.Rpc
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual async ValueTask<Result> SendAsyncSafeAwait<T, Result>
-             (T message, IRpcCallback<int> callback, object options = null, Action<Exception> onException = null)
+             (T message, IRpcCallback<int> callback, object options = null, Action<object, Exception> onException = null)
         {
             var (tempresp, tempex) = await InnerRpcSend(message, callback, options);
 
