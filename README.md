@@ -91,7 +91,7 @@ public async void TestSend()
 方法签名：  
 
 ```cs
-ValueTask<Result> SendAsyncSafeAwait<Result>(object message, object options = null, Action<Exception> onException = null);  
+ValueTask<Result> SendAsyncSafeAwait<T, Result>(T message, object options = null, Action<object, Exception> onException = null); 
 ```
 
 结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，不会抛出异常，所以不用try catch。`异步方法的后续部分不会触发`，所以后续部分可以省去空检查。  
@@ -103,7 +103,7 @@ public async void TestSend()
 {
     Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
     ///                                           泛型类型为期待返回的类型
-    LoginResult result = await remote.SendAsyncSafeAwait<LoginResult>(login, (ex)=>{});
+    LoginResult result = await remote.SendAsyncSafeAwait<LoginResult>(login, (resp, ex)=>{});
     ///后续代码 不用任何判断，也不用担心异常。
     Console.WriteLine(result.IsSuccess);
 }

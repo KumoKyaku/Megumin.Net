@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## [Unreleased] - YYYY-MM-NN
 
+### Added   
+### Changed  
+- SendAsyncSafeAwait中回调函数签名由`Action<Exception>`改为`Action<object, Exception>`。
+### Deprecated  
+### Removed  
+### Fixed  
+### Security 
+
+
 ## [3.3.0] - 2023-03-11
 ### Added   
 - 增加Tcp发送接收测试
