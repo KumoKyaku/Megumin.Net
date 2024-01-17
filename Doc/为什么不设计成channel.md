@@ -4,5 +4,8 @@
 - CS架构本质是问答机制，推送和问答是两个截然不同的网络功能，不能混为一谈。
 
 
-- 之前理解有点肤浅了，可以使用await readmessage方式实现，API可以参考微软官方的channel pipe库。
++ 之前理解有点肤浅了，可以使用await readmessage方式实现，API可以参考微软官方的channel pipe库。
   
+## 结论
+channel 可以有。
+
