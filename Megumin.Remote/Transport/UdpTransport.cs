@@ -230,6 +230,7 @@ namespace Megumin.Remote
             MillisecondsTimeout = 5000,
             Cmd = 1,
             RpcComplatePost2ThreadScheduler = true,
+            RpcComplatePost2ThreadSchedulerType = 0, ///不要强制切换线程，如果用户没有手动调用线程调度器，可能导致消息丢失和内存泄露。
             ForceUdp = true,
         };
 

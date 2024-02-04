@@ -1,4 +1,5 @@
-﻿using Net.Remote;
+﻿using System;
+using Net.Remote;
 
 namespace Megumin.Remote
 {
@@ -14,7 +15,15 @@ namespace Megumin.Remote
         /// <para/> false: 强制不使用ThreadScheduler;
         /// <para/> null表示不控制，由其他设置决定;
         /// </summary>
+        [Obsolete("use RpcComplatePost2ThreadSchedulerType instead.", true)]
         bool? RpcComplatePost2ThreadScheduler { get; }
+
+        /// <summary>
+        /// <para/>  1: 强制使用ThreadScheduler;
+        /// <para/>  0: 表示不控制，由其他设置决定;
+        /// <para/> -1: 强制不使用ThreadScheduler;
+        /// </summary>
+        int RpcComplatePost2ThreadSchedulerType { get; }
     }
 
     public interface IForceUdpDataOnKcpRemote
@@ -32,6 +41,7 @@ namespace Megumin.Remote
         public int MillisecondsTimeout { get; set; } = 30000;
         public short Cmd { get; set; } = 0;
         public bool? RpcComplatePost2ThreadScheduler { get; set; } = null;
+        public int RpcComplatePost2ThreadSchedulerType { get; set; } = 0;
         public bool ForceUdp { get; set; } = false;
 
     }

@@ -120,7 +120,8 @@ namespace Megumin.Remote
         {
             ///分流普通消息和RPC回复消息
 
-            var post = UseThreadSchedule(rpcID, cmd, messageID, message);
+            var scheduler = GetThreadScheduler(rpcID, cmd, messageID, message);
+
 
             //第一版设计中先计算是否使用线程调度器，在分流。
             //后续设置Rpc过程是否使用线程调度器，增加发送处设置。
@@ -128,15 +129,15 @@ namespace Megumin.Remote
             //所以现在先分流决定走Rpc流程还是Recevie流程，每个流程自己处理线程调度。
 
             //Rpc线程转换在RpcLayer 内部处理
-            this.RpcLayer.TrySetUseThreadScheduleResult(rpcID, post);
+            //this.RpcLayer.TrySetUseThreadScheduleResult(rpcID, transducer != null); //直接通过TryInput传递，不在需要额外方法。
 
-            if (!RpcLayer.TryInput(rpcID, message))
+            if (!RpcLayer.TryInput(rpcID, message, scheduler))
             {
-                ///在这里处理线程转换,是否将后续处理切换到<see cref="MessageThreadTransducer"/>线程中去.
+                ///在这里处理线程转换,是否将后续处理切换到<see cref="ThreadScheduler"/>线程中去.
                 ///切换线程后调用 还是直接调用<see cref="ProcessRecevie"/>的区别
-                if (post)
+                if (scheduler != null)
                 {
-                    Push2MessageThreadTransducer(rpcID, cmd, messageID, message, options);
+                    scheduler.Push(this, rpcID, cmd, messageID, message, options);
                 }
                 else
                 {
@@ -156,6 +157,7 @@ namespace Megumin.Remote
         /// <remarks>独立一个函数，不然<see cref="MessageThreadTransducer.Push(IDealMessageable, int, short, int, object,object)"/>继承者无法调用</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [System.Diagnostics.DebuggerHidden]
+        [Obsolete("Use GetThreadTransducer instead.", true)]
         protected void Push2MessageThreadTransducer(int rpcID, short cmd, int messageID, object message, object options = null)
         {
             MessageThreadTransducer.Push(this, rpcID, cmd, messageID, message, options);

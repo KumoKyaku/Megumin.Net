@@ -361,13 +361,12 @@ namespace Megumin.Remote.Rpc
     /// </summary>
     public abstract class RpcCallbackPool<K, M, A>
     {
-        protected Dictionary<K, (DateTime startTime, Action<(M result, Exception exception)> source)> Pool { get; }
-            = new Dictionary<K, (DateTime startTime, Action<(M result, Exception exception)> source)>();
+        protected Dictionary<K, (DateTime startTime, Action<(M result, Exception exception)> source)> Pool { get; } = new();
 
         /// <summary>
-        /// 主要由<see cref="IRpcThreadOption"/>决定，其次由UseThreadSchedule决定。
+        /// 主要由<see cref="IRpcThreadOption"/>决定，其次由<see cref="RemoteBase.GetThreadScheduler(int, short, int, object)"/>决定。
         /// </summary>
-        protected Dictionary<K, bool?> PostThreadSetting { get; } = new Dictionary<K, bool?>();
+        protected Dictionary<K, (int, IThreadScheduler)> PostThreadSetting { get; } = new();
 
         /// <summary>
         /// 默认30000ms
@@ -383,12 +382,26 @@ namespace Megumin.Remote.Rpc
         /// <param name="options"></param>
         protected void CheckKeyConflict(K key, object options = null)
         {
-            if (TryDequeue(key, out var callback, out var post))
+            if (TryDequeue(key, out var callback, out var schedulerType, out var scheduler))
             {
-                if (post)
+                IThreadScheduler threadScheduler = null;
+                if (schedulerType < 0)
+                {
+                    //不使用回调器
+                }
+                else
+                {
+                    threadScheduler = scheduler;
+                    if (schedulerType > 0)
+                    {
+                        threadScheduler ??= ThreadScheduler.Default;
+                    }
+                }
+
+                if (threadScheduler != null)
                 {
                     //Todo,线程转换应该分离出去
-                    MessageThreadTransducer.Invoke(() =>
+                    threadScheduler.Invoke(() =>
                     {
                         //如果出现RpcID冲突，认为前一个已经超时。
                         callback.source?.Invoke((default, new TimeoutException("RpcID overlaps and timeouts the previous callback/RpcID 重叠，对前一个回调进行超时处理")));
@@ -411,11 +424,11 @@ namespace Megumin.Remote.Rpc
             ///RpcSend 设置 回调线程
             if (options is IRpcThreadOption threadOption)
             {
-                PostThreadSetting[rpcID] = threadOption.RpcComplatePost2ThreadScheduler;
+                PostThreadSetting[rpcID] = (threadOption.RpcComplatePost2ThreadSchedulerType, null);
             }
             else
             {
-                PostThreadSetting[rpcID] = null;
+                PostThreadSetting[rpcID] = (0, null);
             }
 
             CheckKeyConflict(rpcID, options);
@@ -494,19 +507,19 @@ namespace Megumin.Remote.Rpc
         }
 
         public bool TryDequeue(K rpcID,
-            out (DateTime startTime, Action<(M result, Exception exception)> source) rpc,
-            out bool post)
+                               out (DateTime startTime, Action<(M result, Exception exception)> source) rpc,
+                               out int schedulerType,
+                               out IThreadScheduler scheduler)
         {
             lock (dequeueLock)
             {
-                post = false;
+                schedulerType = 0;
+                scheduler = null;
                 if (PostThreadSetting.TryGetValue(rpcID, out var postSetting))
                 {
                     PostThreadSetting.Remove(rpcID);
-                    if (postSetting.HasValue)
-                    {
-                        post = (bool)postSetting;
-                    }
+                    schedulerType = postSetting.Item1;
+                    scheduler = postSetting.Item2;
                 }
 
                 if (Pool.TryGetValue(rpcID, out rpc))
@@ -519,9 +532,16 @@ namespace Megumin.Remote.Rpc
             return false;
         }
 
-        public bool TrySetResult(K rpcID, M msg)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="msg"></param>
+        /// <param name="scheduler">可选的线程回调器。具体使用哪个线程回调器，<see cref="PostThreadSetting"/></param>
+        /// <returns></returns>
+        public bool TrySetResult(K rpcID, M msg, IThreadScheduler scheduler = null)
         {
-            return TryComplate(rpcID, msg, null);
+            return TryComplate(rpcID, msg, null, scheduler);
         }
 
         public bool TrySetException(K rpcID, Exception exception)
@@ -529,30 +549,53 @@ namespace Megumin.Remote.Rpc
             return TryComplate(rpcID, default, exception);
         }
 
+        ///// <summary>
+        ///// DeserializeSuccess后设置回调线程，只有PostThreadSetting含有Key并且值为null时才设置。
+        ///// </summary>
+        ///// <param name="rpcID"></param>
+        ///// <param name="trans"></param>
+        //public void TrySetUseThreadScheduleResult(K rpcID, bool trans)
+        //{
+        //    if (PostThreadSetting.ContainsKey(rpcID))
+        //    {
+        //        if (PostThreadSetting[rpcID] == null)
+        //        {
+        //            PostThreadSetting[rpcID] = trans;
+        //        }
+        //    }
+        //}
+
         /// <summary>
-        /// DeserializeSuccess后设置回调线程，只有PostThreadSetting含有Key并且值为null时才设置。
+        /// 
         /// </summary>
         /// <param name="rpcID"></param>
-        /// <param name="trans"></param>
-        public void TrySetUseThreadScheduleResult(K rpcID, bool trans)
-        {
-            if (PostThreadSetting.ContainsKey(rpcID))
-            {
-                if (PostThreadSetting[rpcID] == null)
-                {
-                    PostThreadSetting[rpcID] = trans;
-                }
-            }
-        }
-
-        bool TryComplate(K rpcID, M msg, Exception exception)
+        /// <param name="msg"></param>
+        /// <param name="exception"></param>
+        /// <param name="fallbackScheduler"></param>
+        /// <returns></returns>
+        bool TryComplate(K rpcID, M msg, Exception exception, IThreadScheduler fallbackScheduler = null)
         {
             ///rpc响应
-            if (TryDequeue(rpcID, out var rpc, out var postThread))
+            if (TryDequeue(rpcID, out var rpc, out var schedulerType, out var scheduler))
             {
-                if (postThread == true)
+                IThreadScheduler threadScheduler = null;
+                if (schedulerType < 0)
                 {
-                    MessageThreadTransducer.Invoke(() =>
+                    //不使用回调器
+                }
+                else
+                {
+                    //优先使用预设的回调器
+                    threadScheduler = scheduler ?? fallbackScheduler;
+                    if (schedulerType > 0)
+                    {
+                        threadScheduler ??= ThreadScheduler.Default;
+                    }
+                }
+
+                if (threadScheduler != null)
+                {
+                    threadScheduler.Invoke(() =>
                     {
                         rpc.source.Invoke((msg, exception));
                     });

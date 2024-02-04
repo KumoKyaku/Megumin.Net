@@ -345,6 +345,7 @@ namespace Megumin.Remote
         /// <summary>
         /// 默认关闭线程转换<see cref="MessageThreadTransducer.Update(double)"/>
         /// </summary>
+        [Obsolete("Use DefaultThreadScheduler instead.", true)]
         public bool Post2ThreadScheduler { get; set; } = false;
 
         /// <summary>
@@ -359,6 +360,7 @@ namespace Megumin.Remote
         /// <param name="message"></param>
         /// <returns></returns>
         /// <remarks>在Unity中也可以重写这个函数，判断调用线程是不是unity主线程，如果是则不需要转化线程</remarks>
+        [Obsolete("Use GetThreadTransducer instead.", true)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual bool UseThreadSchedule(int rpcID, short cmd, int messageID, object message)
         {
@@ -370,12 +372,52 @@ namespace Megumin.Remote
         }
 
         /// <summary>
+        /// 默认值为null，可设置为 <seealso cref="ThreadScheduler.Default"/>
+        /// </summary>
+        public ThreadScheduler DefaultThreadScheduler { get; set; } = null;
+
+        /// <summary>
+        /// 是否使用<see cref="ThreadScheduler"/>
+        /// <para>精确控制各个消息是否切换到主线程。</para>
+        /// <para>用于处理在某些时钟精确的且线程无关消息时跳过轮询等待。</para>
+        /// 例如：同步两个远端时间戳的消息。
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="cmd"></param>
+        /// <param name="messageID"></param>
+        /// <param name="message"></param>
+        /// <returns>
+        /// 如果返回null，表示在当前线程处理消息，不使用线程转换器
+        /// </returns>
+        /// <remarks>在Unity中也可以重写这个函数，判断调用线程是不是unity主线程，如果是则不需要转化线程</remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual ThreadScheduler GetThreadScheduler(int rpcID, short cmd, int messageID, object message)
+        {
+            //注意不要返回ThreadScheduler.Default，用户可能永远不会调用更新ThreadScheduler.Default.Update。
+
+            if (message is IReceiveThreadControlable controlable && controlable.ReceiveThreadPost2ThreadScheduler.HasValue)
+            {
+                if (controlable.ReceiveThreadPost2ThreadScheduler.Value)
+                {
+                    return DefaultThreadScheduler;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            return DefaultThreadScheduler;
+        }
+
+        /// <summary>
         /// TODO
         /// </summary>
         public SynchronizationContext DeserializeSuccessCtx { get; set; } = null;
 
         /// <summary>
         /// TODO 重构MessageThreadTransducer，使用SynchronizationContext代替。
+        /// SynchronizationContext 不是很容易使用，理解起来也更加困难，还会于其他功能冲突。暂时先不动。
         /// </summary>
         /// <param name="rpcID"></param>
         /// <param name="cmd"></param>

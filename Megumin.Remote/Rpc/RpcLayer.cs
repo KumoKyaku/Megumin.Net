@@ -75,9 +75,10 @@ namespace Megumin.Remote.Rpc
         /// </summary>
         /// <param name="rpcID"></param>
         /// <param name="message"></param>
+        /// <param name="scheduler"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryInput(int rpcID, object message)
+        public bool TryInput(int rpcID, object message, IThreadScheduler scheduler = null)
         {
             //rpcID为负数为发送，正数改为回复，这样此处判断一次就可以了。不用额外判断 0 和 int.MinValue。
             //最妙的是int.MinValue * -1时仍然等于int.MinValue，即使远端回复int.MinValue也不会导致错误。
@@ -85,7 +86,7 @@ namespace Megumin.Remote.Rpc
             if (rpcID > 0)
             {
                 //这个消息是rpc返回（回复的RpcID为正数）
-                TrySetResult(rpcID * -1, message);
+                TrySetResult(rpcID * -1, message, scheduler);
                 return true;
             }
             return false;
@@ -150,7 +151,7 @@ namespace Megumin.Remote.Rpc
         /// <returns></returns>
         /// <remarks>
         /// 异步后续调用TaskPool线程或者MessageThreadTransducer线程,
-        /// <see cref="RpcCallbackPool{K, M, A}.TrySetResult(K, M)"/>
+        /// <see cref="RpcCallbackPool{K, M, A}.TrySetResult(K, M, IThreadScheduler)"/>
         /// <see cref="MiniTask{T}.SetResult(T)"/>
         /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

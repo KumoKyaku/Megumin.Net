@@ -126,12 +126,25 @@ namespace Megumin.Remote
             r.Deal(rpcID, cmd, messageID, message, options);
         }
     }
-    /// <summary>
-    /// 接收消息池
-    /// </summary>
-    public partial class ThreadTransducer
+
+    public interface IThreadScheduler
     {
-        public static readonly ThreadTransducer Default = new();
+        void Invoke(Action action);
+    }
+
+
+    /// <summary>
+    /// 消息线程调度器。
+    /// 不使用异步，而是用回调函数的原因有3个。
+    /// 1.异步会导致闭包不可控。不能针对性优化。还是有一定性能开销的。
+    /// 2.异步的await关键字执行时机不确定。可能会导致消息顺序发生变化。有可能被错误使用，只有拿到Task立刻await才能保证正确。
+    ///     例如可能拿到线程切换的task后，不进行await，而是保存起来，在后面的某个时间点await，这样不能正常工作。
+    /// 3.异步的异常处理，异常传递比较麻烦，会引出更多的问题。多个并列的异步可能耦合在同一次回调里。异常后可能导致消息丢失。
+    ///     例如这一帧有10个消息，都通过await附加到同一个回调委托中，但是中间某一个消息处理时出现异常，那么后面的消息可能就丢了。
+    /// </summary>
+    public partial class ThreadScheduler : IThreadScheduler
+    {
+        public static readonly ThreadScheduler Default = new();
 
         readonly ConcurrentQueue<Action> actions = new ConcurrentQueue<Action>();
         [Obsolete("设计缺陷,线程转换不应该带有异步逻辑,严重增加复杂性", true)]

@@ -10,6 +10,10 @@ using RequestWorkQueue = System.Collections.Concurrent.ConcurrentQueue<Megumin.R
 
 namespace Megumin.Remote
 {
+    /// <summary>
+    /// <see cref="ThreadScheduler.Default"/>
+    /// </summary>
+    [Obsolete("Use ThreadScheduler.Default instead.")]
     public partial class MessageThreadTransducer
     {
         /// <summary>
@@ -18,7 +22,7 @@ namespace Megumin.Remote
         /// <param name="delta"></param>
         public static void Update(double delta)
         {
-            ThreadTransducer.Default.Update(delta);
+            ThreadScheduler.Default.Update(delta);
         }
 
         /// <summary>
@@ -36,7 +40,7 @@ namespace Megumin.Remote
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static IMiniAwaitable<object> Push(int rpcID, short cmd, int messageID, object message, IObjectMessageReceiver r)
         {
-            return ThreadTransducer.Default.Push(rpcID, cmd, messageID, message, r);
+            return ThreadScheduler.Default.Push(rpcID, cmd, messageID, message, r);
         }
 
         /// <summary>
@@ -52,7 +56,7 @@ namespace Megumin.Remote
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Push(IDealMessageable r, int rpcID, short cmd, int messageID, object message, object options = null)
         {
-            ThreadTransducer.Default.Push(r, rpcID, cmd, messageID, options);
+            ThreadScheduler.Default.Push(r, rpcID, cmd, messageID, options);
         }
 
         /// <summary>
@@ -67,7 +71,7 @@ namespace Megumin.Remote
         internal static void Push<HD>(HD header, object message, IDealMessageable<HD> r)
             where HD : IMessageHeader
         {
-            ThreadTransducer.Default.Push<HD>(header, message, r);
+            ThreadScheduler.Default.Push<HD>(header, message, r);
         }
 
         /// <summary>
@@ -77,7 +81,7 @@ namespace Megumin.Remote
         /// <param name="action"></param>
         public static void Invoke(Action action)
         {
-            ThreadTransducer.Default.Invoke(action);
+            ThreadScheduler.Default.Invoke(action);
         }
 
         /// <summary>
@@ -90,7 +94,7 @@ namespace Megumin.Remote
         [Obsolete("Use Switch instead", true)]
         public static ConfiguredValueTaskAwaitable<T> Push<T>(T value)
         {
-            return ThreadTransducer.Default.Push(value);
+            return ThreadScheduler.Default.Push(value);
         }
 
         /// <summary>
@@ -100,7 +104,7 @@ namespace Megumin.Remote
         [Obsolete("BUG", true)]
         public static ConfiguredValueTaskAwaitable Switch()
         {
-            return ThreadTransducer.Default.Switch();
+            return ThreadScheduler.Default.Switch();
         }
 
         /// <summary>
@@ -109,7 +113,7 @@ namespace Megumin.Remote
         /// <returns></returns>
         public static IMiniAwaitable MiniSwitch()
         {
-            return ThreadTransducer.Default.MiniSwitch();
+            return ThreadScheduler.Default.MiniSwitch();
         }
     }
 }

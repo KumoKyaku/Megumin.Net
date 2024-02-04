@@ -102,6 +102,7 @@ namespace Megumin.Remote
         {
             MillisecondsTimeout = 2000,
             RpcComplatePost2ThreadScheduler = false,
+            RpcComplatePost2ThreadSchedulerType = -1,
         };
 
         public async Task<OffsetValue> GetOffset(ISendAsyncable remote, int index = 0)
