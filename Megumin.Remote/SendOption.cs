@@ -40,6 +40,7 @@ namespace Megumin.Remote
         public static readonly SendOption Echo = new SendOption() { MillisecondsTimeout = 30000, Cmd = 1 };
         public int MillisecondsTimeout { get; set; } = 30000;
         public short Cmd { get; set; } = 0;
+        [Obsolete("use RpcComplatePost2ThreadSchedulerType instead.")]
         public bool? RpcComplatePost2ThreadScheduler { get; set; } = null;
         public int RpcComplatePost2ThreadSchedulerType { get; set; } = 0;
         public bool ForceUdp { get; set; } = false;
