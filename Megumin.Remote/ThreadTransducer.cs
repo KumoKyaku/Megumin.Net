@@ -129,21 +129,23 @@ namespace Megumin.Remote
     /// <summary>
     /// 接收消息池
     /// </summary>
-    public partial class MessageThreadTransducer
+    public partial class ThreadTransducer
     {
-        static readonly ConcurrentQueue<Action> actions = new ConcurrentQueue<Action>();
+        public static readonly ThreadTransducer Default = new();
+
+        readonly ConcurrentQueue<Action> actions = new ConcurrentQueue<Action>();
         [Obsolete("设计缺陷,线程转换不应该带有异步逻辑,严重增加复杂性", true)]
-        static readonly RequestWorkQueue requestWorkQueue = new RequestWorkQueue();
-        static readonly DealWorkQueue dealWorkQueue = new DealWorkQueue();
+        readonly RequestWorkQueue requestWorkQueue = new RequestWorkQueue();
+        readonly DealWorkQueue dealWorkQueue = new DealWorkQueue();
         //static readonly ThreadSwitcher DefaultSwitcher = new ThreadSwitcher();
-        static readonly ConcurrentQueue<MiniTask<int>> MiniTasksSwitcher = new ConcurrentQueue<MiniTask<int>>();
-        static readonly List<MiniTask<int>> MiniTaskNoAwait = new List<MiniTask<int>>();
+        readonly ConcurrentQueue<MiniTask<int>> MiniTasksSwitcher = new ConcurrentQueue<MiniTask<int>>();
+        readonly List<MiniTask<int>> MiniTaskNoAwait = new List<MiniTask<int>>();
 
         /// <summary>
         /// 在控制执行顺序的线程中刷新，所有异步方法的后续部分都在这个方法中执行
         /// </summary>
         /// <param name="delta"></param>
-        public static void Update(double delta)
+        public void Update(double delta)
         {
             //while (requestWorkQueue.TryDequeue(out var res))
             //{
@@ -202,7 +204,7 @@ namespace Megumin.Remote
         /// <exception cref="ArgumentNullException"></exception>
         [Obsolete("设计缺陷,线程转换不应该带有异步逻辑,严重增加复杂性", true)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static IMiniAwaitable<object> Push(int rpcID, short cmd, int messageID, object message, IObjectMessageReceiver r)
+        internal IMiniAwaitable<object> Push(int rpcID, short cmd, int messageID, object message, IObjectMessageReceiver r)
         {
             if (r == null)
             {
@@ -227,7 +229,7 @@ namespace Megumin.Remote
         /// <param name="options"></param>
         /// <exception cref="ArgumentNullException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Push(IDealMessageable r, int rpcID, short cmd, int messageID, object message, object options = null)
+        public void Push(IDealMessageable r, int rpcID, short cmd, int messageID, object message, object options = null)
         {
             if (r == null)
             {
@@ -248,7 +250,7 @@ namespace Megumin.Remote
         /// <param name="r"></param>
         [Obsolete("解决不了泛型问题，必须装箱，或生成闭包", true)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Push<HD>(HD header, object message, IDealMessageable<HD> r)
+        public void Push<HD>(HD header, object message, IDealMessageable<HD> r)
             where HD : IMessageHeader
         {
             Invoke(() =>
@@ -262,7 +264,7 @@ namespace Megumin.Remote
         /// <see cref="Switch"/>
         /// </summary>
         /// <param name="action"></param>
-        public static void Invoke(Action action)
+        public void Invoke(Action action)
         {
             actions.Enqueue(action);
         }
@@ -275,7 +277,7 @@ namespace Megumin.Remote
         /// <returns></returns>
         /// <remarks>没实现,这个方法存在意义不大</remarks>
         [Obsolete("Use Switch instead", true)]
-        public static ConfiguredValueTaskAwaitable<T> Push<T>(T value)
+        public ConfiguredValueTaskAwaitable<T> Push<T>(T value)
         {
             return new ValueTask<T>(value).ConfigureAwait(false);
         }
@@ -285,16 +287,16 @@ namespace Megumin.Remote
         /// </summary>
         /// <returns></returns>
         [Obsolete("BUG", true)]
-        public static ConfiguredValueTaskAwaitable Switch()
+        public ConfiguredValueTaskAwaitable Switch()
         {
             return default; // DefaultSwitcher.Switch();
         }
 
         /// <summary>
-        /// 性能比<see cref="Switch"/>高, 通用性也好,但是没有经过验证有没有bug.
+        /// 性能比<see cref="Switch"/>更好, 通用性也好,但是没有经过验证有没有bug.
         /// </summary>
         /// <returns></returns>
-        public static IMiniAwaitable MiniSwitch()
+        public IMiniAwaitable MiniSwitch()
         {
             MiniTask<int> task = MiniTask<int>.Rent();
             MiniTasksSwitcher.Enqueue(task);
