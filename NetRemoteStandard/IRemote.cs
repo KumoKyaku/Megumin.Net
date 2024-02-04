@@ -131,7 +131,7 @@ namespace Net.Remote
     ///         所以折衷将异常以返回值的形式传递回调用者处。
     /// <para/> 这里的精髓是，当后续代码读取结果时，结果一定符合预期，如果不符合预期，后续代码则不会被执行。
     ///         当出现异常时，允许不触发异步延续，后续代码执行全被吃掉，这是Go所不具备的。
-    /// <para/> <see cref="SendAsyncSafeAwait{T, Result}(T, object, Action{Exception})"/> 才是设计的最终目的。
+    /// <para/> <see cref="SendAsyncSafeAwait{T, Result}(T, object, Action{object, Exception})"/> 才是设计的最终目的。
     ///         而<see cref="SendAsync{T, Result}(T, object)"/>只是对特殊需求的补丁API。
     /// </remarks>
     public interface ISendAsyncable
